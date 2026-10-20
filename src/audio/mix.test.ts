@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_VOLUME, layerGains, parseSettings, StrideCounter } from './mix';
+import { DEFAULT_VOLUME, layerGains, parseSettings, StrideCounter, tensionChanged } from './mix';
 
 describe('parseSettings', () => {
   it('boş ya da bozuk veride varsayılana döner', () => {
@@ -58,5 +58,19 @@ describe('StrideCounter', () => {
     expect(s.add(0)).toBe(0);
     expect(s.add(-1)).toBe(0);
     expect(s.add(Number.NaN)).toBe(0);
+  });
+});
+
+describe('tensionChanged', () => {
+  it('küçük kıpırtıları atlar, belirgin değişimi iletir', () => {
+    expect(tensionChanged(0.5, 0.51)).toBe(false);
+    expect(tensionChanged(0.5, 0.55)).toBe(true);
+    expect(tensionChanged(0.5, 0.5)).toBe(false);
+  });
+
+  it('uç değerlere (0 ve 1) küçük farkla da ulaşır', () => {
+    expect(tensionChanged(0.993, 1)).toBe(true);
+    expect(tensionChanged(0.01, 0)).toBe(true);
+    expect(tensionChanged(1, 1)).toBe(false);
   });
 });

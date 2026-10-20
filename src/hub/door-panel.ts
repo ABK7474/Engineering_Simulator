@@ -21,6 +21,7 @@ export interface DoorPanel {
   burnLed: () => void;
   replaceLed: () => void;
   showScorch: () => void;
+  hasScorch: () => boolean;
   update: (dt: number) => void;
 }
 
@@ -143,6 +144,7 @@ export function createDoorPanel(scene: THREE.Scene, assets: Assets, L: CorridorL
     showScorch() {
       scorch.visible = true;
     },
+    hasScorch: () => scorch.visible,
     update(dt) {
       leftLeaf.position.x = -api.openAmount * LEAF_TRAVEL;
       rightLeaf.position.x = api.openAmount * LEAF_TRAVEL;

@@ -52,3 +52,12 @@ export class StrideCounter {
     this.acc = 0;
   }
 }
+
+/**
+ * Gerilim hedefi ses motoruna iletilmeli mi? Küçük kıpırtılar (tüketimle her çeyrek saniye)
+ * atlanır; ama uç değerler (0 = tam sakin, 1 = tam gerilim) her zaman tam olarak ulaşılır.
+ */
+export function tensionChanged(prev: number, next: number, epsilon = 0.02): boolean {
+  if (next === prev) return false;
+  return Math.abs(next - prev) > epsilon || next === 0 || next === 1;
+}

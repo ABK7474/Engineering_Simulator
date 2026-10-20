@@ -118,3 +118,41 @@ button { font: inherit; cursor: pointer; }
 }
 .audio-controls .mute.on { border-color: var(--warn); }
 @media (max-width: 560px) { .audio-controls input[type=range] { width: 60px; } }
+
+.hud {
+  position: absolute; top: 12px; left: 12px; min-width: 220px; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 6px; background: rgba(4, 22, 27, 0.75);
+  font-size: 13px; z-index: 5; pointer-events: none;
+}
+.hud-row { display: grid; grid-template-columns: 36px 1fr 40px auto; align-items: center; gap: 8px; margin: 3px 0; }
+.hud-label { color: var(--muted); }
+.hud-bar { height: 8px; border-radius: 4px; background: #0d2a31; overflow: hidden; }
+.hud-bar > span { display: block; height: 100%; background: var(--accent); transition: width 0.4s; }
+.hud-value { font-family: monospace; text-align: right; }
+.hud-drain { font-family: monospace; font-size: 11px; color: var(--warn); }
+.hud-row.low .hud-bar > span { background: var(--warn); }
+.hud-row.low .hud-value { color: var(--warn); }
+.hud-row.critical .hud-bar > span { background: var(--fail); }
+.hud-row.critical .hud-value { color: var(--fail); animation: hud-blink 0.8s steps(2) infinite; }
+@keyframes hud-blink { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .hud-row.critical .hud-value { animation: none; } }
+.hud-damages { margin: 6px 0 0; padding-left: 16px; color: var(--warn); font-size: 12px; }
+.hud-episode { margin-top: 4px; color: var(--muted); font-size: 11px; }
+
+.backup-menu { position: absolute; top: 56px; right: 12px; z-index: 5; text-align: right; }
+.backup-menu .menu-toggle { padding: 2px 10px; background: rgba(4, 22, 27, 0.75); }
+.backup-menu .menu {
+  margin-top: 4px; display: flex; flex-direction: column; gap: 4px; padding: 6px;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+}
+.backup-menu .menu[hidden] { display: none; }
+.backup-menu .menu button {
+  background: none; border: none; color: var(--text); text-align: left; padding: 6px 8px; border-radius: 4px;
+}
+.backup-menu .menu button:hover { background: var(--panel-2); }
+
+.episode-closed .closed-reason { color: var(--fail); font-weight: 600; font-size: 17px; }
+.episode-closed dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.episode-closed dt { color: var(--muted); }
+.episode-closed dd { margin: 0; }
+.episode-closed footer { display: flex; justify-content: flex-end; margin-top: 12px; }

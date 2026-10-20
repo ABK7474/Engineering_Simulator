@@ -40,6 +40,18 @@ export interface Hub {
   applyOutcome: (o: Outcome) => Promise<void>;
   /** Başarısızlık sonrası yedek parça: ışıklar, LED, kapı eski hâline (yanık izi kalır). */
   repairForRetry: () => void;
+  /** Kırmızı uyarı ışığı (hata onarılana kadar ya da kaynaklar azken; kararı dışarısı verir). */
+  setWarningLight: (on: boolean) => void;
+  /** Oyuncu koridorda serbestçe dolaşıyor mu (panel/rapor/giriş ekranı kapalı, sekme görünür). */
+  isRoaming: () => boolean;
+  /** Bölüm baştan: kapı kilitli, ışıklar ve LED yenilenir; yanık izi kalır. */
+  resetEpisode: () => void;
+  /** Kayıttan: arıza önceden onarılmış, kapı açık başlar. */
+  restoreSolved: () => void;
+  /** Kayıttan: önceki hataların izi. */
+  restoreScars: (s: { panelScorch: boolean }) => void;
+  /** Panelde yanık izi oluştu mu (kalıcı iz olarak kaydedilmek için). */
+  hasScorch: () => boolean;
   /** Geliştirme/test için çizim istatistikleri. */
   stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number };
 }
@@ -289,6 +301,31 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       if (door.openAmount > 0.01) sounds.play('door_close', { volume: 0.7 });
       moveDoor(0, 0.5, 0);
     },
+    setWarningLight(on) {
+      effects.setAlarm(on);
+    },
+    isRoaming: () => active && locked && document.visibilityState === 'visible',
+    resetEpisode() {
+      tweens.clear();
+      ledFlicker = null;
+      solved = false;
+      corridor.setPower(1);
+      effects.setAlarm(false);
+      door.replaceLed();
+      door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
+      if (door.openAmount > 0.01) sounds.play('door_close', { volume: 0.7 });
+      moveDoor(0, 0.8, 0);
+    },
+    restoreSolved() {
+      solved = true;
+      door.openAmount = 1;
+      door.setLed(0x30ff70, 1);
+      door.setScreen('KİLİT AÇIK', '#40ff80');
+    },
+    restoreScars(sc) {
+      if (sc.panelScorch) door.showScorch();
+    },
+    hasScorch: () => door.hasScorch(),
     stats() {
       const { calls, triangles } = renderer.info.render;
       const { geometries, textures } = renderer.info.memory;
