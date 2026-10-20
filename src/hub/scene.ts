@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 
-export const WATER_COLOR = 0x05222a;
+export const WATER_COLOR = 0x04262e;
 
 export interface SceneKit {
   renderer: THREE.WebGLRenderer;
@@ -16,6 +16,8 @@ export function createSceneKit(container: HTMLElement): SceneKit {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.85;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
@@ -23,9 +25,9 @@ export function createSceneKit(container: HTMLElement): SceneKit {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(WATER_COLOR);
-  scene.fog = new THREE.FogExp2(WATER_COLOR, 0.055);
+  scene.fog = new THREE.FogExp2(WATER_COLOR, 0.065);
 
-  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.05, 40);
+  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.05, 45);
 
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;

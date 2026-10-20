@@ -11,7 +11,8 @@ export interface Player {
   controls: PointerLockControls;
   /** Hareket girdisi kapalıyken tuşlar yok sayılır (2D panel açıkken). */
   enabled: boolean;
-  update: (dt: number, colliders: readonly THREE.Box3[]) => void;
+  /** Bu kare yatayda kaç metre yürüdüğünü döndürür (adım sesi için). */
+  update: (dt: number, colliders: readonly THREE.Box3[]) => number;
   position: THREE.Vector3;
 }
 
@@ -34,10 +35,10 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
     enabled: true,
     position: camera.position,
     update(dt, colliders) {
-      if (!player.enabled || !controls.isLocked) return;
+      if (!player.enabled || !controls.isLocked) return 0;
       const f = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
       const s = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
-      if (f === 0 && s === 0) return;
+      if (f === 0 && s === 0) return 0;
 
       camera.getWorldDirection(forward);
       forward.y = 0;
@@ -46,10 +47,13 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
       move.copy(forward).multiplyScalar(f).addScaledVector(right, s).normalize().multiplyScalar(SPEED * dt);
 
       // Eksen eksen ilerle: duvara çapraz yürürken kayarak devam eder.
+      const x0 = camera.position.x;
+      const z0 = camera.position.z;
       camera.position.x += move.x;
       resolve(camera.position, colliders);
       camera.position.z += move.z;
       resolve(camera.position, colliders);
+      return Math.hypot(camera.position.x - x0, camera.position.z - z0);
     },
   };
   return player;

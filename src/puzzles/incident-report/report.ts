@@ -7,6 +7,7 @@ export interface IncidentReportOptions {
   /** Yalnızca başarısızlıkta gösterilir: yedek parçayla yeni deneme. */
   onRetry?: () => void;
   onClose: () => void;
+  onSound?: (s: 'click') => void;
 }
 
 export function showIncidentReport(root: HTMLElement, r: StageResult, opts: IncidentReportOptions): () => void {
@@ -44,10 +45,12 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
 
   const close = () => el.remove();
   el.querySelector('[data-act="close"]')!.addEventListener('click', () => {
+    opts.onSound?.('click');
     close();
     opts.onClose();
   });
   el.querySelector('[data-act="retry"]')?.addEventListener('click', () => {
+    opts.onSound?.('click');
     close();
     opts.onRetry?.();
   });

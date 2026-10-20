@@ -9,6 +9,8 @@ export interface SeriesCircuitPanelOptions {
   problem: SeriesLedProblem;
   onSubmit: (choiceId: string) => void;
   onCancel: () => void;
+  /** Arayüz sesi isteği (ses katmanını bilmeden). */
+  onSound?: (s: 'click' | 'switch') => void;
 }
 
 const LED_HEX: Record<string, string> = {
@@ -61,6 +63,7 @@ export function openSeriesCircuitPanel(root: HTMLElement, opts: SeriesCircuitPan
     b.className = 'resistor';
     b.innerHTML = `${resistorSvg(c.r, 120, 34)}<span>${esc(c.label)}</span>`;
     b.addEventListener('click', () => {
+      opts.onSound?.('click');
       selected = c;
       bin.querySelectorAll('.resistor').forEach((x) => x.classList.toggle('selected', x === b));
       submit.disabled = false;
@@ -88,6 +91,7 @@ export function openSeriesCircuitPanel(root: HTMLElement, opts: SeriesCircuitPan
   });
   submit.addEventListener('click', () => {
     if (!selected) return;
+    opts.onSound?.('switch');
     close();
     opts.onSubmit(selected.id);
   });

@@ -32,6 +32,16 @@ Dosyalar değiştirilmeden kopyalandı.
 
 Alarm sesi dosya değildir; oyun içinde Web Audio ile üretilir.
 
+## PBR dokular — `public/assets/textures/`
+
+Poly Haven (https://polyhaven.com), **CC0**. 1k JPG; diffuse, normal (OpenGL) ve ARM
+(AO/pürüzlülük/metaliklik) dokuları değiştirilmeden kopyalandı.
+
+| Klasör | Doku | Kaynak | Kullanım |
+|---|---|---|---|
+| `metal_plate_02/` | Metal Plate 02 | https://polyhaven.com/a/metal_plate_02 | Koridor zemini |
+| `rusty_metal_04/` | Rusty Metal 04 | https://polyhaven.com/a/rusty_metal_04 | Kapı kanatları (kutu izdüşümü UV ile) |
+
 ## 3D modeller ve dokular — `public/assets/models/quaternius/`
 
 Tümü Quaternius (https://quaternius.com), **CC0**. Lisans metinleri:

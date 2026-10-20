@@ -1,16 +1,34 @@
 // Hub cephesi: sahneyi kurar, gezinmeyi ve etkileşimi yönetir, Outcome'u görsel efekte çevirir.
-// Bulmaca mantığını bilmez; yalnızca core/types Outcome'unu okur.
+// Bulmaca mantığını ve ses motorunu bilmez; Outcome'u okur, sesleri HubSounds arayüzüyle ister.
 
 import * as THREE from 'three';
 import type { Outcome } from '../core/types';
-import { buildCorridor, LAYOUT } from './corridor';
+import { StrideCounter } from '../audio/mix';
+import { loadAssets } from './assets';
+import { buildCorridor } from './corridor';
 import { createDoorPanel } from './door-panel';
 import { Effects, Tweens } from './effects';
+import { buildLayout } from './layout';
 import { createPlayer } from './player';
 import { createSceneKit } from './scene';
 
+export type HubSfx = 'door_open' | 'door_close' | 'spark' | 'led_pop' | 'fuse' | 'jam' | 'step';
+
+/** Hub'ın istediği sesler; uygulaması audio/ katmanında. */
+export interface HubSounds {
+  play: (name: HubSfx, opts?: { volume?: number; delay?: number; pitchJitter?: number }) => void;
+  sparks: (seconds?: number) => void;
+  alarm: (seconds: number) => void;
+  setLeakVolume: (v: number) => void;
+}
+
 export interface HubOptions {
+  /** public/assets'in URL'si (sonunda / ile). */
+  assetBase: string;
+  sounds: HubSounds;
   onInteract: () => void;
+  /** "Tıkla ve başla" tıklaması: kullanıcı etkileşimi (ses burada başlatılabilir). */
+  onStart: () => void;
 }
 
 export interface Hub {
@@ -22,19 +40,43 @@ export interface Hub {
   applyOutcome: (o: Outcome) => Promise<void>;
   /** Başarısızlık sonrası yedek parça: ışıklar, LED, kapı eski hâline (yanık izi kalır). */
   repairForRetry: () => void;
+  /** Geliştirme/test için çizim istatistikleri. */
+  stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number };
 }
 
 const INTERACT_RANGE = 1.8;
+const ALARM_SECONDS = 4.5;
+const STRIDE = 0.65;
 const FAULT_SCREEN = ['KİLİT ARIZASI\nPANELİ ONAR', '#ff5040'] as const;
 
-export function createHub(container: HTMLElement, opts: HubOptions): Hub {
+export async function createHub(container: HTMLElement, opts: HubOptions): Promise<Hub> {
+  const { sounds } = opts;
+
+  // --- DOM: başlangıç/devam katmanı (yükleme sırasında da görünür) ---
+  const gate = document.createElement('div');
+  gate.className = 'gate';
+  gate.innerHTML = `<div><h1>Derin Mühendis</h1><p class="gate-action">Yükleniyor…</p>
+    <p class="keys">WASD / oklar: yürü · Fare: bak · E: etkileşim · Esc: imleci bırak · M: sessiz</p></div>`;
+  container.appendChild(gate);
+  const gateAction = gate.querySelector<HTMLParagraphElement>('.gate-action')!;
+
   const kit = createSceneKit(container);
   const { scene, camera, renderer } = kit;
-  const corridor = buildCorridor(scene);
-  const door = createDoorPanel(scene);
-  const effects = new Effects(scene, new THREE.Vector3(0, LAYOUT.height - 0.2, LAYOUT.doorZ + 0.5));
+  let assets;
+  try {
+    assets = await loadAssets(opts.assetBase, renderer);
+  } catch (e) {
+    gateAction.textContent = `Yükleme hatası: ${e instanceof Error ? e.message : String(e)}`;
+    throw e;
+  }
+  const layout = buildLayout();
+  const corridor = buildCorridor(scene, assets, layout);
+  const door = createDoorPanel(scene, assets, layout);
+  const effects = new Effects(scene, new THREE.Vector3(layout.alarm.x, layout.alarm.y, layout.alarm.z));
   const tweens = new Tweens();
-  const player = createPlayer(camera, renderer.domElement, new THREE.Vector3(0, 0, 4));
+  const player = createPlayer(camera, renderer.domElement, new THREE.Vector3(layout.spawn.x, 0, layout.spawn.z));
+  const leak = new THREE.Vector3(layout.leak.x, layout.leak.y, layout.leak.z);
+  const strides = new StrideCounter(STRIDE);
   kit.bakeShadows();
 
   door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
@@ -43,13 +85,11 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
   let solved = false;
   let ledFlicker: { color: number; lo: number; hi: number } | null = null;
 
-  // --- DOM: başlangıç/devam katmanı ve etkileşim ipucu ---
-  const gate = document.createElement('div');
-  gate.className = 'gate';
-  gate.innerHTML = `<div><h1>Derin Mühendis</h1><p>Tıkla ve başla</p>
-    <p class="keys">WASD / oklar: yürü · Fare: bak · E: etkileşim · Esc: imleci bırak</p></div>`;
-  container.appendChild(gate);
-  gate.addEventListener('click', () => player.controls.lock());
+  gateAction.textContent = 'Tıkla ve başla';
+  gate.addEventListener('click', () => {
+    opts.onStart();
+    player.controls.lock();
+  });
 
   const hint = document.createElement('div');
   hint.className = 'hint';
@@ -88,7 +128,10 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
     timer.update(now);
     const dt = Math.min(timer.getDelta(), 0.05);
     const colliders = door.openAmount > 0.95 ? corridor.colliders : [...corridor.colliders, door.collider];
-    player.update(dt, colliders);
+    const walked = player.update(dt, colliders);
+    for (let k = strides.add(walked); k > 0; k--) sounds.play('step', { volume: 0.55, pitchJitter: 0.08 });
+    const leakNear = Math.max(0, 1 - camera.position.distanceTo(leak) / 7);
+    sounds.setLeakVolume(leakNear * leakNear);
 
     nearPanel =
       !solved &&
@@ -144,6 +187,7 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
           door.setScreen('KİLİT AÇIK', '#40ff80');
         });
         moveDoor(T0 + 0.4, 1.6, 1);
+        at(T0 + 0.4, () => sounds.play('door_open'));
         solved = true;
         return T0 + 2.2;
       case 'dim':
@@ -152,10 +196,12 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
           door.setScreen('SİNYAL ZAYIF', '#ffb030', true);
         });
         moveDoor(T0 + 0.3, 1.2, 0.12, 0.015);
+        at(T0 + 0.3, () => sounds.play('jam', { volume: 0.8 }));
         return T0 + 2.2;
       case 'no_light':
         at(T0, () => door.setScreen('SİNYAL YOK', '#ffb030', true));
         moveDoor(T0 + 0.2, 0.3, 0.03, 0.01);
+        at(T0 + 0.2, () => sounds.play('jam', { volume: 0.4 }));
         moveDoor(T0 + 0.6, 0.3, 0);
         return T0 + 1.8;
       case 'led_stressed':
@@ -164,6 +210,7 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
         at(T0 + 1.4, () => {
           ledFlicker = null;
           door.setLed(0, 0);
+          sounds.sparks(0.3);
           door.setScreen('AŞIRI AKIM\nHAT KESİLDİ', '#ff5040', true);
         });
         moveDoor(T0 + 0.2, 0.6, 0.08);
@@ -173,22 +220,28 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
         at(T0, () => door.setLed(0xffffff, 4));
         at(T0 + 0.15, () => {
           effects.sparkBurst(door.ledPosition);
+          sounds.play('led_pop');
+          sounds.sparks(0.6);
           door.burnLed();
           door.showScorch();
           door.setScreen('LED ARIZASI', '#ff5040', true);
         });
         return T0 + 2.2;
       case 'fuse_blown':
-        at(T0, () => effects.sparkBurst(door.ledPosition, 90));
+        at(T0, () => {
+          effects.sparkBurst(door.ledPosition, 90);
+          sounds.sparks(0.5);
+        });
         at(T0 + 0.1, () => {
+          sounds.play('fuse');
           corridor.setPower(0);
           door.setScreen('', '#000');
-          effects.setAlarm(true);
         });
         return T0 + 2.6;
       case 'resistor_burnt':
         at(T0, () => {
           effects.smokePuff(door.ledPosition, 3);
+          sounds.sparks(0.3);
           door.showScorch();
           door.setScreen('DİRENÇ ARIZASI', '#ff5040', true);
         });
@@ -212,6 +265,13 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
       tweens.clear();
       focusCamera(T0);
       const duration = play(o);
+      if (o.kind !== 'success') {
+        // Her yanlış cevapta: siren en fazla ALARM_SECONDS; kırmızı ışık onarıma kadar sürer.
+        at(T0 + 0.2, () => {
+          effects.setAlarm(true);
+          sounds.alarm(ALARM_SECONDS);
+        });
+      }
       if (o.resistorOverheat && o.kind !== 'resistor_burnt') {
         at(T0 + 0.2, () => {
           effects.smokePuff(door.ledPosition, 2.5);
@@ -226,7 +286,13 @@ export function createHub(container: HTMLElement, opts: HubOptions): Hub {
       effects.setAlarm(false);
       door.replaceLed();
       door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
+      if (door.openAmount > 0.01) sounds.play('door_close', { volume: 0.7 });
       moveDoor(0, 0.5, 0);
+    },
+    stats() {
+      const { calls, triangles } = renderer.info.render;
+      const { geometries, textures } = renderer.info.memory;
+      return { calls, triangles, geometries, textures, x: camera.position.x, z: camera.position.z };
     },
   };
 }
