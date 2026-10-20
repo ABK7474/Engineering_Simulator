@@ -47,6 +47,8 @@ export interface StageDef {
   briefing: string;
   /** Problem türüne özgü yapılandırma; çözücü modülü doğrular. */
   config: unknown;
+  /** Kullanıcının yüklediği bir konudan üretilmiş şablonsa kaynağı. */
+  source?: { topicId: string; topicName: string; courseName: string };
 }
 
 export interface FaultCard {

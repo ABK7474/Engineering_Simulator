@@ -3,6 +3,7 @@
 // Doğrulama/serileştirme saftır ve test edilir.
 
 import type { Balance, Damage, ResourceState } from './resources';
+import { openKv, type Kv } from './kv';
 import { createResources } from './resources';
 
 export const PROGRESS_VERSION = 2;
@@ -107,12 +108,15 @@ export function validateProgress(raw: unknown, b: Balance): ProgressData | null 
 
 const EXPORT_TAG = 'derin-muhendis/progress';
 
-export function toExportJson(p: ProgressData): string {
-  return JSON.stringify({ format: EXPORT_TAG, exportedAt: new Date().toISOString(), progress: p }, null, 2);
+/**
+ * Yedek: ilerleme + (varsa) konu kütüphanesi. API anahtarı ASLA yedeğe girmez (ayrı yerde durur).
+ * Kütüphane alanı olmayan eski yedekler okunmaya devam eder.
+ */
+export function toExportJson(p: ProgressData, library?: unknown): string {
+  return JSON.stringify({ format: EXPORT_TAG, exportedAt: new Date().toISOString(), progress: p, ...(library ? { library } : {}) }, null, 2);
 }
 
-/** Yedek dosyasını okur; biçim ya da içerik geçersizse açıklamalı hata fırlatır. */
-export function fromExportJson(text: string, b: Balance): ProgressData {
+function parseBackup(text: string): Record<string, unknown> {
   let o: unknown;
   try {
     o = JSON.parse(text);
@@ -120,9 +124,19 @@ export function fromExportJson(text: string, b: Balance): ProgressData {
     throw new Error('Dosya JSON değil.');
   }
   if (!isObj(o) || o.format !== EXPORT_TAG) throw new Error('Bu bir Derin Mühendis ilerleme yedeği değil.');
-  const p = validateProgress(o.progress, b);
+  return o;
+}
+
+/** Yedek dosyasını okur; biçim ya da içerik geçersizse açıklamalı hata fırlatır. */
+export function fromExportJson(text: string, b: Balance): ProgressData {
+  const p = validateProgress(parseBackup(text).progress, b);
   if (!p) throw new Error('Yedekteki ilerleme verisi bozuk ya da bu sürümle uyumsuz.');
   return p;
+}
+
+/** Yedekteki ham kütüphane (doğrulamayı çağıran yapar); eski yedekte yoksa undefined. */
+export function libraryFromExportJson(text: string): unknown {
+  return parseBackup(text).library;
 }
 
 // ---------------------------------------------------------------- depolar
@@ -144,45 +158,14 @@ export class MemoryStore implements ProgressStore {
   }
 }
 
-const DB = 'derin-muhendis';
-const STORE = 'kv';
-const KEY = 'progress';
-
-function req<T>(r: IDBRequest<T>): Promise<T> {
-  return new Promise((ok, fail) => {
-    r.onsuccess = () => ok(r.result);
-    r.onerror = () => fail(r.error);
-  });
+/** İlerleme, ortak anahtar-değer deposunda 'progress' anahtarı altında durur. */
+export function progressStore(kv: Kv): ProgressStore {
+  return { kind: kv.kind, load: () => kv.get('progress'), save: (p) => kv.set('progress', p) };
 }
 
-class IndexedDbStore implements ProgressStore {
-  readonly kind = 'indexeddb' as const;
-  constructor(private db: IDBDatabase) {}
-  async load(): Promise<unknown> {
-    return req(this.db.transaction(STORE).objectStore(STORE).get(KEY));
-  }
-  async save(p: ProgressData): Promise<void> {
-    const tx = this.db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).put(p, KEY);
-    await new Promise<void>((ok, fail) => {
-      tx.oncomplete = () => ok();
-      tx.onerror = () => fail(tx.error);
-      tx.onabort = () => fail(tx.error);
-    });
-  }
-}
-
-/** IndexedDB'yi açar; kullanılamıyorsa (gizli pencere, eski tarayıcı) bellek içi depoya düşer. */
+/** IndexedDB'yi açar; kullanılamıyorsa bellek içi depoya düşer. */
 export async function openProgressStore(): Promise<ProgressStore> {
-  try {
-    if (typeof indexedDB === 'undefined') throw new Error('IndexedDB yok');
-    const open = indexedDB.open(DB, 1);
-    open.onupgradeneeded = () => open.result.createObjectStore(STORE);
-    return new IndexedDbStore(await req(open));
-  } catch (e) {
-    console.warn('İlerleme kalıcı saklanamıyor; bu oturumla sınırlı.', e);
-    return new MemoryStore();
-  }
+  return progressStore(await openKv());
 }
 
 /** Depodan okur ve doğrular; yoksa ya da bozuksa varsayılan. */

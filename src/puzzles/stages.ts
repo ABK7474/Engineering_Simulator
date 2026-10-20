@@ -21,6 +21,7 @@ export interface StagePanelContext {
   onSubmit: (answer: unknown) => void;
   onCancel: () => void;
   onSound: (s: 'click' | 'switch') => void;
+  source?: { label: string; onFlag: () => void };
 }
 
 /** Üretilmiş, doğrulanmış tek bir aşama problemi. */
@@ -48,6 +49,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
             problem,
             onSound: ctx.onSound,
             onCancel: ctx.onCancel,
+            source: ctx.source,
             onSubmit: (id) => ctx.onSubmit(id),
           }),
         evaluate(answer, rng) {
@@ -75,6 +77,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
             problem,
             onSound: ctx.onSound,
             onCancel: ctx.onCancel,
+            source: ctx.source,
             onSubmit: (placement) => ctx.onSubmit(placement),
           }),
         evaluate(answer, rng) {

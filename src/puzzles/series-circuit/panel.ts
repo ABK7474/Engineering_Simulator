@@ -10,6 +10,8 @@ export interface SeriesCircuitPanelOptions {
   problem: SeriesLedProblem;
   onSubmit: (choiceId: string) => void;
   onCancel: () => void;
+  /** Kullanıcının konusundan üretilmiş şablonsa: kaynak ve "bu soru hatalı". */
+  source?: { label: string; onFlag: () => void };
   /** Arayüz sesi isteği (ses katmanını bilmeden). */
   onSound?: (s: 'click' | 'switch') => void;
 }
@@ -35,6 +37,7 @@ export function openSeriesCircuitPanel(root: HTMLElement, opts: SeriesCircuitPan
         <h2>${esc(opts.title)}</h2>
         <button class="ghost" data-act="cancel" title="Esc">Geri dön ✕</button>
       </header>
+      ${opts.source ? `<p class="source-line">Konu: ${esc(opts.source.label)} <button class="ghost small" data-act="flag" title="Bu soruyu havuzdan çıkar">Bu soru hatalı</button></p>` : ''}
       <details class="briefing" open>
         <summary>Brifing</summary>
         <p>${esc(opts.briefing)}</p>
@@ -86,6 +89,11 @@ export function openSeriesCircuitPanel(root: HTMLElement, opts: SeriesCircuitPan
   };
   window.addEventListener('keydown', onKey);
 
+  el.querySelector('[data-act="flag"]')?.addEventListener('click', () => {
+    if (!confirm('Bu soru hatalı olarak işaretlensin mi? Şablon oyun havuzundan çıkarılır (kütüphanede kalır).')) return;
+    close();
+    opts.source?.onFlag();
+  });
   el.querySelector('[data-act="cancel"]')!.addEventListener('click', () => {
     close();
     opts.onCancel();

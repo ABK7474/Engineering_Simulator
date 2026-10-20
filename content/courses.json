@@ -1,0 +1,9 @@
+[
+  { "id": "devre-teorisi-1", "name": "Devre Teorisi 1", "problemTypes": ["series-led", "series-parallel"] },
+  { "id": "elektrik-elektronik-devreler", "name": "Elektrik-Elektronik Devreler", "problemTypes": ["series-led", "series-parallel"] },
+  { "id": "diferansiyel-denklemler", "name": "Diferansiyel Denklemler", "problemTypes": [] },
+  { "id": "muhendislik-matematigi", "name": "Mühendislik Matematiği", "problemTypes": [] },
+  { "id": "olasilik-istatistik", "name": "Olasılık ve İstatistik", "problemTypes": [] },
+  { "id": "veri-yapilari", "name": "Veri Yapıları", "problemTypes": [] },
+  { "id": "ileri-programlama", "name": "İleri Programlama (C#)", "problemTypes": [] }
+]

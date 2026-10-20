@@ -7,6 +7,8 @@ export interface BackupHandlers {
   importJson: (text: string) => Promise<void>;
   /** Tüm ilerlemeyi siler ve oyunu baştan başlatır. */
   reset: () => Promise<void>;
+  /** Menünün başına eklenecek ek seçenekler (konu ekle, kütüphane, ayarlar). */
+  items?: { label: string; onClick: () => void }[];
 }
 
 export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
@@ -15,6 +17,8 @@ export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
   el.innerHTML = `
     <button class="ghost menu-toggle" aria-haspopup="true" aria-expanded="false" title="İlerleme yedeği">⋯</button>
     <div class="menu" hidden>
+      ${(h.items ?? []).map((it, k) => `<button data-item="${k}">${it.label}</button>`).join('')}
+      ${h.items?.length ? '<hr>' : ''}
       <button data-act="export">İlerlemeyi dışa aktar (.json)</button>
       <button data-act="import">İlerlemeyi içe aktar…</button>
       <button data-act="reset" class="danger">Sıfırdan başla…</button>
@@ -31,6 +35,12 @@ export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
   };
   toggle.addEventListener('click', () => setOpen(menu.hidden !== false));
 
+  el.querySelectorAll<HTMLButtonElement>('[data-item]').forEach((b) =>
+    b.addEventListener('click', () => {
+      setOpen(false);
+      h.items![Number(b.dataset.item)].onClick();
+    }),
+  );
   el.querySelector('[data-act="export"]')!.addEventListener('click', () => {
     const blob = new Blob([h.exportJson()], { type: 'application/json' });
     const a = document.createElement('a');
@@ -46,7 +56,7 @@ export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
     setOpen(false);
     const ok = confirm(
       'Tüm ilerleme silinip oyun baştan başlayacak: kaynaklar, onarılan arızalar, bölüm sayacı ve hasar izleri. ' +
-        'Ses ayarların korunur. Saklamak istersen önce "dışa aktar" ile yedek al.\n\nSıfırdan başlansın mı?',
+        'Ses ayarların ve konu kütüphanen (notlar, şablonlar) korunur. Saklamak istersen önce "dışa aktar" ile yedek al.\n\nSıfırdan başlansın mı?',
     );
     if (ok) await h.reset();
   });

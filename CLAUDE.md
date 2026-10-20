@@ -59,6 +59,25 @@ kaynak PDF → (bir kez, Gemini) → temiz .md + konu özeti → KULLANICI İNCE
 
 - İlk kez "konu ekle" denildiğinde sor (açılışta değil; "şimdilik atla" olsun). Ayarlardan değiştirilebilir.
 - Anahtar koda, repoya, loglara girmez. Tarayıcıda yerel olarak saklanır. `.env` varsa `.gitignore`'da.
+- Saklama biçimi: yalnız `localStorage` (`derin-muhendis.llm.apiKey`); dışa aktarılan yedeğe girmez,
+  ekranda yalnız son 4 karakter görünür, hata metinlerinde maskelenir. Ayarlar'da "Bağlantıyı sına" var.
+
+## LLM entegrasyonu (karar notları, Ekim 2026 dokümanına göre)
+
+- Sağlayıcı: Gemini, yalnız `src/llm/client.ts`. Model varsayılanı `gemini-3.8-flash`; Ayarlar'dan
+  değiştirilebilir (isim eskiyince koda dokunmadan güncellenir). Değiştirmeden önce güncel dokümana bak.
+- API: **Interactions API** (`POST /v1beta/interactions`, GA; `generateContent` legacy). SDK yok, düz
+  `fetch`; anahtar `x-goog-api-key` başlığında. `store: false` (ders PDF'leri sağlayıcıda saklanmaz).
+- `thinking_level: "low"` (3.8 Flash `minimal`i kabul etmez; düşünme token'ları çıktı bütçesinden yer).
+- PDF satır içi base64 `document` parçası; sağlayıcı sayfaları görüyle okur (devre şemaları dahil).
+  Üst sınır 50 MB / 1000 sayfa. **40 sayfa üstünde** "konulara bölün" uyarısı; sayfa sayısı
+  güvenilir sayılamazsa (0 ya da `/ObjStm`) "bilinmiyor" denir ve uyarı **15 MB** üstüne göre verilir.
+- Yapılandırılmış çıktı (`response_format` + JSON şema) yalnız biçimi daraltır; değerleri kod doğrular.
+- Kesilme kuralı: yanıt `status: "incomplete"`, yarım JSON ya da boş .md ise sonuç "eksik" işaretlenir
+  ve **onaylanamaz**. Eksik .md asla sessizce kabul edilmez.
+- Şablon üretiminde LLM yalnız mevcut problem türlerinin parametre şemasında aday önerir (seri-paralel
+  topolojisi ve çözüm zinciri sabit); her aday 20 tohumda mevcut doğrulayıcıdan geçmeden havuza girmez.
+- Test: `?llm=mock` sahte istemciyle bütün hat ağsız sınanır; otomatik testler gerçek API çağırmaz.
 
 ## Oyun döngüsü
 

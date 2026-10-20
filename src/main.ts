@@ -3,11 +3,32 @@
 
 import './style.css';
 import balanceJson from '../content/balance/resources.json';
+import coursesJson from '../content/courses.json';
 import fault from '../content/faults/door-power-01.json';
 import { mountAudioControls, loadSettings } from './audio/controls';
 import { AudioEngine } from './audio/engine';
 import { tensionChanged } from './audio/mix';
-import { defaultProgress, fromExportJson, loadProgress, openProgressStore, stageKey, toExportJson } from './core/progress';
+import { openKv } from './core/kv';
+import {
+  approveTopic,
+  flagTemplate,
+  loadLibrary,
+  removeTopic,
+  saveLibrary,
+  templatePool,
+  upsertTopic,
+  validateLibrary,
+  type Library,
+} from './core/library';
+import {
+  defaultProgress,
+  fromExportJson,
+  libraryFromExportJson,
+  loadProgress,
+  progressStore,
+  stageKey,
+  toExportJson,
+} from './core/progress';
 import {
   anyLow,
   applyOutcome,
@@ -22,13 +43,19 @@ import {
   type ResourceEvent,
 } from './core/resources';
 import { createRng } from './core/rng';
-import type { FaultCard } from './core/types';
+import { clearApiKey, getApiKey, getModel, maskKey, setApiKey, setModel } from './core/secrets';
+import type { FaultCard, StageDef } from './core/types';
 import { createHub } from './hub/hub';
 import { showIncidentReport } from './puzzles/incident-report/report';
 import { prepareStage, validateStage, type StageRun } from './puzzles/stages';
+import { getProvider, LLM_DEFAULTS, type LlmSettings } from './llm/llm';
+import { createTopicDraft, generateTopicTemplates, type Course } from './pipeline/topic-pipeline';
 import { mountBackupMenu } from './ui/backup';
 import { showEpisodeClosed } from './ui/episode-closed';
 import { mountHud } from './ui/hud';
+import { openLibraryView } from './ui/library-view';
+import { openSettings } from './ui/settings';
+import { openTopicFlow } from './ui/topic-flow';
 
 const card = fault as FaultCard;
 const FAULT_ID = card.id;
@@ -50,7 +77,8 @@ const app = document.getElementById('app')!;
 const ui = document.getElementById('ui')!;
 
 // --- İlerleme ---
-const store = await openProgressStore();
+const kv = await openKv();
+const store = progressStore(kv);
 let progress = await loadProgress(store, balance);
 let lastSave = 0;
 const persist = async () => {
@@ -89,10 +117,128 @@ const renderHud = () => {
   });
 };
 renderHud();
+// --- Konu kütüphanesi ve içerik hattı (LLM yalnız burada; oyun sırasında çağrılmaz) ---
+const COURSES = coursesJson as Course[];
+const BASES = Object.fromEntries(STAGES.map((s) => [s.type, s])) as Record<StageDef['type'], StageDef>;
+/** Yüklenen kütüphanedeki şablonlar yeniden doğrulanır; geçersiz olan oyuna girmez. */
+function sanitize(lib: Library): Library {
+  return {
+    ...lib,
+    topics: lib.topics.map((t) => ({
+      ...t,
+      templates: t.templates.filter((x) => {
+        try {
+          validateStage(x.stage);
+          return true;
+        } catch (e) {
+          console.warn(`Geçersiz şablon atlandı (${x.stage.id}):`, (e as Error).message);
+          return false;
+        }
+      }),
+    })),
+  };
+}
+let library = sanitize(await loadLibrary(kv));
+const persistLibrary = async () => {
+  try {
+    await saveLibrary(kv, library);
+  } catch (e) {
+    console.warn('Konu kütüphanesi kaydedilemedi.', e);
+  }
+};
+const MOCK_LLM = new URLSearchParams(location.search).get('llm') === 'mock';
+const llmSettings = (): LlmSettings => ({ apiKey: getApiKey(), model: getModel(LLM_DEFAULTS.model), mock: MOCK_LLM });
+const providerLabel = () => (MOCK_LLM ? 'Sahte istemci' : `${LLM_DEFAULTS.label} · ${getModel(LLM_DEFAULTS.model)}`);
+/** Menüden açılan ekranlar: koridordaki girdiyi askıya alır, kapanınca geri verir. */
+const withHubPaused = (open: (onClose: () => void) => void) => {
+  hub.suspend();
+  open(() => {
+    prepareCurrent(); // yeni ya da silinen şablonlar sıradaki aşamaya yansısın
+    hub.resume();
+  });
+};
+
 mountBackupMenu(ui, {
-  exportJson: () => toExportJson(progress),
+  items: [
+    {
+      label: 'Konu ekle…',
+      onClick: () =>
+        withHubPaused((onClose) =>
+          openTopicFlow(ui, {
+            courses: COURSES,
+            providerLabel,
+            keyAdvice: LLM_DEFAULTS.keyAdvice,
+            // Sahte istemci anahtarı kullanmaz ama akış (ve sızıntı denetimi) gerçeğiyle aynı kalsın.
+            needsKey: () => !getApiKey(),
+            saveKey: setApiKey,
+            createDraft: (input) => createTopicDraft(llmSettings(), input),
+            approve: async (t, edits) => {
+              const approved = approveTopic(t, edits);
+              library = upsertTopic(library, approved);
+              await persistLibrary();
+              return approved;
+            },
+            generate: async (t) => {
+              const existing = library.topics.flatMap((x) => x.templates.map((y) => y.stage));
+              const done = await generateTopicTemplates(llmSettings(), t, { course: COURSES.find((c) => c.id === t.courseId)!, bases: BASES, existing });
+              library = upsertTopic(library, done);
+              await persistLibrary();
+              return done;
+            },
+            onClose,
+          }),
+        ),
+    },
+    {
+      label: 'Konu kütüphanesi',
+      onClick: () =>
+        withHubPaused((onClose) =>
+          openLibraryView(ui, () => library, {
+            remove: async (id) => {
+              library = removeTopic(library, id);
+              await persistLibrary();
+            },
+            onClose,
+          }),
+        ),
+    },
+    {
+      label: 'Ayarlar…',
+      onClick: () =>
+        withHubPaused((onClose) =>
+          openSettings(ui, {
+            providerLabel: LLM_DEFAULTS.label,
+            defaultModel: LLM_DEFAULTS.model,
+            keyAdvice: LLM_DEFAULTS.keyAdvice,
+            mock: MOCK_LLM,
+            maskedKey: () => maskKey(getApiKey()),
+            saveKey: setApiKey,
+            clearKey: clearApiKey,
+            model: () => getModel(LLM_DEFAULTS.model),
+            saveModel: setModel,
+            testConnection: async () => {
+              try {
+                return await getProvider(llmSettings()).testConnection();
+              } catch (e) {
+                return { ok: false, message: (e as Error).message };
+              }
+            },
+            onClose,
+          }),
+        ),
+    },
+  ],
+  exportJson: () => toExportJson(progress, library),
   importJson: async (text) => {
-    progress = fromExportJson(text, balance);
+    const imported = fromExportJson(text, balance);
+    const rawLib = libraryFromExportJson(text);
+    if (rawLib !== undefined) {
+      const lib = validateLibrary(rawLib);
+      if (!lib) throw new Error('Yedekteki konu kütüphanesi bozuk ya da bu sürümle uyumsuz.');
+      library = lib;
+      await persistLibrary();
+    }
+    progress = imported;
     await persist();
     location.reload();
   },
@@ -117,8 +263,21 @@ const allDone = () => stagesDone() >= STAGES.length;
 const progressText = (done: number) => `AŞAMA ${done}/${STAGES.length}\nTAMAM`;
 /** Aşama problemi: tohum taban + deneme + aşama; ?seed ile tekrarlanabilir. */
 const stageSeed = () => baseSeed + attempt + 1000 * currentIndex();
-let run: StageRun = prepareStage(STAGES[currentIndex()], stageSeed());
-const prepareCurrent = () => (run = prepareStage(STAGES[currentIndex()], stageSeed()));
+/**
+ * Aşamanın tanımı: kullanıcının onaylı konularından o türde şablon varsa onlardan biri (kendi
+ * notundan çalışsın diye öncelikli), yoksa yerleşik içerik. Seçim aşama tohumuyla belirlenir.
+ */
+const pickStageDef = (): StageDef => {
+  const base = STAGES[currentIndex()];
+  const pool = templatePool(library, base.type);
+  return pool.length ? pool[stageSeed() % pool.length] : base;
+};
+let currentDef = pickStageDef();
+let run: StageRun = prepareStage(currentDef, stageSeed());
+function prepareCurrent(): void {
+  currentDef = pickStageDef();
+  run = prepareStage(currentDef, stageSeed());
+}
 const showStageProgress = () => hub.showProgress(!allDone() && stagesDone() > 0 ? progressText(stagesDone()) : null);
 
 // --- Gerilim ve uyarı ışığı: hata darbesi (onarıma kadar) ya da kaynakların durumu ---
@@ -207,7 +366,8 @@ if (import.meta.env.DEV) {
       audio,
       hub,
       progress: () => structuredClone(progress),
-      stage: () => ({ index: currentIndex(), baseSeed, attempt, seed: stageSeed() }),
+      stage: () => ({ index: currentIndex(), baseSeed, attempt, seed: stageSeed(), def: structuredClone(currentDef) }),
+      library: () => structuredClone(library),
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
         renderHud();
@@ -221,11 +381,21 @@ function openPuzzle(): void {
   uiSound('click');
   hub.suspend();
   const i = currentIndex();
-  const def = STAGES[i];
+  const def = currentDef;
   run.open({
     root: ui,
     title: `${card.title} — Aşama ${i + 1}/${STAGES.length}: ${def.title}`,
     briefing: def.briefing,
+    source: def.source && {
+      label: `${def.source.topicName} (${def.source.courseName})`,
+      onFlag: () => {
+        // "Bu soru hatalı": şablon havuzdan çıkar; aşama başka bir problemle hazırlanır.
+        library = flagTemplate(library, def.id);
+        void persistLibrary();
+        prepareCurrent();
+        hub.resume();
+      },
+    },
     onSound: uiSound,
     onCancel: () => hub.resume(),
     onSubmit: (answer) => void runAttempt(answer),
