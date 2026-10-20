@@ -7,7 +7,11 @@ export type OutcomeKind =
   | 'led_stressed' // aşırı akım, hafif: LED zorlanır ve söner
   | 'led_burnt' // aşırı akım, ağır: LED patlar
   | 'resistor_burnt' // direnç güç sınırını aştı
-  | 'fuse_blown'; // neredeyse kısa devre: sigorta atar
+  | 'fuse_blown' // neredeyse kısa devre ya da hat koruması: sigorta atar
+  | 'motor_stall' // motor akımı çok düşük: motor dönmez
+  | 'motor_slow' // motor akımı düşük ya da besleme kararsız: kapı yavaş, takılır
+  | 'motor_overheat' // aşırı akım, hafif: termik koruma motoru keser
+  | 'motor_burnt'; // aşırı akım, ağır: sargı yanar
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -37,7 +41,10 @@ export interface StageResult {
 
 export interface StageDef {
   id: string;
-  type: 'series-led';
+  type: 'series-led' | 'series-parallel';
+  title: string;
+  /** Aşamanın konu özeti (brifing ekranı). */
+  briefing: string;
   /** Problem türüne özgü yapılandırma; çözücü modülü doğrular. */
   config: unknown;
 }

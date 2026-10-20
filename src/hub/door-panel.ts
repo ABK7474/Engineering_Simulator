@@ -105,10 +105,10 @@ export function createDoorPanel(scene: THREE.Scene, assets: Assets, L: CorridorL
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const lines = screenState.text.split('\n');
-      // En uzun satır ekranın %88'ine sığana kadar yazıyı küçült.
+      // En uzun satır ekranın %70'ine sığana kadar küçült (kenarları terminalin çerçevesi örtüyor).
       let size = 30;
       do ctx.font = `bold ${size}px monospace`;
-      while (size-- > 12 && Math.max(...lines.map((l) => ctx.measureText(l).width)) > canvas.width * 0.88);
+      while (size-- > 12 && Math.max(...lines.map((l) => ctx.measureText(l).width)) > canvas.width * 0.7);
       lines.forEach((l, k) => ctx.fillText(l, canvas.width / 2, canvas.height / 2 + (k - (lines.length - 1) / 2) * 30));
     }
     screenTex.needsUpdate = true;

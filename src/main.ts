@@ -7,7 +7,7 @@ import fault from '../content/faults/door-power-01.json';
 import { mountAudioControls, loadSettings } from './audio/controls';
 import { AudioEngine } from './audio/engine';
 import { tensionChanged } from './audio/mix';
-import { fromExportJson, loadProgress, openProgressStore, toExportJson } from './core/progress';
+import { defaultProgress, fromExportJson, loadProgress, openProgressStore, stageKey, toExportJson } from './core/progress';
 import {
   anyLow,
   applyOutcome,
@@ -25,19 +25,15 @@ import { createRng } from './core/rng';
 import type { FaultCard } from './core/types';
 import { createHub } from './hub/hub';
 import { showIncidentReport } from './puzzles/incident-report/report';
-import { openSeriesCircuitPanel } from './puzzles/series-circuit/panel';
-import { parseSeriesLedConfig, solveSeriesLed } from './solvers/circuit/series-led';
-import { generateSeriesLed } from './solvers/circuit/series-led.generate';
-import { resolveOutcome } from './solvers/circuit/series-led.outcomes';
-import { buildSeriesLedReport } from './solvers/circuit/series-led.report';
+import { prepareStage, validateStage, type StageRun } from './puzzles/stages';
 import { mountBackupMenu } from './ui/backup';
 import { showEpisodeClosed } from './ui/episode-closed';
 import { mountHud } from './ui/hud';
 
 const card = fault as FaultCard;
-const stage = card.stages[0];
 const FAULT_ID = card.id;
-const config = parseSeriesLedConfig(stage.config);
+const STAGES = card.stages;
+STAGES.forEach(validateStage); // içerik hatası açılışta yakalansın
 const balance = parseBalance(balanceJson);
 const ASSETS = `${import.meta.env.BASE_URL}assets/`;
 /** Onarımdan sonra müziğin kaynak seviyesine dönüş süresi (s). */
@@ -49,7 +45,6 @@ const SAVE_EVERY_MS = 5000;
 const seedParam = Number(new URLSearchParams(location.search).get('seed'));
 const baseSeed = Number.isInteger(seedParam) && seedParam > 0 ? seedParam : Math.floor(Math.random() * 2 ** 31);
 let attempt = 0;
-let problem = generateSeriesLed(config, baseSeed);
 
 const app = document.getElementById('app')!;
 const ui = document.getElementById('ui')!;
@@ -101,6 +96,11 @@ mountBackupMenu(ui, {
     await persist();
     location.reload();
   },
+  reset: async () => {
+    progress = defaultProgress(balance);
+    await persist();
+    location.reload();
+  },
 });
 
 const hub = await createHub(app, {
@@ -109,6 +109,17 @@ const hub = await createHub(app, {
   onInteract: openPuzzle,
   onStart: () => void audioReady.then(() => audio.start()),
 });
+
+// --- Arıza zinciri: ardışık aşamalar ---
+const stagesDone = () => progress.faults[FAULT_ID]?.stagesDone ?? 0;
+const currentIndex = () => Math.min(stagesDone(), STAGES.length - 1);
+const allDone = () => stagesDone() >= STAGES.length;
+const progressText = (done: number) => `AŞAMA ${done}/${STAGES.length}\nTAMAM`;
+/** Aşama problemi: tohum taban + deneme + aşama; ?seed ile tekrarlanabilir. */
+const stageSeed = () => baseSeed + attempt + 1000 * currentIndex();
+let run: StageRun = prepareStage(STAGES[currentIndex()], stageSeed());
+const prepareCurrent = () => (run = prepareStage(STAGES[currentIndex()], stageSeed()));
+const showStageProgress = () => hub.showProgress(!allDone() && stagesDone() > 0 ? progressText(stagesDone()) : null);
 
 // --- Gerilim ve uyarı ışığı: hata darbesi (onarıma kadar) ya da kaynakların durumu ---
 let failurePulse = false;
@@ -144,9 +155,9 @@ function closeEpisode(): void {
       progress.episode++;
       progress.attemptsThisEpisode = 0;
       progress.worstEvent = null;
-      progress.faults[FAULT_ID] = { repaired: false };
+      progress.faults[FAULT_ID] = { stagesDone: 0 };
       attempt++;
-      problem = generateSeriesLed(config, baseSeed + attempt);
+      prepareCurrent();
       failurePulse = false;
       hub.resetEpisode();
       renderHud();
@@ -168,7 +179,8 @@ function onDrainEvents(events: ResourceEvent[]): void {
 }
 
 // --- Kayıttan geri yükleme ---
-if (progress.faults[FAULT_ID]?.repaired) hub.restoreSolved();
+if (allDone()) hub.restoreSolved();
+else showStageProgress();
 hub.restoreScars(progress.scars);
 updateMood(0.1);
 if (isCritical(progress.resources, balance)) closeEpisode();
@@ -195,6 +207,7 @@ if (import.meta.env.DEV) {
       audio,
       hub,
       progress: () => structuredClone(progress),
+      stage: () => ({ index: currentIndex(), baseSeed, attempt, seed: stageSeed() }),
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
         renderHud();
@@ -207,25 +220,27 @@ if (import.meta.env.DEV) {
 function openPuzzle(): void {
   uiSound('click');
   hub.suspend();
-  openSeriesCircuitPanel(ui, {
-    title: card.title,
-    briefing: card.briefing,
-    problem,
+  const i = currentIndex();
+  const def = STAGES[i];
+  run.open({
+    root: ui,
+    title: `${card.title} — Aşama ${i + 1}/${STAGES.length}: ${def.title}`,
+    briefing: def.briefing,
     onSound: uiSound,
     onCancel: () => hub.resume(),
-    onSubmit: (choiceId) => void runAttempt(choiceId),
+    onSubmit: (answer) => void runAttempt(answer),
   });
 }
 
-async function runAttempt(choiceId: string): Promise<void> {
-  const choice = problem.choices.find((c) => c.id === choiceId)!;
-  const sol = solveSeriesLed(problem.spec.vs, problem.spec.led.model, choice.r);
-  const outcome = resolveOutcome(problem.spec, sol, createRng(problem.seed * 31 + attempt));
-  const result = buildSeriesLedReport(stage.id, problem, choiceId, outcome);
+async function runAttempt(answer: unknown): Promise<void> {
+  const i = currentIndex();
+  const { outcome, result } = run.evaluate(answer, createRng(baseSeed * 31 + attempt + 7 * i));
+  const success = outcome.kind === 'success';
+  const final = success && i + 1 === STAGES.length;
 
-  // Bedel ya da geri kazanım: çözücünün fiziksel sonucundan.
+  // Bedel ya da geri kazanım: çözücünün fiziksel sonucundan; hasar bu aşamaya bağlanır.
   progress.attemptsThisEpisode++;
-  const step = applyOutcome(progress.resources, balance, FAULT_ID, outcome);
+  const step = applyOutcome(progress.resources, balance, stageKey(FAULT_ID, i), outcome);
   progress.resources = step.state;
   const lost: Amounts = {};
   for (const e of step.events) {
@@ -238,31 +253,34 @@ async function runAttempt(choiceId: string): Promise<void> {
     const total = Object.values(lost).reduce((a, b) => a + b, 0);
     if (!progress.worstEvent || total > progress.worstEvent.total) progress.worstEvent = { label: damage.label, total };
   }
-  progress.faults[FAULT_ID] = { repaired: outcome.kind === 'success' };
-  failurePulse = outcome.kind !== 'success';
+  if (success) progress.faults[FAULT_ID] = { stagesDone: i + 1 };
+  failurePulse = !success;
   const critical = isCritical(progress.resources, balance);
   if (critical) result.facts.push({ label: 'Durum', value: 'Kaynaklar kritik — bölüm kapanacak' });
   renderHud();
-  updateMood(outcome.kind === 'success' ? CALM_DOWN_SECONDS : 2);
+  updateMood(success ? CALM_DOWN_SECONDS : 2);
   void persist();
 
-  await hub.applyOutcome(outcome);
+  await hub.applyOutcome(outcome, { final, progressText: progressText(i + 1) });
   if (hub.hasScorch() && !progress.scars.panelScorch) {
     progress.scars.panelScorch = true;
     void persist();
   }
+  if (success && !final) prepareCurrent(); // sıradaki aşama
 
   const repair = () => {
     // Yedek parça: yeni deneme yeni sayılarla; kalıcı hasar onarılana kadar sürer.
     attempt++;
-    problem = generateSeriesLed(config, baseSeed + attempt);
+    prepareCurrent();
     hub.repairForRetry();
+    showStageProgress();
     failurePulse = false;
     updateMood(CALM_DOWN_SECONDS);
   };
 
   showIncidentReport(ui, result, {
     onSound: uiSound,
+    onNext: success && !final && !critical ? openPuzzle : undefined,
     onRetry: critical
       ? undefined
       : () => {

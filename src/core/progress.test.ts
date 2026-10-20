@@ -5,6 +5,7 @@ import {
   fromExportJson,
   loadProgress,
   MemoryStore,
+  stageKey,
   toExportJson,
   validateProgress,
   type ProgressData,
@@ -25,7 +26,7 @@ function sample(): ProgressData {
   p.episode = 3;
   p.attemptsThisEpisode = 2;
   p.worstEvent = { label: 'LED yandı', total: 20 };
-  p.faults = { 'door-power-01': { repaired: false } };
+  p.faults = { 'door-power-01': { stagesDone: 1 } };
   p.scars.panelScorch = true;
   p.savedAt = '2026-10-20T12:00:00.000Z';
   return p;
@@ -52,6 +53,33 @@ describe('validateProgress', () => {
     ['bozuk iz', { ...sample(), scars: {} }],
   ])('bozuk veriyi reddeder: %s', (_n, raw) => {
     expect(validateProgress(raw, B)).toBeNull();
+  });
+});
+
+describe('v1 → v2 göçü', () => {
+  const v1 = () => {
+    const p = JSON.parse(JSON.stringify(sample()));
+    p.version = 1;
+    p.faults = { 'door-power-01': { repaired: true }, 'baska': { repaired: false } };
+    p.resources.damages = p.resources.damages.map((d: { faultId: string }) => ({ ...d, faultId: 'door-power-01' }));
+    return p;
+  };
+
+  it('onarılmış arıza yalnız 1. aşaması bitmiş sayılır (v1\'de tek aşama vardı); onarılmamış 0', () => {
+    // Hata: önce "tüm aşamalar bitti" sayılıyordu; eski kaydı olan oyuncuda kapı aşama 2 oynanmadan açık başlıyordu.
+    const m = validateProgress(v1(), B)!;
+    expect(m.version).toBe(2);
+    expect(m.faults).toEqual({ 'door-power-01': { stagesDone: 1 }, baska: { stagesDone: 0 } });
+  });
+
+  it('kalıcı hasar anahtarı arıza#0 olur (v1\'de tek aşama vardı)', () => {
+    const m = validateProgress(v1(), B)!;
+    expect(m.resources.damages.every((d) => d.faultId === stageKey('door-power-01', 0))).toBe(true);
+    expect(m.resources.values).toEqual(sample().resources.values);
+  });
+
+  it('bozuk v1 kaydı reddedilir', () => {
+    expect(validateProgress({ ...v1(), faults: { 'door-power-01': { repaired: 'evet' } } }, B)).toBeNull();
   });
 });
 

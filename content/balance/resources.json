@@ -1,46 +1,133 @@
 {
   "resources": {
-    "oxygen": { "label": "O₂", "start": 100, "max": 100 },
-    "power": { "label": "Güç", "start": 100, "max": 100 }
+    "oxygen": {
+      "label": "O₂",
+      "start": 100,
+      "max": 100
+    },
+    "power": {
+      "label": "Güç",
+      "start": 100,
+      "max": 100
+    }
   },
   "warning": 35,
   "critical": 15,
-  "recovery": { "oxygen": 10, "power": 10 },
+  "recovery": {
+    "oxygen": 10,
+    "power": 10
+  },
   "drainCapPerMinute": 2.5,
   "severityScale": {
-    "kinds": ["led_stressed", "led_burnt"],
+    "kinds": [
+      "led_stressed",
+      "led_burnt",
+      "motor_overheat",
+      "motor_burnt"
+    ],
     "base": 0.75,
     "perSeverity": 0.25,
     "max": 1.5
   },
-  "tension": { "calmAbove": 60, "fullAt": 15 },
+  "tension": {
+    "calmAbove": 60,
+    "fullAt": 15
+  },
   "outcomes": {
-    "no_light": { "label": "Kilit motoru enerjisiz kaldı", "loss": { "power": 3 } },
+    "no_light": {
+      "label": "Kilit motoru enerjisiz kaldı",
+      "loss": {
+        "power": 3
+      }
+    },
     "dim": {
       "label": "Kapı aralık takıldı, basınç kaçağı",
-      "loss": { "oxygen": 4, "power": 5 },
-      "drainPerMinute": { "oxygen": 0.5 }
+      "loss": {
+        "oxygen": 4,
+        "power": 5
+      },
+      "drainPerMinute": {
+        "oxygen": 0.5
+      }
     },
-    "led_stressed": { "label": "Aşırı akım, sürücü hattı kesti", "loss": { "power": 7 } },
+    "led_stressed": {
+      "label": "Aşırı akım, sürücü hattı kesti",
+      "loss": {
+        "power": 7
+      }
+    },
     "fuse_blown": {
       "label": "Sigorta attı, acil bataryaya geçildi",
-      "loss": { "power": 6 },
-      "drainPerMinute": { "power": 0.6 }
+      "loss": {
+        "power": 6
+      },
+      "drainPerMinute": {
+        "power": 0.6
+      }
     },
     "led_burnt": {
       "label": "LED yandı, duman filtrede",
-      "loss": { "oxygen": 8, "power": 12 },
-      "drainPerMinute": { "oxygen": 0.6 }
+      "loss": {
+        "oxygen": 8,
+        "power": 12
+      },
+      "drainPerMinute": {
+        "oxygen": 0.6
+      }
     },
     "resistor_burnt": {
       "label": "Direnç yandı, duman",
-      "loss": { "oxygen": 12, "power": 8 },
-      "drainPerMinute": { "oxygen": 0.8 }
+      "loss": {
+        "oxygen": 12,
+        "power": 8
+      },
+      "drainPerMinute": {
+        "oxygen": 0.8
+      }
+    },
+    "motor_stall": {
+      "label": "Kilit motoru dönmedi",
+      "loss": {
+        "power": 3
+      }
+    },
+    "motor_slow": {
+      "label": "Kapı aralık takıldı, basınç kaçağı",
+      "loss": {
+        "oxygen": 3,
+        "power": 4
+      },
+      "drainPerMinute": {
+        "oxygen": 0.4
+      }
+    },
+    "motor_overheat": {
+      "label": "Motor aşırı ısındı, termik koruma",
+      "loss": {
+        "power": 8
+      },
+      "drainPerMinute": {
+        "power": 0.4
+      }
+    },
+    "motor_burnt": {
+      "label": "Motor sargısı yandı, duman",
+      "loss": {
+        "oxygen": 10,
+        "power": 14
+      },
+      "drainPerMinute": {
+        "oxygen": 0.7
+      }
     }
   },
   "overheat": {
     "label": "Aşırı ısınan direnç, ek duman",
-    "loss": { "oxygen": 5 },
-    "drainPerMinute": { "oxygen": 0.3 }
+    "loss": {
+      "oxygen": 5
+    },
+    "drainPerMinute": {
+      "oxygen": 0.3
+    }
   }
 }

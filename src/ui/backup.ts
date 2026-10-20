@@ -1,10 +1,12 @@
-// ⋯ menüsü: ilerlemeyi .json olarak dışa aktar / içe aktar (altın kural 4).
+// ⋯ menüsü: ilerlemeyi .json olarak dışa aktar / içe aktar (altın kural 4) ya da sıfırdan başla.
 
 export interface BackupHandlers {
   /** Yedek dosyasının içeriği. */
   exportJson: () => string;
   /** Dosya metnini doğrulayıp uygular; geçersizse açıklamalı hata fırlatır. */
   importJson: (text: string) => Promise<void>;
+  /** Tüm ilerlemeyi siler ve oyunu baştan başlatır. */
+  reset: () => Promise<void>;
 }
 
 export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
@@ -15,6 +17,7 @@ export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
     <div class="menu" hidden>
       <button data-act="export">İlerlemeyi dışa aktar (.json)</button>
       <button data-act="import">İlerlemeyi içe aktar…</button>
+      <button data-act="reset" class="danger">Sıfırdan başla…</button>
       <input type="file" accept="application/json,.json" hidden>
     </div>`;
   root.appendChild(el);
@@ -39,6 +42,14 @@ export function mountBackupMenu(root: HTMLElement, h: BackupHandlers): void {
   });
 
   el.querySelector('[data-act="import"]')!.addEventListener('click', () => file.click());
+  el.querySelector('[data-act="reset"]')!.addEventListener('click', async () => {
+    setOpen(false);
+    const ok = confirm(
+      'Tüm ilerleme silinip oyun baştan başlayacak: kaynaklar, onarılan arızalar, bölüm sayacı ve hasar izleri. ' +
+        'Ses ayarların korunur. Saklamak istersen önce "dışa aktar" ile yedek al.\n\nSıfırdan başlansın mı?',
+    );
+    if (ok) await h.reset();
+  });
   file.addEventListener('change', async () => {
     const f = file.files?.[0];
     file.value = '';

@@ -1,18 +1,36 @@
 {
   "id": "door-power-01",
   "title": "B-2 bölmesi kapı kilidi",
-  "briefing": "Kapı kilidinin sürücü devresi, durum LED'ini doğru akımda görmeden kilidi açmıyor. Seri devrede tek akım vardır; kaynak gerilimi direnç ve LED arasında paylaşılır (KVL). LED'in üzerindeki gerilim yaklaşık sabittir (Vf), akımı belirleyen dirençtir.",
+  "briefing": "Kapı kilidi iki aşamada onarılır: önce durum LED'inin sürücüsü, sonra kilit motorunun sürücüsü. Kapı ancak iki aşama da tamamlanınca açılır.",
   "stages": [
     {
       "id": "led-driver",
       "type": "series-led",
+      "title": "Durum LED'i sürücüsü",
+      "briefing": "Kapı kilidinin sürücü devresi, durum LED'ini doğru akımda görmeden kilidi açmıyor. Seri devrede tek akım vardır; kaynak gerilimi direnç ve LED arasında paylaşılır (KVL). LED'in üzerindeki gerilim yaklaşık sabittir (Vf), akımı belirleyen dirençtir.",
       "config": {
-        "supplyVoltages": [5, 9, 12],
+        "supplyVoltages": [
+          5,
+          9,
+          12
+        ],
         "leds": [
-          { "color": "kırmızı", "vf": 2.0 },
-          { "color": "sarı", "vf": 2.1 },
-          { "color": "yeşil", "vf": 2.2 },
-          { "color": "mavi", "vf": 3.0 }
+          {
+            "color": "kırmızı",
+            "vf": 2.0
+          },
+          {
+            "color": "sarı",
+            "vf": 2.1
+          },
+          {
+            "color": "yeşil",
+            "vf": 2.2
+          },
+          {
+            "color": "mavi",
+            "vf": 3.0
+          }
         ],
         "targetMin_mA": 10,
         "targetMax_mA": 20,
@@ -20,6 +38,339 @@
         "visibleMin_mA": 1,
         "fuse_mA": 200,
         "resistorRating_W": 0.25
+      }
+    },
+    {
+      "id": "motor-driver",
+      "type": "series-parallel",
+      "title": "Kilit motoru sürücüsü",
+      "briefing": "Seri elemanlardan aynı akım geçer, gerilimler toplanır (KVL): R_eş = R₁ + R₂. Paralel kollar aynı gerilimi görür, akımlar toplanır (KCL): 1/R_eş = 1/R₁ + 1/R₂. Gerilim bölücü: V_çıkış = Vs·R_alt / (R_üst + R_alt); tersten okunursa bilinmeyen bir direnç bulunur. Akım bölücü: paralel kollarda akım dirençle ters orantılı paylaşılır. Bu aşamada önce eski ölçümden motorun direncini bul, sonra iki hedef akımı birlikte sağlayan R₁ ve R₂'yi seçip yerleştir.",
+      "config": {
+        "elements": [
+          {
+            "id": "Vs",
+            "kind": "V",
+            "a": "top",
+            "b": "0",
+            "value": "Vs",
+            "label": "Vs"
+          },
+          {
+            "id": "R1",
+            "kind": "R",
+            "a": "top",
+            "b": "a",
+            "slot": true,
+            "label": "R₁"
+          },
+          {
+            "id": "Rm",
+            "kind": "R",
+            "a": "a",
+            "b": "0",
+            "value": "Rm",
+            "label": "Motor",
+            "symbol": "motor"
+          },
+          {
+            "id": "R2",
+            "kind": "R",
+            "a": "a",
+            "b": "0",
+            "slot": true,
+            "label": "R₂"
+          }
+        ],
+        "params": {
+          "Vs": {
+            "label": "Kaynak gerilimi",
+            "unit": "V",
+            "choices": [
+              12,
+              24
+            ]
+          },
+          "Rm": {
+            "label": "Motor sargı direnci",
+            "unit": "Ω",
+            "e12": [
+              10,
+              47
+            ],
+            "hidden": true
+          },
+          "Rold": {
+            "label": "Eski R₁",
+            "unit": "Ω",
+            "e12": [
+              10,
+              100
+            ]
+          }
+        },
+        "answer": {
+          "R1": [
+            4.7,
+            68
+          ],
+          "R2": [
+            10,
+            330
+          ]
+        },
+        "measurement": {
+          "id": "Vmeas",
+          "set": {
+            "R1": "Rold"
+          },
+          "open": [
+            "R2"
+          ],
+          "probe": {
+            "voltage": "a"
+          },
+          "unit": "V",
+          "identifies": "Rm",
+          "text": "Önceki vardiyanın kaydı: R₁ yerinde {Rold:Ω} varken ve R₂ sökülüyken a düğümünde {Vmeas:V} ölçülmüş."
+        },
+        "targets": [
+          {
+            "id": "Im",
+            "label": "Motor akımı (tork için)",
+            "probe": {
+              "current": "Rm"
+            },
+            "unit": "A",
+            "tolerance": 0.04
+          },
+          {
+            "id": "Is",
+            "label": "Regülatör çıkış akımı (çalışma aralığı)",
+            "probe": {
+              "current": "Vs",
+              "negate": true
+            },
+            "unit": "A",
+            "tolerance": 0.04
+          }
+        ],
+        "roles": {
+          "load": "Im",
+          "supply": "Is"
+        },
+        "limits": {
+          "slotRating_W": 5
+        },
+        "plausible": {
+          "load": [
+            0.15,
+            1.2
+          ],
+          "node": "a",
+          "nodeFraction": [
+            0.3,
+            0.85
+          ]
+        },
+        "binSize": 6,
+        "derived": {
+          "Rm_calc": "Vmeas*Rold/(Vs-Vmeas)",
+          "Va": "Im*Rm_calc",
+          "R1_calc": "(Vs-Va)/Is",
+          "I2": "Is-Im",
+          "R2_calc": "Va/I2"
+        },
+        "solution": {
+          "R1": "R1_calc",
+          "R2": "R2_calc"
+        },
+        "mistakes": [
+          {
+            "expr": "Va/Is",
+            "text": "Paralel koldaki motor akımı unutulursa R₂ = V_a / I_s = {value:Ω} bulunur; bu kutudaki en yakın değer."
+          },
+          {
+            "expr": "(Vs-Vmeas)/Is",
+            "text": "Eski ölçümdeki gerilim hedef sanılırsa R₁ = (Vs − V_ölç) / I_s = {value:Ω} bulunur; bu kutudaki en yakın değer."
+          },
+          {
+            "expr": "Vs/Is",
+            "text": "Motorun üzerindeki gerilim unutulursa R₁ = Vs / I_s = {value:Ω} bulunur; bu kutudaki en yakın değer."
+          }
+        ],
+        "steps": [
+          "Ölçümden motor direnci (gerilim bölücü, tersten): R_m = V_ölç·R_eski / (Vs − V_ölç) = {Vmeas:V} · {Rold:Ω} / ({Vs:V} − {Vmeas:V}) = {Rm_calc:Ω}",
+          "Motorun gerilimi a düğümünün gerilimidir: V_a = I_m·R_m = {Im:A} · {Rm_calc:Ω} = {Va:V}",
+          "R₁ kaynağın tüm akımını taşır (KVL): R₁ = (Vs − V_a) / I_s = ({Vs:V} − {Va:V}) / {Is:A} = {R1_calc:Ω}",
+          "Paralel kolun akımı (KCL): I₂ = I_s − I_m = {Is:A} − {Im:A} = {I2:A}",
+          "R₂ motorla aynı gerilimi görür: R₂ = V_a / I₂ = {Va:V} / {I2:A} = {R2_calc:Ω}",
+          "En yakın E12 değerleri: R₁ = {R1:Ω}, R₂ = {R2:Ω}"
+        ],
+        "reportProbes": [
+          {
+            "label": "a düğümü gerilimi",
+            "probe": {
+              "voltage": "a"
+            },
+            "unit": "V"
+          },
+          {
+            "label": "Motor akımı",
+            "probe": {
+              "current": "Rm"
+            },
+            "unit": "A"
+          },
+          {
+            "label": "Kaynak akımı",
+            "probe": {
+              "current": "Vs",
+              "negate": true
+            },
+            "unit": "A"
+          },
+          {
+            "label": "R₂ akımı",
+            "probe": {
+              "current": "R2"
+            },
+            "unit": "A"
+          },
+          {
+            "label": "R₁ gücü",
+            "probe": {
+              "power": "R1"
+            },
+            "unit": "W"
+          },
+          {
+            "label": "R₂ gücü",
+            "probe": {
+              "power": "R2"
+            },
+            "unit": "W"
+          }
+        ],
+        "layout": {
+          "viewBox": [
+            0,
+            0,
+            540,
+            260
+          ],
+          "elements": {
+            "Vs": {
+              "x": 50,
+              "y": 135,
+              "dir": "v"
+            },
+            "R1": {
+              "x": 170,
+              "y": 50,
+              "dir": "h"
+            },
+            "Rm": {
+              "x": 280,
+              "y": 135,
+              "dir": "v"
+            },
+            "R2": {
+              "x": 420,
+              "y": 135,
+              "dir": "v"
+            }
+          },
+          "wires": [
+            [
+              [
+                50,
+                95
+              ],
+              [
+                50,
+                50
+              ],
+              [
+                130,
+                50
+              ]
+            ],
+            [
+              [
+                210,
+                50
+              ],
+              [
+                420,
+                50
+              ],
+              [
+                420,
+                95
+              ]
+            ],
+            [
+              [
+                280,
+                50
+              ],
+              [
+                280,
+                95
+              ]
+            ],
+            [
+              [
+                50,
+                175
+              ],
+              [
+                50,
+                220
+              ],
+              [
+                420,
+                220
+              ],
+              [
+                420,
+                175
+              ]
+            ],
+            [
+              [
+                280,
+                175
+              ],
+              [
+                280,
+                220
+              ]
+            ]
+          ],
+          "dots": [
+            [
+              280,
+              50
+            ],
+            [
+              280,
+              220
+            ]
+          ],
+          "ground": [
+            235,
+            220
+          ],
+          "labels": [],
+          "probes": [
+            {
+              "x": 280,
+              "y": 50,
+              "text": "a"
+            }
+          ]
+        }
       }
     }
   ]

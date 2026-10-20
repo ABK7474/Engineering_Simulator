@@ -150,9 +150,35 @@ button { font: inherit; cursor: pointer; }
   background: none; border: none; color: var(--text); text-align: left; padding: 6px 8px; border-radius: 4px;
 }
 .backup-menu .menu button:hover { background: var(--panel-2); }
+.backup-menu .menu button.danger { color: var(--fail); border-top: 1px solid var(--line); border-radius: 0 0 4px 4px; }
 
 .episode-closed .closed-reason { color: var(--fail); font-weight: 600; font-size: 17px; }
 .episode-closed dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
 .episode-closed dt { color: var(--muted); }
 .episode-closed dd { margin: 0; }
 .episode-closed footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+.panel.wide { width: min(1080px, 100%); }
+.circuit.board .dot { fill: #9cc6cc; }
+.circuit.board .ground line { stroke: #9cc6cc; stroke-width: 2.5; }
+.circuit.board .sym { fill: none; stroke: #e6f4f5; stroke-width: 2.5; }
+.circuit.board .sign { fill: #e6f4f5; font: bold 12px monospace; }
+.circuit.board .motor-m { fill: #e6f4f5; font: bold 17px system-ui; }
+.circuit.board .node-lbl { fill: var(--accent); font-weight: bold; }
+.circuit.board .probe circle { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.circuit.board .probe text { fill: var(--accent); font: 11px monospace; }
+.circuit.board .bslot { cursor: pointer; }
+.circuit.board .slot-hit { fill: transparent; }
+.circuit.board .slot-empty { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 4; }
+.circuit.board .slot-lbl { fill: var(--warn); }
+.circuit.board .bslot.filled .slot-lbl { fill: var(--text); }
+.circuit.board .bslot:hover .slot-hit, .circuit.board .bslot.armed .slot-hit {
+  fill: rgba(255, 176, 48, 0.12); stroke: var(--warn); stroke-width: 1.5;
+}
+.logbook { border: 1px dashed var(--line); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; background: #081e24; }
+.logbook h3 { margin: 0 0 4px; }
+.logbook p { margin: 0; line-height: 1.5; font-size: 14px; }
+.targets { list-style: none; padding: 0; margin: 0 0 8px; font-size: 14px; }
+.targets li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.targets b { font-family: monospace; white-space: nowrap; }
+.limits, .how { color: var(--muted); font-size: 13px; margin: 4px 0 10px; }

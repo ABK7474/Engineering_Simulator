@@ -37,7 +37,13 @@ export interface Hub {
   /** Girdiyi açar; oyuncu tıklayınca yürümeye devam eder. */
   resume: () => void;
   /** Sonucu sahnede oynatır; izlenebilir kısım bitince çözülür. */
-  applyOutcome: (o: Outcome) => Promise<void>;
+  /**
+   * Sonucu sahnede oynatır; izlenebilir kısım bitince çözülür. `final: false` ara aşama başarısıdır:
+   * LED yeşil yanar, ekranda `progressText` görünür, kapı açılmaz.
+   */
+  applyOutcome: (o: Outcome, opts?: { final?: boolean; progressText?: string }) => Promise<void>;
+  /** Arıza kısmen onarılmışken panel durumu (LED yeşil + metin); null = arıza ekranı. */
+  showProgress: (text: string | null) => void;
   /** Başarısızlık sonrası yedek parça: ışıklar, LED, kapı eski hâline (yanık izi kalır). */
   repairForRetry: () => void;
   /** Kırmızı uyarı ışığı (hata onarılana kadar ya da kaynaklar azken; kararı dışarısı verir). */
@@ -191,9 +197,20 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   };
 
   const T0 = 0.6; // kamera odaklandıktan sonra
-  const play = (o: Outcome): number => {
+  // Kilit motoru kapının üst kasasında; motor sonuçları duman/kıvılcımı orada gösterir.
+  const motorPos = new THREE.Vector3(0.6, 4.2, layout.doorZ + 0.3);
+  const PROGRESS_COLOR = '#ffd040';
+
+  const play = (o: Outcome, final: boolean, progressText: string): number => {
     switch (o.kind) {
       case 'success':
+        if (!final) {
+          at(T0, () => {
+            door.setLed(0x30ff70, 1);
+            door.setScreen(progressText, PROGRESS_COLOR);
+          });
+          return T0 + 1.6;
+        }
         at(T0, () => {
           door.setLed(0x30ff70, 1);
           door.setScreen('KİLİT AÇIK', '#40ff80');
@@ -250,6 +267,37 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           door.setScreen('', '#000');
         });
         return T0 + 2.6;
+      case 'motor_stall':
+        at(T0, () => {
+          sounds.play('jam', { volume: 0.5 });
+          door.setScreen('MOTOR\nDÖNMÜYOR', '#ffb030', true);
+        });
+        moveDoor(T0, 0.25, 0.015, 0.006);
+        moveDoor(T0 + 0.4, 0.25, 0);
+        return T0 + 1.8;
+      case 'motor_slow':
+        at(T0, () => door.setScreen('MOTOR ZAYIF', '#ffb030', true));
+        moveDoor(T0 + 0.2, 2.2, 0.22, 0.01);
+        at(T0 + 2.2, () => sounds.play('jam', { volume: 0.8 }));
+        return T0 + 2.8;
+      case 'motor_overheat':
+        moveDoor(T0 + 0.1, 0.9, 0.35);
+        at(T0 + 1.0, () => {
+          sounds.play('jam', { volume: 0.6 });
+          effects.smokePuff(motorPos, 2);
+          door.setScreen('TERMİK\nKORUMA', '#ff5040', true);
+        });
+        return T0 + 2.6;
+      case 'motor_burnt':
+        moveDoor(T0 + 0.1, 0.5, 0.15, 0.01);
+        at(T0 + 0.5, () => {
+          effects.sparkBurst(motorPos, 70);
+          sounds.sparks(0.7);
+          sounds.play('fuse', { volume: 0.6 });
+          effects.smokePuff(motorPos, 3.5);
+          door.setScreen('MOTOR YANDI', '#ff5040', true);
+        });
+        return T0 + 2.8;
       case 'resistor_burnt':
         at(T0, () => {
           effects.smokePuff(door.ledPosition, 3);
@@ -273,10 +321,10 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       player.enabled = true;
       refreshGate();
     },
-    applyOutcome(o) {
+    applyOutcome(o, opts = {}) {
       tweens.clear();
       focusCamera(T0);
-      const duration = play(o);
+      const duration = play(o, opts.final ?? true, opts.progressText ?? '');
       if (o.kind !== 'success') {
         // Her yanlış cevapta: siren en fazla ALARM_SECONDS; kırmızı ışık onarıma kadar sürer.
         at(T0 + 0.2, () => {
@@ -300,6 +348,16 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
       if (door.openAmount > 0.01) sounds.play('door_close', { volume: 0.7 });
       moveDoor(0, 0.5, 0);
+    },
+    showProgress(text) {
+      if (solved) return;
+      if (text) {
+        door.setLed(0x30ff70, 1);
+        door.setScreen(text, PROGRESS_COLOR);
+      } else {
+        door.replaceLed();
+        door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
+      }
     },
     setWarningLight(on) {
       effects.setAlarm(on);

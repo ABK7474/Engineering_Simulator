@@ -7,6 +7,8 @@ export interface IncidentReportOptions {
   /** Yalnızca başarısızlıkta gösterilir: yedek parçayla yeni deneme. */
   onRetry?: () => void;
   onClose: () => void;
+  /** Başarıdan sonra arızanın sıradaki aşamasına geç. */
+  onNext?: () => void;
   onSound?: (s: 'click') => void;
 }
 
@@ -38,7 +40,8 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
       </div>
       <footer>
         ${!r.success && opts.onRetry ? '<button class="primary" data-act="retry">Yedek parçayla tekrar dene</button>' : ''}
-        <button class="${r.success ? 'primary' : 'ghost'}" data-act="close">Koridora dön</button>
+        ${r.success && opts.onNext ? '<button class="primary" data-act="next">Sonraki aşama →</button>' : ''}
+        <button class="${r.success && !opts.onNext ? 'primary' : 'ghost'}" data-act="close">Koridora dön</button>
       </footer>
     </div>`;
   root.appendChild(el);
@@ -48,6 +51,11 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
     opts.onSound?.('click');
     close();
     opts.onClose();
+  });
+  el.querySelector('[data-act="next"]')?.addEventListener('click', () => {
+    opts.onSound?.('click');
+    close();
+    opts.onNext?.();
   });
   el.querySelector('[data-act="retry"]')?.addEventListener('click', () => {
     opts.onSound?.('click');

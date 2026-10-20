@@ -6,8 +6,14 @@ import { weightedPick, type Rng } from '../../core/rng';
 import type { Outcome, OutcomeKind } from '../../core/types';
 import { classify, type SeriesLedSolution, type SeriesLedSpec } from './series-led';
 
+/** Seri LED devresinin üretebildiği sonuçlar. */
+export type LedOutcomeKind = Extract<
+  OutcomeKind,
+  'success' | 'no_light' | 'dim' | 'led_stressed' | 'led_burnt' | 'resistor_burnt' | 'fuse_blown'
+>;
+
 export interface PoolEntry {
-  value: OutcomeKind;
+  value: LedOutcomeKind;
   weight: number;
 }
 
@@ -44,7 +50,7 @@ export function resolveOutcome(spec: SeriesLedSpec, sol: SeriesLedSolution, rng:
   return { kind, severity: severityOf(kind, spec, sol), resistorOverheat, ...text };
 }
 
-function severityOf(kind: OutcomeKind, spec: SeriesLedSpec, sol: SeriesLedSolution): number {
+function severityOf(kind: LedOutcomeKind, spec: SeriesLedSpec, sol: SeriesLedSolution): number {
   switch (kind) {
     case 'success':
       return 0;
@@ -62,7 +68,7 @@ function severityOf(kind: OutcomeKind, spec: SeriesLedSpec, sol: SeriesLedSoluti
 }
 
 function describe(
-  kind: OutcomeKind,
+  kind: LedOutcomeKind,
   spec: SeriesLedSpec,
   sol: SeriesLedSolution,
   i: string,

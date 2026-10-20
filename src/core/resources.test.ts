@@ -54,6 +54,33 @@ describe('denge dosyası', () => {
   });
 });
 
+describe('denge kapsamı', () => {
+  it('her hata sonucu türünün denge satırı var', () => {
+    const kinds: OutcomeKind[] = [
+      'no_light', 'dim', 'led_stressed', 'led_burnt', 'resistor_burnt', 'fuse_blown',
+      'motor_stall', 'motor_slow', 'motor_overheat', 'motor_burnt',
+    ];
+    for (const k of kinds) expect(B.outcomes[k as Exclude<OutcomeKind, 'success'>], k).toBeDefined();
+  });
+
+  it.each([
+    ['motor_stall', 0, 3],
+    ['motor_slow', 3, 4],
+    ['motor_overheat', 0, 8],
+    ['motor_burnt', 10, 14],
+  ] as const)('%s → O₂ −%d, güç −%d (şiddet 1)', (kind, o2, pw) => {
+    const l = lossOf(kind, 1);
+    expect(l.oxygen).toBeCloseTo(o2, 10);
+    expect(l.power).toBeCloseTo(pw, 10);
+  });
+
+  it('motor yanması şiddetle ölçeklenir, termik korumadan ağırdır', () => {
+    expect(lossOf('motor_burnt', 3).power).toBeCloseTo(14 * 1.5, 10);
+    const total = (k: OutcomeKind) => lossOf(k, 1.2).oxygen + lossOf(k, 1.2).power;
+    expect(total('motor_overheat')).toBeLessThan(total('motor_burnt'));
+  });
+});
+
 describe('applyOutcome: hasar fiziksel sonuçtan gelir', () => {
   it.each([
     ['no_light', 0, 3],

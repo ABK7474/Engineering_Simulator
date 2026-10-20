@@ -5,7 +5,11 @@
 import type { Balance, Damage, ResourceState } from './resources';
 import { createResources } from './resources';
 
-export const PROGRESS_VERSION = 1;
+export const PROGRESS_VERSION = 2;
+
+/** Kalıcı hasar ve onarım anahtarı: arızanın belirli bir aşaması. */
+export const stageKey = (faultId: string, stageIndex: number) => `${faultId}#${stageIndex}`;
+
 
 export interface ProgressData {
   version: typeof PROGRESS_VERSION;
@@ -14,7 +18,8 @@ export interface ProgressData {
   attemptsThisEpisode: number;
   /** Bu bölümde en çok kaynak götüren olay (bölüm kapandı ekranı için). */
   worstEvent: { label: string; total: number } | null;
-  faults: Record<string, { repaired: boolean }>;
+  /** Arıza başına tamamlanan aşama sayısı; tümü bitince arıza onarılmıştır. */
+  faults: Record<string, { stagesDone: number }>;
   scars: { panelScorch: boolean };
   savedAt: string;
 }
@@ -36,8 +41,30 @@ const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object
 const isNum = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
 const isAmounts = (x: unknown): x is Record<string, number> => isObj(x) && Object.values(x).every(isNum);
 
-/** Ham veriyi doğrular; geçersizse null (çağıran varsayılana döner). */
+/**
+ * v1 → v2: arıza başına `repaired` yerine `stagesDone`; hasar anahtarı arıza#aşama.
+ * v1'de her arızanın tek aşaması vardı: onarılmış = yalnız 1. aşama bitti. Sonradan eklenen
+ * aşamalar oynanmadan arıza onarılmış sayılmaz.
+ */
+function migrateV1(raw: Record<string, unknown>): Record<string, unknown> {
+  const faults: Record<string, { stagesDone: number }> = {};
+  if (isObj(raw.faults)) {
+    for (const [id, f] of Object.entries(raw.faults)) {
+      if (!isObj(f) || typeof f.repaired !== 'boolean') return { ...raw, faults: null };
+      faults[id] = { stagesDone: f.repaired ? 1 : 0 };
+    }
+  }
+  const r = raw.resources;
+  const damages =
+    isObj(r) && Array.isArray(r.damages)
+      ? r.damages.map((d) => (isObj(d) && typeof d.faultId === 'string' && !d.faultId.includes('#') ? { ...d, faultId: stageKey(d.faultId, 0) } : d))
+      : r;
+  return { ...raw, version: 2, faults, resources: isObj(r) ? { ...r, damages } : r };
+}
+
+/** Ham veriyi doğrular (gerekirse eski sürümden göç ettirir); geçersizse null. */
 export function validateProgress(raw: unknown, b: Balance): ProgressData | null {
+  if (isObj(raw) && raw.version === 1) raw = migrateV1(raw);
   if (!isObj(raw) || raw.version !== PROGRESS_VERSION) return null;
   const r = raw.resources;
   if (!isObj(r) || !isAmounts(r.values) || !isObj(r.warned) || !Array.isArray(r.damages)) return null;
@@ -59,7 +86,7 @@ export function validateProgress(raw: unknown, b: Balance): ProgressData | null 
   if (!isNum(raw.episode) || raw.episode < 1 || !isNum(raw.attemptsThisEpisode) || raw.attemptsThisEpisode < 0) return null;
   const w = raw.worstEvent;
   if (w !== null && !(isObj(w) && typeof w.label === 'string' && isNum(w.total))) return null;
-  if (!isObj(raw.faults) || !Object.values(raw.faults).every((f) => isObj(f) && typeof f.repaired === 'boolean')) return null;
+  if (!isObj(raw.faults) || !Object.values(raw.faults).every((f) => isObj(f) && isNum(f.stagesDone) && f.stagesDone >= 0)) return null;
   if (!isObj(raw.scars) || typeof raw.scars.panelScorch !== 'boolean') return null;
   if (typeof raw.savedAt !== 'string') return null;
   const warned: Record<string, boolean> = {};
