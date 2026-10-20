@@ -5,6 +5,7 @@
 import { evaluate, type Scope } from '../../core/expr';
 import { formatOhm } from '../../core/format';
 import { createRng, pick, shuffle, type Rng } from '../../core/rng';
+import { pickParam } from './design-core';
 import { e12Values } from './e-series';
 import {
   derivedScope,
@@ -59,10 +60,6 @@ export function generateSeriesParallel(c: SeriesParallelConfig, seed: number, ma
   }
   const top = [...reasons.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([r, n]) => `${r} (${n})`);
   throw new Error(`Seri-paralel problem üretilemedi: ${maxAttempts} denemede doğrulanabilir problem bulunamadı (tohum ${seed}). En sık red nedenleri: ${top.join('; ')}`);
-}
-
-function pickParam(rng: Rng, p: { choices?: number[]; e12?: [number, number] }): number {
-  return p.choices?.length ? pick(rng, p.choices) : pick(rng, e12Values(p.e12![0], p.e12![1]));
 }
 
 /** Aday problem ya da red nedeni (metin). */

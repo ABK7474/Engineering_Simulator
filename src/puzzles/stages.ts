@@ -1,6 +1,7 @@
 // Aşama adaptörleri: her problem türünü ortak bir arayüze bağlar (üret → panel aç → değerlendir).
 // main.ts türden bağımsızdır; yeni problem türü = buraya bir adaptör kaydı.
 
+import { checkStageTags } from '../core/courses';
 import type { Rng } from '../core/rng';
 import type { Outcome, StageDef, StageResult } from '../core/types';
 import { parseSeriesLedConfig, solveSeriesLed } from '../solvers/circuit/series-led';
@@ -11,12 +12,21 @@ import { parseSeriesParallelConfig } from '../solvers/circuit/series-parallel';
 import { generateSeriesParallel } from '../solvers/circuit/series-parallel.generate';
 import { evaluatePlacement } from '../solvers/circuit/series-parallel.outcomes';
 import { buildSeriesParallelReport } from '../solvers/circuit/series-parallel.report';
+import { parseMaxPowerConfig } from '../solvers/circuit/max-power';
+import { generateMaxPower } from '../solvers/circuit/max-power.generate';
+import { resolveMaxPowerOutcome } from '../solvers/circuit/max-power.outcomes';
+import { buildMaxPowerReport } from '../solvers/circuit/max-power.report';
+import { parseTheveninConfig } from '../solvers/circuit/thevenin';
+import { generateThevenin } from '../solvers/circuit/thevenin.generate';
+import { resolveTheveninOutcome, type TheveninAnswer } from '../solvers/circuit/thevenin.outcomes';
+import { buildTheveninReport } from '../solvers/circuit/thevenin.report';
 import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
 import { resolveTraceOutcome, type TraceAnswer } from '../solvers/ds/ds-trace.outcomes';
 import { buildDsTraceReport } from '../solvers/ds/ds-trace.report';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
 import { openCircuitBoardPanel } from './circuit-board/panel';
 import { openSeriesCircuitPanel } from './series-circuit/panel';
+import { openMaxPowerPanel, openTheveninPanel } from './power/panels';
 import { openTracePanel } from './trace-table/panel';
 
 export interface StagePanelContext {
@@ -116,11 +126,41 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       };
     },
   },
+  thevenin: {
+    validate: (def) => void parseTheveninConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateThevenin(parseTheveninConfig(def.config), seed);
+      return {
+        open: (ctx) => openTheveninPanel(ctx.root, { ...ctx, problem, onSubmit: (a) => ctx.onSubmit(a) }),
+        evaluate(answer) {
+          const a = answer as TheveninAnswer;
+          const outcome = resolveTheveninOutcome(problem, a);
+          return { outcome, result: buildTheveninReport(def.id, problem, a, outcome) };
+        },
+      };
+    },
+  },
+  'max-power': {
+    validate: (def) => void parseMaxPowerConfig(def.config),
+    prepare(def, seed) {
+      const config = parseMaxPowerConfig(def.config);
+      const problem = generateMaxPower(config, seed);
+      return {
+        open: (ctx) => openMaxPowerPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveMaxPowerOutcome(problem, id);
+          return { outcome, result: buildMaxPowerReport(def.id, config, problem, id, outcome) };
+        },
+      };
+    },
+  },
 };
 
 export function validateStage(def: StageDef): void {
   const a = ADAPTERS[def.type];
   if (!a) throw new Error(`Bilinmeyen aşama türü: ${def.type}`);
+  checkStageTags(def);
   a.validate(def);
 }
 

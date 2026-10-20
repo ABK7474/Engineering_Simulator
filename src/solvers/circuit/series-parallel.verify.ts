@@ -1,6 +1,7 @@
 // Seri-paralel problem doğrulayıcısı: havuza yalnız bundan geçen problemler girer.
 
 import { evaluate } from '../../core/expr';
+import { placements } from './design-core';
 import { e12Values } from './e-series';
 import { checkSolution } from './mna';
 import {
@@ -27,14 +28,7 @@ export interface VerifyResult {
   errors: string[];
 }
 
-/** Kutudan yuvalara tüm sıralı yerleşimler (aynı kart iki yuvaya konamaz). */
-export function placements(slots: string[], cards: string[]): Record<string, string>[] {
-  if (slots.length === 0) return [{}];
-  const [first, ...rest] = slots;
-  return cards.flatMap((card) =>
-    placements(rest, cards.filter((x) => x !== card)).map((p) => ({ [first]: card, ...p })),
-  );
-}
+export { placements };
 
 export function verifySeriesParallel(c: SeriesParallelConfig, p: SpProblem): VerifyResult {
   const errors: string[] = [];

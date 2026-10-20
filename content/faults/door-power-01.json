@@ -6,6 +6,8 @@
     {
       "id": "led-driver",
       "type": "series-led",
+      "course": "devre-teorisi-1",
+      "topic": "seri-devre-ohm",
       "title": "Durum LED'i sürücüsü",
       "briefing": "Kapı kilidinin sürücü devresi, durum LED'ini doğru akımda görmeden kilidi açmıyor. Seri devrede tek akım vardır; kaynak gerilimi direnç ve LED arasında paylaşılır (KVL). LED'in üzerindeki gerilim yaklaşık sabittir (Vf), akımı belirleyen dirençtir.",
       "config": {
@@ -43,6 +45,8 @@
     {
       "id": "motor-driver",
       "type": "series-parallel",
+      "course": "devre-teorisi-1",
+      "topic": "seri-paralel-kvl-kcl",
       "title": "Kilit motoru sürücüsü",
       "briefing": "Seri elemanlardan aynı akım geçer, gerilimler toplanır (KVL): R_eş = R₁ + R₂. Paralel kollar aynı gerilimi görür, akımlar toplanır (KCL): 1/R_eş = 1/R₁ + 1/R₂. Gerilim bölücü: V_çıkış = Vs·R_alt / (R_üst + R_alt); tersten okunursa bilinmeyen bir direnç bulunur. Akım bölücü: paralel kollarda akım dirençle ters orantılı paylaşılır. Bu aşamada önce eski ölçümden motorun direncini bul, sonra iki hedef akımı birlikte sağlayan R₁ ve R₂'yi seçip yerleştir.",
       "config": {

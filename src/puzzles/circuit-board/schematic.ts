@@ -1,7 +1,7 @@
 // Genel devre şeması çizici (SVG). Konumlar içerik JSON'undaki `layout`tan gelir; yeni topoloji
-// için kod gerekmez. Semboller IEC: direnç dikdörtgen, DC kaynak (+/−), motor Ⓜ, toprak.
+// için kod gerekmez. Semboller IEC: direnç dikdörtgen, DC gerilim kaynağı (+/−), akım kaynağı (ok), motor Ⓜ, toprak.
 
-import { formatUnit, type SeriesParallelConfig } from '../../solvers/circuit/series-parallel';
+import { formatUnit, type Drawable } from '../../solvers/circuit/design-core';
 import { esc } from '../dom';
 import { resistorSvg } from '../resistor';
 
@@ -16,7 +16,7 @@ export interface SchematicState {
   visible: Record<string, number>;
 }
 
-export function schematicSvg(c: SeriesParallelConfig, st: SchematicState): string {
+export function schematicSvg(c: Drawable, st: SchematicState): string {
   const L = c.layout;
   const parts: string[] = [];
 
@@ -31,7 +31,8 @@ export function schematicSvg(c: SeriesParallelConfig, st: SchematicState): strin
   );
 
   for (const e of c.elements) {
-    const { x, y, dir } = L.elements[e.id];
+    const { x, y, dir, flip } = L.elements[e.id];
+    const f = flip ? -1 : 1; // a ucu: dikeyde üst (f=1) ya da alt; yatayda sağ (f=1) ya da sol
     const h = dir === 'h';
     // Uçlardan gövdeye uzanan bağlantılar
     const lead = (len: number) =>
@@ -63,9 +64,22 @@ export function schematicSvg(c: SeriesParallelConfig, st: SchematicState): strin
       parts.push(
         lead(18) +
           `<circle cx="${x}" cy="${y}" r="18" class="sym"/>` +
-          `<text x="${h ? x + 8 : x}" y="${h ? y + 4 : y - 5}" class="sign" text-anchor="middle">+</text>` +
-          `<text x="${h ? x - 8 : x}" y="${h ? y + 4 : y + 12}" class="sign" text-anchor="middle">−</text>` +
+          `<text x="${h ? x + 8 * f : x}" y="${h ? y + 4 : y + (f > 0 ? -5 : 12)}" class="sign" text-anchor="middle">+</text>` +
+          `<text x="${h ? x - 8 * f : x}" y="${h ? y + 4 : y + (f > 0 ? 12 : -5)}" class="sign" text-anchor="middle">−</text>` +
           label(v === undefined ? e.label : `${e.label} = ${formatUnit(v, 'V')}`),
+      );
+    } else if (e.kind === 'I') {
+      // Gerilim kaynağıyla aynı kural: a ucu üstte (dikey) ya da sağda (yatay). Kaynağın içindeki akım
+      // a'dan b'ye akar; ok b'yi gösterir.
+      const v = st.visible[e.value!];
+      const [ax, ay, bx, by] = h ? [x + 10 * f, y, x - 10 * f, y] : [x, y - 10 * f, x, y + 10 * f];
+      const head = h ? `M${bx + 5 * f} ${by - 5} L${bx} ${by} L${bx + 5 * f} ${by + 5}` : `M${bx - 5} ${by - 5 * f} L${bx} ${by} L${bx + 5} ${by - 5 * f}`;
+      parts.push(
+        lead(18) +
+          `<circle cx="${x}" cy="${y}" r="18" class="sym"/>` +
+          `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" class="sym-arrow"/>` +
+          `<path d="${head}" class="sym-arrow"/>` +
+          label(v === undefined ? e.label : `${e.label} = ${formatUnit(v, 'A')}`),
       );
     } else if (e.symbol === 'motor') {
       const v = st.visible[e.value!];

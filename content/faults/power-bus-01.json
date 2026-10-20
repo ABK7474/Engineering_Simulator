@@ -1,0 +1,931 @@
+{
+  "id": "power-bus-01",
+  "title": "Ana güç barası",
+  "briefing": "Ana bara kesik. Önce yedek ağı eşdeğer kaynak modülüyle baraya bağla (Thevenin/Norton), sonra sonar vericisine en büyük gücü aktaracak yükü seç.",
+  "stages": [
+    {
+      "id": "bus-equivalent",
+      "type": "thevenin",
+      "course": "devre-teorisi-1",
+      "topic": "thevenin-norton",
+      "title": "Eşdeğer kaynak modülü",
+      "briefing": "Doğrusal her ağ, iki ucundan bakınca bir V_th kaynağı ve seri R_th'dir. V_th: uçlar AÇIKKEN gerilim. R_th: kaynaklar sıfırlanınca (gerilim kaynağı KISA, akım kaynağı AÇIK devre) uçlardan görülen direnç. Norton: I_N = V_th / R_th (uçlar kısa devreyken akım), R_N = R_th. Modülü ağın eşdeğeriyle programlarsan yedek ağ pompayı besler.",
+      "config": {
+        "form": "thevenin",
+        "tolerance": 0.02,
+        "plausible": {
+          "Vth": [
+            1,
+            60
+          ],
+          "Rth": [
+            20,
+            5000
+          ],
+          "Iload": [
+            0.002,
+            0.5
+          ]
+        },
+        "networks": [
+          {
+            "id": "source-plus-current",
+            "story": "Yedek ağ: akü hattı ve sabit akımlı şarj devresi aynı düğümü besliyor.",
+            "elements": [
+              {
+                "id": "V1",
+                "kind": "V",
+                "a": "t",
+                "b": "0",
+                "value": "V1",
+                "label": "V₁"
+              },
+              {
+                "id": "R1",
+                "kind": "R",
+                "a": "t",
+                "b": "a",
+                "value": "R1",
+                "label": "R₁"
+              },
+              {
+                "id": "R2",
+                "kind": "R",
+                "a": "a",
+                "b": "0",
+                "value": "R2",
+                "label": "R₂"
+              },
+              {
+                "id": "I1",
+                "kind": "I",
+                "a": "0",
+                "b": "a",
+                "value": "Is",
+                "label": "I₁"
+              },
+              {
+                "id": "R3",
+                "kind": "R",
+                "a": "a",
+                "b": "x",
+                "value": "R3",
+                "label": "R₃"
+              }
+            ],
+            "terminals": [
+              "x",
+              "0"
+            ],
+            "params": {
+              "V1": {
+                "label": "Akü gerilimi",
+                "unit": "V",
+                "choices": [
+                  12,
+                  24
+                ]
+              },
+              "R1": {
+                "label": "R₁",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R2": {
+                "label": "R₂",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R3": {
+                "label": "R₃",
+                "unit": "Ω",
+                "e12": [
+                  47,
+                  470
+                ]
+              },
+              "Is": {
+                "label": "Şarj akımı",
+                "unit": "A",
+                "choices": [
+                  0.01,
+                  0.02,
+                  0.05
+                ]
+              },
+              "RL": {
+                "label": "Pompa motoru",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              }
+            },
+            "load": "RL",
+            "derived": {
+              "Rp": "R1*R2/(R1+R2)",
+              "Rth_f": "R3+Rp",
+              "Vth_f": "(V1/R1+Is)*Rp",
+              "In_f": "Vth_f/Rth_f"
+            },
+            "formula": {
+              "Vth": "Vth_f",
+              "Rth": "Rth_f"
+            },
+            "steps": [
+              "Kaynakları sıfırla: V₁ kısa devre, I₁ açık devre. Uçlardan bakınca R₃, R₁ ∥ R₂ ile seri: R_th = {R3:Ω} + {R1:Ω}·{R2:Ω} / ({R1:Ω} + {R2:Ω}) = {Rth_f:Ω}",
+              "Uçlar açıkken R₃'ten akım geçmez, V_th = V_a. a düğümünde KCL: (V₁ − V_a)/R₁ + I₁ = V_a/R₂ → V_a = (V₁/R₁ + I₁)·(R₁ ∥ R₂) = ({V1:V}/{R1:Ω} + {Is:A}) · {Rp:Ω} = {Vth_f:V}"
+            ],
+            "layout": {
+              "viewBox": [
+                0,
+                0,
+                640,
+                270
+              ],
+              "elements": {
+                "V1": {
+                  "x": 60,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "R1": {
+                  "x": 160,
+                  "y": 50,
+                  "dir": "h"
+                },
+                "R2": {
+                  "x": 250,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "I1": {
+                  "x": 420,
+                  "y": 135,
+                  "dir": "v",
+                  "flip": true
+                },
+                "R3": {
+                  "x": 520,
+                  "y": 50,
+                  "dir": "h"
+                }
+              },
+              "wires": [
+                [
+                  [
+                    60,
+                    95
+                  ],
+                  [
+                    60,
+                    50
+                  ],
+                  [
+                    120,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    200,
+                    50
+                  ],
+                  [
+                    480,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    250,
+                    50
+                  ],
+                  [
+                    250,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    420,
+                    50
+                  ],
+                  [
+                    420,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    560,
+                    50
+                  ],
+                  [
+                    600,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    60,
+                    175
+                  ],
+                  [
+                    60,
+                    220
+                  ],
+                  [
+                    600,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    250,
+                    175
+                  ],
+                  [
+                    250,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    420,
+                    175
+                  ],
+                  [
+                    420,
+                    220
+                  ]
+                ]
+              ],
+              "dots": [
+                [
+                  250,
+                  50
+                ],
+                [
+                  420,
+                  50
+                ],
+                [
+                  250,
+                  220
+                ],
+                [
+                  420,
+                  220
+                ]
+              ],
+              "ground": [
+                150,
+                220
+              ],
+              "labels": [],
+              "probes": [
+                {
+                  "x": 600,
+                  "y": 50,
+                  "text": "a"
+                },
+                {
+                  "x": 600,
+                  "y": 220,
+                  "text": "b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "bridge",
+            "story": "Sensör köprüsü: iki gerilim bölücünün orta noktaları arasından besleme alınıyor.",
+            "elements": [
+              {
+                "id": "V1",
+                "kind": "V",
+                "a": "t",
+                "b": "0",
+                "value": "V1",
+                "label": "V₁"
+              },
+              {
+                "id": "R1",
+                "kind": "R",
+                "a": "t",
+                "b": "a",
+                "value": "R1",
+                "label": "R₁"
+              },
+              {
+                "id": "R2",
+                "kind": "R",
+                "a": "a",
+                "b": "0",
+                "value": "R2",
+                "label": "R₂"
+              },
+              {
+                "id": "R3",
+                "kind": "R",
+                "a": "t",
+                "b": "c",
+                "value": "R3",
+                "label": "R₃"
+              },
+              {
+                "id": "R4",
+                "kind": "R",
+                "a": "c",
+                "b": "0",
+                "value": "R4",
+                "label": "R₄"
+              }
+            ],
+            "terminals": [
+              "a",
+              "c"
+            ],
+            "params": {
+              "V1": {
+                "label": "Besleme",
+                "unit": "V",
+                "choices": [
+                  12,
+                  24,
+                  36
+                ]
+              },
+              "R1": {
+                "label": "R₁",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  2200
+                ]
+              },
+              "R2": {
+                "label": "R₂",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  2200
+                ]
+              },
+              "R3": {
+                "label": "R₃",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  2200
+                ]
+              },
+              "R4": {
+                "label": "R₄",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  2200
+                ]
+              },
+              "RL": {
+                "label": "Pompa motoru",
+                "unit": "Ω",
+                "e12": [
+                  220,
+                  4700
+                ]
+              }
+            },
+            "load": "RL",
+            "derived": {
+              "Rth_f": "R1*R2/(R1+R2)+R3*R4/(R3+R4)",
+              "Va": "V1*R2/(R1+R2)",
+              "Vc": "V1*R4/(R3+R4)",
+              "Vth_f": "Va-Vc",
+              "In_f": "Vth_f/Rth_f"
+            },
+            "formula": {
+              "Vth": "Vth_f",
+              "Rth": "Rth_f"
+            },
+            "steps": [
+              "Kaynağı sıfırla (V₁ kısa devre): t düğümü toprağa iner. a'dan bakınca R₁ ∥ R₂, c'den bakınca R₃ ∥ R₄; ikisi uçlar arasında seri: R_th = {R1:Ω} ∥ {R2:Ω} + {R3:Ω} ∥ {R4:Ω} = {Rth_f:Ω}",
+              "Uçlar açıkken iki bölücü bağımsız: V_a = V₁·R₂/(R₁ + R₂) = {Va:V}, V_c = V₁·R₄/(R₃ + R₄) = {Vc:V}",
+              "V_th = V_a − V_c = {Va:V} − {Vc:V} = {Vth_f:V}"
+            ],
+            "layout": {
+              "viewBox": [
+                0,
+                0,
+                520,
+                310
+              ],
+              "elements": {
+                "V1": {
+                  "x": 60,
+                  "y": 155,
+                  "dir": "v"
+                },
+                "R1": {
+                  "x": 220,
+                  "y": 90,
+                  "dir": "v"
+                },
+                "R2": {
+                  "x": 220,
+                  "y": 220,
+                  "dir": "v"
+                },
+                "R3": {
+                  "x": 400,
+                  "y": 90,
+                  "dir": "v"
+                },
+                "R4": {
+                  "x": 400,
+                  "y": 220,
+                  "dir": "v"
+                }
+              },
+              "wires": [
+                [
+                  [
+                    60,
+                    115
+                  ],
+                  [
+                    60,
+                    25
+                  ],
+                  [
+                    400,
+                    25
+                  ],
+                  [
+                    400,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    220,
+                    25
+                  ],
+                  [
+                    220,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    220,
+                    130
+                  ],
+                  [
+                    220,
+                    180
+                  ]
+                ],
+                [
+                  [
+                    400,
+                    130
+                  ],
+                  [
+                    400,
+                    180
+                  ]
+                ],
+                [
+                  [
+                    60,
+                    195
+                  ],
+                  [
+                    60,
+                    285
+                  ],
+                  [
+                    400,
+                    285
+                  ],
+                  [
+                    400,
+                    260
+                  ]
+                ],
+                [
+                  [
+                    220,
+                    260
+                  ],
+                  [
+                    220,
+                    285
+                  ]
+                ],
+                [
+                  [
+                    220,
+                    155
+                  ],
+                  [
+                    275,
+                    155
+                  ]
+                ],
+                [
+                  [
+                    400,
+                    155
+                  ],
+                  [
+                    455,
+                    155
+                  ]
+                ]
+              ],
+              "dots": [
+                [
+                  220,
+                  25
+                ],
+                [
+                  220,
+                  285
+                ],
+                [
+                  220,
+                  155
+                ],
+                [
+                  400,
+                  155
+                ]
+              ],
+              "ground": [
+                140,
+                285
+              ],
+              "labels": [],
+              "probes": [
+                {
+                  "x": 275,
+                  "y": 155,
+                  "text": "a"
+                },
+                {
+                  "x": 455,
+                  "y": 155,
+                  "text": "b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "two-sources",
+            "story": "İki besleme hattı (ana akü ve yardımcı jeneratör) aynı baraya bağlı.",
+            "elements": [
+              {
+                "id": "V1",
+                "kind": "V",
+                "a": "t",
+                "b": "0",
+                "value": "V1",
+                "label": "V₁"
+              },
+              {
+                "id": "R1",
+                "kind": "R",
+                "a": "t",
+                "b": "a",
+                "value": "R1",
+                "label": "R₁"
+              },
+              {
+                "id": "R3",
+                "kind": "R",
+                "a": "a",
+                "b": "0",
+                "value": "R3",
+                "label": "R₃"
+              },
+              {
+                "id": "R2",
+                "kind": "R",
+                "a": "a",
+                "b": "c",
+                "value": "R2",
+                "label": "R₂"
+              },
+              {
+                "id": "V2",
+                "kind": "V",
+                "a": "c",
+                "b": "0",
+                "value": "V2",
+                "label": "V₂"
+              }
+            ],
+            "terminals": [
+              "a",
+              "0"
+            ],
+            "params": {
+              "V1": {
+                "label": "Ana akü",
+                "unit": "V",
+                "choices": [
+                  12,
+                  24
+                ]
+              },
+              "V2": {
+                "label": "Jeneratör",
+                "unit": "V",
+                "choices": [
+                  5,
+                  9,
+                  15
+                ]
+              },
+              "R1": {
+                "label": "R₁",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R2": {
+                "label": "R₂",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R3": {
+                "label": "R₃",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "RL": {
+                "label": "Pompa motoru",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              }
+            },
+            "load": "RL",
+            "derived": {
+              "G": "1/R1+1/R2+1/R3",
+              "Rth_f": "1/G",
+              "Vth_f": "(V1/R1+V2/R2)/G",
+              "In_f": "Vth_f/Rth_f"
+            },
+            "formula": {
+              "Vth": "Vth_f",
+              "Rth": "Rth_f"
+            },
+            "steps": [
+              "Kaynakları sıfırla (V₁ ve V₂ kısa devre): R₁, R₂, R₃ uçlar arasında paralel: R_th = 1 / (1/{R1:Ω} + 1/{R2:Ω} + 1/{R3:Ω}) = {Rth_f:Ω}",
+              "Uçlar açıkken a düğümünde KCL (düğüm gerilimi): (V₁ − V_a)/R₁ + (V₂ − V_a)/R₂ = V_a/R₃ → V_a = (V₁/R₁ + V₂/R₂)·R_th = ({V1:V}/{R1:Ω} + {V2:V}/{R2:Ω}) · {Rth_f:Ω} = {Vth_f:V}"
+            ],
+            "layout": {
+              "viewBox": [
+                0,
+                0,
+                560,
+                270
+              ],
+              "elements": {
+                "V1": {
+                  "x": 60,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "R1": {
+                  "x": 160,
+                  "y": 50,
+                  "dir": "h"
+                },
+                "R3": {
+                  "x": 260,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "R2": {
+                  "x": 370,
+                  "y": 50,
+                  "dir": "h"
+                },
+                "V2": {
+                  "x": 470,
+                  "y": 135,
+                  "dir": "v"
+                }
+              },
+              "wires": [
+                [
+                  [
+                    60,
+                    95
+                  ],
+                  [
+                    60,
+                    50
+                  ],
+                  [
+                    120,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    200,
+                    50
+                  ],
+                  [
+                    330,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    50
+                  ],
+                  [
+                    260,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    410,
+                    50
+                  ],
+                  [
+                    470,
+                    50
+                  ],
+                  [
+                    470,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    60,
+                    175
+                  ],
+                  [
+                    60,
+                    220
+                  ],
+                  [
+                    470,
+                    220
+                  ],
+                  [
+                    470,
+                    175
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    175
+                  ],
+                  [
+                    260,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    50
+                  ],
+                  [
+                    260,
+                    18
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    220
+                  ],
+                  [
+                    260,
+                    252
+                  ]
+                ]
+              ],
+              "dots": [
+                [
+                  260,
+                  50
+                ],
+                [
+                  260,
+                  220
+                ]
+              ],
+              "ground": [
+                150,
+                220
+              ],
+              "labels": [],
+              "probes": [
+                {
+                  "x": 260,
+                  "y": 18,
+                  "text": "a"
+                },
+                {
+                  "x": 260,
+                  "y": 252,
+                  "text": "b"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus-transmitter",
+      "type": "max-power",
+      "course": "devre-teorisi-1",
+      "topic": "maksimum-guc",
+      "title": "Sonar vericisi",
+      "briefing": "Kaynağın iç direnci R_th ise yük R_th'ye eşitken en büyük güç aktarılır: P_max = V_th² / (4·R_th). İç direnç bilinmiyorsa iki yük testinden çıkar: her testte V = V_th − I·R_th.",
+      "config": {
+        "vth": [
+          9,
+          12,
+          15,
+          24
+        ],
+        "rth": [
+          22,
+          470
+        ],
+        "testR": [
+          10,
+          4700
+        ],
+        "binSize": 5,
+        "spacing": 1.8,
+        "fuseRatio": 0.8,
+        "derived": {
+          "I1": "V1/R1",
+          "I2": "V2/R2",
+          "Rth_calc": "(V2-V1)/(I1-I2)",
+          "Vth_calc": "V1+I1*Rth_calc",
+          "Pmax_calc": "Vth_calc*Vth_calc/(4*Rth_calc)"
+        },
+        "solution": "Rth_calc",
+        "mistakes": [
+          {
+            "expr": "(V2-V1)/(I1+I2)",
+            "text": "Akımların farkı yerine toplamı alınırsa R_th = {value:Ω} bulunur."
+          },
+          {
+            "expr": "Vth_calc/I1",
+            "text": "V_th, yük testindeki akıma bölünürse (kısa devre akımıyla karıştırılırsa) R = {value:Ω} bulunur."
+          },
+          {
+            "expr": "V2/I1",
+            "text": "İki testin gerilim ve akımı karıştırılırsa R = {value:Ω} bulunur."
+          }
+        ],
+        "steps": [
+          "Yük testlerinden akımlar: I₁ = V₁/R₁ = {V1:V} / {R1:Ω} = {I1:A}, I₂ = V₂/R₂ = {V2:V} / {R2:Ω} = {I2:A}",
+          "Her testte V = V_th − I·R_th. İki denklemi çıkar: R_th = (V₂ − V₁) / (I₁ − I₂) = {Rth_calc:Ω}",
+          "V_th = V₁ + I₁·R_th = {Vth_calc:V}",
+          "En büyük güç R_yük = R_th iken: P_max = V_th² / (4·R_th) = {Pmax_calc:W}",
+          "Kutuda R_th'ye en yakın değer: {R:Ω}"
+        ],
+        "log": "Vericinin besleme kaydı: R₁ = {R1:Ω} takılıyken uçlarda {V1:V}, R₂ = {R2:Ω} takılıyken {V2:V} ölçülmüş."
+      }
+    }
+  ]
+}

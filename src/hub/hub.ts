@@ -374,6 +374,13 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           sounds.play('jam', { volume: 0.3 });
         });
         return T0 + 2;
+      case 'signal_weak':
+        at(T0, () => {
+          ledFlicker = { t, color: 0xffb030, lo: 0.05, hi: 0.4 };
+          t.setScreen('VERİCİ ZAYIF\nSİNYAL YOK', '#ffb030', true);
+          sounds.play('jam', { volume: 0.3 });
+        });
+        return T0 + 2;
       case 'core_freeze':
         at(T0, () => {
           t.setLed(0xffb030, 0.8, true);

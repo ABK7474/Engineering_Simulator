@@ -164,6 +164,7 @@ button { font: inherit; cursor: pointer; }
 .circuit.board .sym { fill: none; stroke: #e6f4f5; stroke-width: 2.5; }
 .circuit.board .sign { fill: #e6f4f5; font: bold 12px monospace; }
 .circuit.board .motor-m { fill: #e6f4f5; font: bold 17px system-ui; }
+.circuit.board .sym-arrow { fill: none; stroke: #e6f4f5; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .circuit.board .node-lbl { fill: var(--accent); font-weight: bold; }
 .circuit.board .probe circle { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 3 2; }
 .circuit.board .probe text { fill: var(--accent); font: 11px monospace; }
@@ -282,6 +283,7 @@ table.trace tr[data-row]:hover { background: rgba(63, 214, 208, 0.08); }
 table.trace tr.selected { background: rgba(63, 214, 208, 0.2); outline: 1px solid var(--accent); }
 table.trace tr.initial td { color: var(--muted); }
 table.trace tr.bad td { background: rgba(255, 96, 80, 0.18); }
+table.trace tr.good td { background: rgba(64, 224, 128, 0.16); }
 table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .trace-edit { margin-top: 14px; padding: 12px 14px; background: var(--panel-2); border-radius: 6px; }
 .trace-edit h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 500; }
@@ -291,3 +293,11 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .trace-edit .err { color: var(--warn); font-size: 13px; margin: 0 0 8px; }
 .report .trace-wrap { margin-top: 14px; max-height: 40vh; }
 .report .trace-wrap h4 { margin: 8px 10px; }
+
+/* Birimli sayı girişi */
+.qty-fields { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 6px 0 14px; }
+.qty { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.qty input { font: 15px ui-monospace, monospace; padding: 8px 10px; width: 13em; background: #061a1f; color: var(--text); border: 1px solid var(--line); border-radius: 4px; }
+.qty input:focus { border-color: var(--accent); outline: none; }
+.qty-preview { color: var(--accent); min-height: 1.2em; }
+.qty-preview.bad { color: var(--warn); }

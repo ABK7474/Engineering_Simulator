@@ -6,6 +6,8 @@
     {
       "id": "backup-indicator",
       "type": "series-led",
+      "course": "devre-teorisi-1",
+      "topic": "seri-devre-ohm",
       "title": "Yedek hat göstergesi",
       "briefing": "Seri devrede tek akım vardır; LED üzerindeki gerilim yaklaşık sabittir (Vf). Bu panoda kaynak gerilimi yüksek: direncin harcadığı gücü (P = I²R) de kontrol et.",
       "config": {

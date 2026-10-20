@@ -67,7 +67,7 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
 }
 
 function tableHtml(t: NonNullable<StageResult['table']>): string {
-  const cls = (k: number) => [k === t.bad ? 'bad' : '', k === t.chosen ? 'chosen' : ''].join(' ').trim();
+  const cls = (k: number) => [k === t.bad ? 'bad' : '', k === t.good ? 'good' : '', k === t.chosen ? 'chosen' : ''].join(' ').trim();
   return `<div class="trace-wrap"><h4>${esc(t.caption)}</h4><table class="trace">
     <thead><tr>${t.head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
     <tbody>${t.rows.map((r, k) => `<tr class="${cls(k)}">${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>

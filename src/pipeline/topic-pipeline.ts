@@ -71,7 +71,7 @@ export async function generateTopicTemplates(
     }
     const run = validateCandidates(type, res.candidates, {
       base: ctx.bases[type],
-      topic: { id: topic.id, name: topic.name, courseName: topic.courseName, briefing: topic.briefing },
+      topic: { id: topic.id, courseId: topic.courseId, name: topic.name, courseName: topic.courseName, briefing: topic.briefing },
       existing: [...ctx.existing, ...accepted],
       seeds: ctx.seeds,
     });

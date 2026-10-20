@@ -151,6 +151,15 @@
       "loss": {
         "power": 6
       }
+    },
+    "signal_weak": {
+      "label": "Sonar vericisi zayıf, haberleşme kesik",
+      "loss": {
+        "power": 4
+      },
+      "drainPerMinute": {
+        "power": 0.3
+      }
     }
   },
   "overheat": {

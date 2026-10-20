@@ -4,12 +4,17 @@
 // - series-led: ledWindow_mA = hedef akım aralığı. (Bu türde kutu bölge başına bir dirençtir; binSize yok.)
 // - ds-trace: trace.ops = izleme adım sayısı, trace.structures = yapı türleri, trace.corruptions = hata türleri,
 //   trace.hideCounters = döngü sayaçlarını tabloda gizle.
+// - thevenin: thevenin.form (thevenin/norton), thevenin.tolerance. max-power: maxPower.binSize.
 
 import type { FaultCard, StageDef } from '../core/types';
 import { parseSeriesLedConfig } from '../solvers/circuit/series-led';
 import { generateSeriesLed } from '../solvers/circuit/series-led.generate';
 import { parseSeriesParallelConfig } from '../solvers/circuit/series-parallel';
 import { generateSeriesParallel } from '../solvers/circuit/series-parallel.generate';
+import { parseMaxPowerConfig } from '../solvers/circuit/max-power';
+import { generateMaxPower } from '../solvers/circuit/max-power.generate';
+import { parseTheveninConfig } from '../solvers/circuit/thevenin';
+import { generateThevenin } from '../solvers/circuit/thevenin.generate';
 import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
 import type { Difficulty } from './schema';
@@ -28,6 +33,11 @@ export function applyDifficulty(stage: StageDef, d: Difficulty): StageDef {
     if (d.trace.structures) config.structures = d.trace.structures;
     if (d.trace.corruptions) config.corruptions = d.trace.corruptions;
     if (d.trace.hideCounters !== undefined) config.hideCounters = d.trace.hideCounters;
+  } else if (stage.type === 'thevenin' && d.thevenin) {
+    if (d.thevenin.form) config.form = d.thevenin.form;
+    if (d.thevenin.tolerance !== undefined) config.tolerance = d.thevenin.tolerance;
+  } else if (stage.type === 'max-power' && d.maxPower) {
+    if (d.maxPower.binSize !== undefined) config.binSize = d.maxPower.binSize;
   }
   return { ...stage, config };
 }
@@ -37,17 +47,21 @@ export function faultStages(card: FaultCard, d: Difficulty): StageDef[] {
   return card.stages.map((s) => applyDifficulty(s, d));
 }
 
+/** Tür → (yapılandırma) → (tohum) problem üret; üretemezse hata fırlatır. */
+const CHECKERS: Record<StageDef['type'], (config: unknown) => (seed: number) => unknown> = {
+  'series-led': (c) => ((cfg) => (seed: number) => generateSeriesLed(cfg, seed))(parseSeriesLedConfig(c)),
+  'series-parallel': (c) => ((cfg) => (seed: number) => generateSeriesParallel(cfg, seed))(parseSeriesParallelConfig(c)),
+  'ds-trace': (c) => ((cfg) => (seed: number) => generateDsTrace(cfg, seed))(parseDsTraceConfig(structuredClone(c))),
+  thevenin: (c) => ((cfg) => (seed: number) => generateThevenin(cfg, seed))(parseTheveninConfig(c)),
+  'max-power': (c) => ((cfg) => (seed: number) => generateMaxPower(cfg, seed))(parseMaxPowerConfig(c)),
+};
+
 /** Her aşama birçok tohumda doğrulanmış problem üretebilmeli; üretemeyenler açıklamalı döner. */
 export function verifyFaultStages(faultId: string, stages: StageDef[], seeds = DIFFICULTY_SEEDS): string[] {
   const problems: string[] = [];
   for (const s of stages) {
     try {
-      const check =
-        s.type === 'series-led'
-          ? ((cfg) => (seed: number) => generateSeriesLed(cfg, seed))(parseSeriesLedConfig(s.config))
-          : s.type === 'ds-trace'
-            ? ((cfg) => (seed: number) => generateDsTrace(cfg, seed))(parseDsTraceConfig(structuredClone(s.config)))
-            : ((cfg) => (seed: number) => generateSeriesParallel(cfg, seed))(parseSeriesParallelConfig(s.config));
+      const check = CHECKERS[s.type](s.config);
       for (let seed = 1; seed <= seeds; seed++) check(seed);
     } catch (e) {
       problems.push(`arıza '${faultId}' aşama '${s.id}': zorluk ayarıyla doğrulanabilir problem üretilemiyor (${(e as Error).message.split('\n')[0]})`);

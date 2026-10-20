@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import balanceJson from '../../content/balance/resources.json';
+import { checkStageTags } from './courses';
 import { MemoryKv } from './kv';
 import {
   approveTopic,
@@ -40,7 +41,7 @@ const draft = (patch: Partial<Topic> = {}): Topic => ({
   report: null,
   ...patch,
 });
-const stage = (id: string, type: StageDef['type'] = 'series-led'): StageDef => ({ id, type, title: id, briefing: 'b', config: {} });
+const stage = (id: string, type: StageDef['type'] = 'series-led'): StageDef => ({ id, type, course: 'devre-teorisi-1', topic: 'konu:t', title: id, briefing: 'b', config: {} });
 const report = { total: 1, accepted: 1, rejected: [], truncatedTypes: [] };
 
 describe('onay kuralı', () => {
@@ -81,6 +82,21 @@ describe('havuz ve "bu soru hatalı"', () => {
     const flagged = flagTemplate(lib, 'a');
     expect(templatePool(flagged, 'series-led').map((s) => s.id)).toEqual(['b']);
     expect(flagged.topics[0].templates.find((x) => x.stage.id === 'a')?.flagged).toBe(true);
+  });
+});
+
+describe('ders/konu etiketleri', () => {
+  it('etiketlerden önceki kütüphane: şablonlara konunun dersi ve konu kimliği eklenir, oyun çalışmaya devam eder', () => {
+    const old = { version: 1, topics: [draft({ courseId: 'devre-teorisi-1', templates: [{ stage: { id: 's1', type: 'series-led', title: 's', briefing: 'b', config: {} }, flagged: false, createdAt: '2026-10-20T10:00:00.000Z' }] as unknown as Topic['templates'] })] };
+    const lib = validateLibrary(old)!;
+    expect(lib.topics[0].templates[0].stage).toMatchObject({ course: 'devre-teorisi-1', topic: `konu:${lib.topics[0].id}` });
+    expect(() => checkStageTags(lib.topics[0].templates[0].stage)).not.toThrow();
+  });
+
+  it('etiketsiz ya da bilinmeyen dersli aşama açıklamalı hata verir', () => {
+    expect(() => checkStageTags({ id: 'x', course: '', topic: 'a' })).toThrow(/course etiketi eksik/);
+    expect(() => checkStageTags({ id: 'x', course: 'kimya', topic: 'a' })).toThrow(/bilinmiyor \('kimya'\)/);
+    expect(() => checkStageTags({ id: 'x', course: 'veri-yapilari', topic: 'Boşluklu Konu' })).toThrow(/topic etiketi/);
   });
 });
 

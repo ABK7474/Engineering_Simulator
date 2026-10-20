@@ -138,7 +138,17 @@ function validTopic(x: unknown): x is Topic {
 export function validateLibrary(raw: unknown): Library | null {
   if (!isObj(raw) || raw.version !== LIBRARY_VERSION || !Array.isArray(raw.topics)) return null;
   if (!raw.topics.every(validTopic)) return null;
-  return structuredClone(raw) as unknown as Library;
+  return migrateTags(structuredClone(raw) as unknown as Library);
+}
+
+/** Etiketlerden önceki kayıtlar: şablon aşamasına konunun dersi ve konu kimliği eklenir. */
+export function migrateTags(lib: Library): Library {
+  for (const t of lib.topics)
+    for (const x of t.templates) {
+      x.stage.course ??= t.courseId;
+      x.stage.topic ??= `konu:${t.id}`;
+    }
+  return lib;
 }
 
 export async function loadLibrary(kv: Kv): Promise<Library> {

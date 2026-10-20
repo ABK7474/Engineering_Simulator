@@ -10,8 +10,8 @@ import { generateSeriesLed } from './circuit/series-led.generate';
 import { parseSeriesParallelConfig } from './circuit/series-parallel';
 import { generateSeriesParallel } from './circuit/series-parallel.generate';
 
-/** LLM'in aday önerebildiği türler. Trace (ds-trace) bu adımda yalnız elle yazılmış şablonlarla gelir. */
-export type TemplateType = Exclude<StageDef['type'], 'ds-trace'>;
+/** LLM'in aday önerebildiği türler. Diğer türler (ds-trace, thevenin, max-power…) yalnız elle yazılmış şablonlarla gelir. */
+export type TemplateType = Extract<StageDef['type'], 'series-led' | 'series-parallel'>;
 
 /** Kabul için her adayın bu kadar farklı tohumda doğrulanmış problem üretmesi gerekir. */
 export const TEMPLATE_SEEDS = 20;
@@ -19,6 +19,8 @@ export const MAX_CANDIDATES = 8;
 
 export interface TopicRef {
   id: string;
+  /** Konunun dersi (content/courses.json kimliği); üretilen şablonun course etiketi. */
+  courseId: string;
   name: string;
   courseName: string;
   briefing: string;
@@ -169,6 +171,8 @@ export function validateCandidates(
       run.accepted.push({
         id: `tpl:${ctx.topic.id}:${type}:${index}`,
         type,
+        course: ctx.topic.courseId,
+        topic: `konu:${ctx.topic.id}`,
         title,
         briefing: `${story} ${ctx.topic.briefing}`,
         config,

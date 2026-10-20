@@ -11,7 +11,7 @@ import { MAX_CANDIDATES, validateCandidates } from './templates';
 
 const LED_BASE = fault.stages[0] as StageDef;
 const SP_BASE = fault.stages[1] as StageDef;
-const topic = { id: 't1', name: 'Seri devreler', courseName: 'Devre Teorisi 1', briefing: 'Konu özeti.' };
+const topic = { id: 't1', courseId: 'devre-teorisi-1', name: 'Seri devreler', courseName: 'Devre Teorisi 1', briefing: 'Konu özeti.' };
 const ctxFor = (base: StageDef, existing: StageDef[] = []) => ({ base, topic, existing, seeds: 5 });
 
 const goodLed = {
@@ -47,6 +47,8 @@ describe('geçerli adaylar kabul edilir', () => {
     expect(r.accepted).toHaveLength(1);
     expect(r.accepted[0]).toMatchObject({
       type: 'series-led',
+      course: 'devre-teorisi-1',
+      topic: 'konu:t1',
       title: 'Uyarı LED\'i',
       briefing: 'Bölme uyarısı. Konu özeti.',
       source: { topicId: 't1', topicName: 'Seri devreler', courseName: 'Devre Teorisi 1' },

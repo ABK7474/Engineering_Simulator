@@ -15,7 +15,8 @@ export type OutcomeKind =
   | 'core_reboot' // trace: komşu (yanlış) kayıt düzeltildi, çekirdek yeniden başladı
   | 'core_crash' // trace: sağlam bellek kaydının üstüne yazıldı, AI çekirdeği çöktü
   | 'sensor_misread' // trace: doğru kayıt, yanlış değer/eleman sayısı (sınır hatası): sensör yanlış okur
-  | 'core_freeze'; // trace: doğru kayıt, elemanlar doğru ama sıra ters: komutlar ters işlendi, panel donar
+  | 'core_freeze' // trace: doğru kayıt, elemanlar doğru ama sıra ters: komutlar ters işlendi, panel donar
+  | 'signal_weak'; // max-power: yük gücü en büyük gücün altında, verici zayıf
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -42,12 +43,16 @@ export interface StageResult {
   /** Adım adım çözüm, olay raporunda gösterilir. */
   steps: string[];
   /** İsteğe bağlı tablo (ör. doğru trace); `bad` ve `chosen` satır dizinleri işaretlenir. */
-  table?: { caption: string; head: string[]; rows: string[][]; bad?: number; chosen?: number };
+  table?: { caption: string; head: string[]; rows: string[][]; bad?: number; good?: number; chosen?: number };
 }
 
 export interface StageDef {
   id: string;
-  type: 'series-led' | 'series-parallel' | 'ds-trace';
+  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power';
+  /** Ders kimliği (content/courses.json). Zorunlu; aralıklı tekrar için. */
+  course: string;
+  /** Konu etiketi (ör. "thevenin-norton"; kullanıcı konuları için "konu:<kimlik>"). Zorunlu. */
+  topic: string;
   title: string;
   /** Aşamanın konu özeti (brifing ekranı). */
   briefing: string;

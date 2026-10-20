@@ -139,6 +139,13 @@
             "wrong_end"
           ],
           "hideCounters": false
+        },
+        "thevenin": {
+          "form": "thevenin",
+          "tolerance": 0.02
+        },
+        "maxPower": {
+          "binSize": 5
         }
       }
     }
@@ -222,6 +229,29 @@
         "solved": "ÇEKİRDEK\nÇEVRİMİÇİ"
       },
       "blockedHint": "E: Güç yok — haritaya bak"
+    },
+    {
+      "id": "power-bus",
+      "card": "power-bus-01",
+      "room": "lab-c1",
+      "model": "Prop_AccessPoint",
+      "anchor": {
+        "wall": "east",
+        "index": 2,
+        "along": 0.5
+      },
+      "requires": [
+        "core.online"
+      ],
+      "provides": [
+        "power.main"
+      ],
+      "screen": {
+        "fault": "ANA BARA\nKESİK",
+        "blocked": "ÇEKİRDEK\nBEKLENİYOR",
+        "solved": "ANA BARA\nBESLENİYOR"
+      },
+      "blockedHint": "E: Çekirdek çevrimdışı — haritaya bak"
     }
   ]
 }

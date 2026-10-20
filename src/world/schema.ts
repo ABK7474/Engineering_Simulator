@@ -21,6 +21,10 @@ export interface Difficulty {
   ledWindow_mA?: [number, number];
   /** Trace (veri yapıları) aşaması: işlem sayısı, yapı türleri, hata türleri, sayaçları gizleme. */
   trace?: { ops?: [number, number]; structures?: Kind[]; corruptions?: CorruptionKind[]; hideCounters?: boolean };
+  /** Thevenin aşaması: istenen biçim ve kabul toleransı. */
+  thevenin?: { form?: 'thevenin' | 'norton'; tolerance?: number };
+  /** Max-power aşaması: kutudaki yük sayısı. */
+  maxPower?: { binSize?: number };
 }
 
 export interface PropDef {
@@ -147,6 +151,15 @@ export function parseWorld(raw: unknown): WorldDef {
         need(tr.structures === undefined || (Array.isArray(tr.structures) && tr.structures.length > 0 && tr.structures.every((k) => ['stack', 'queue', 'list'].includes(k))), `oda '${id}': trace.structures stack/queue/list olmalı`);
         need(tr.corruptions === undefined || (Array.isArray(tr.corruptions) && tr.corruptions.length > 0 && tr.corruptions.every((k) => (CORRUPTION_KINDS as readonly unknown[]).includes(k))), `oda '${id}': trace.corruptions ${CORRUPTION_KINDS.join('/')} olmalı`);
         need(tr.hideCounters === undefined || typeof tr.hideCounters === 'boolean', `oda '${id}': trace.hideCounters true/false olmalı`);
+      }
+      const th = d.thevenin as Record<string, unknown> | undefined;
+      if (th !== undefined && need(isObj(th), `oda '${id}': thevenin nesne olmalı`)) {
+        need(th.form === undefined || th.form === 'thevenin' || th.form === 'norton', `oda '${id}': thevenin.form thevenin/norton olmalı`);
+        need(th.tolerance === undefined || (isNum(th.tolerance) && th.tolerance > 0 && th.tolerance <= 0.1), `oda '${id}': thevenin.tolerance 0–0,1 olmalı`);
+      }
+      const mp = d.maxPower as Record<string, unknown> | undefined;
+      if (mp !== undefined && need(isObj(mp), `oda '${id}': maxPower nesne olmalı`)) {
+        need(mp.binSize === undefined || (isInt(mp.binSize) && mp.binSize >= 3 && mp.binSize <= 7), `oda '${id}': maxPower.binSize 3–7 olmalı`);
       }
       need(d.ledWindow_mA === undefined || (pair(d.ledWindow_mA) && d.ledWindow_mA[0] > 0 && d.ledWindow_mA[0] < d.ledWindow_mA[1]), `oda '${id}': ledWindow_mA [min, max] olmalı`);
     }
