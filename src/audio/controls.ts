@@ -26,7 +26,7 @@ export function mountAudioControls(root: HTMLElement, initial: VolumeSettings, o
   const el = document.createElement('div');
   el.className = 'audio-controls';
   el.innerHTML = `
-    <button class="mute" title="Sessize al (M)" aria-label="Sessize al"></button>
+    <button class="mute" title="Sessize al (N)" aria-label="Sessize al"></button>
     <label>Müzik <input type="range" min="0" max="100" data-k="music" aria-label="Müzik sesi"></label>
     <label>Efekt <input type="range" min="0" max="100" data-k="sfx" aria-label="Efekt sesi"></label>`;
   root.appendChild(el);
@@ -50,7 +50,8 @@ export function mountAudioControls(root: HTMLElement, initial: VolumeSettings, o
     r.addEventListener('input', () => commit({ ...s, [r.dataset.k as 'music' | 'sfx']: Number(r.value) / 100 }));
   }
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyM' && !(e.target instanceof HTMLInputElement)) commit({ ...s, muted: !s.muted });
+    // M haritadır; sessize alma N (metin alanında yazarken tetiklenmez)
+    if (e.code === 'KeyN' && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) commit({ ...s, muted: !s.muted });
   });
   render();
 }

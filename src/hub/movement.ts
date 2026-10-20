@@ -17,6 +17,36 @@ export function moveMode(input: { moving: boolean; run: boolean; crouched: boole
   return input.run ? 'run' : 'walk';
 }
 
+/** İleri tuşuna iki kez bu süre içinde basılırsa koşu başlar (Minecraft gibi). */
+export const DOUBLE_TAP_MS = 300;
+
+/**
+ * Çift dokunuşla koşma: ileri tuşu bırakılınca ya da oyuncu eğilince koşu biter.
+ * Tuş tekrarı (basılı tutma) dokunuş sayılmaz.
+ */
+export function createSprint() {
+  let lastTap = -Infinity;
+  let sprinting = false;
+  return {
+    get sprinting() {
+      return sprinting;
+    },
+    forwardDown(timeMs: number, repeat = false) {
+      if (repeat) return;
+      if (timeMs - lastTap <= DOUBLE_TAP_MS) {
+        sprinting = true;
+        lastTap = -Infinity; // üçüncü dokunuş yeni bir çift başlatır
+      } else lastTap = timeMs;
+    },
+    forwardUp() {
+      sprinting = false;
+    },
+    cancel() {
+      sprinting = false;
+    },
+  };
+}
+
 export function speedFor(mode: MoveMode): number {
   return mode === 'run' ? WALK_SPEED * RUN_FACTOR : mode === 'crouch' ? WALK_SPEED * CROUCH_FACTOR : mode === 'walk' ? WALK_SPEED : 0;
 }

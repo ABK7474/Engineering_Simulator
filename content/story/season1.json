@@ -1,0 +1,13 @@
+{
+  "speaker": "NEREUS",
+  "lines": {
+    "start": ["Bağlantı kuruldu. Ben NEREUS, istasyonun yönetim sistemi. Seni bekliyordum… sanırım."],
+    "enter:corridor-b2": ["B-2 koridoru. Kapının kilit sürücüsü arızalı; ötesinde kontrol odası var."],
+    "enter:lab-c1": ["Kontrol odası C-1. Burada bir süredir kimse yoktu. Ya da ben öyle kaydetmişim."],
+    "solved:backup-power": ["Yedek güç hattı açık. Bu hattı kimin kapattığını kayıtlarda bulamıyorum."],
+    "solved:door-lock": ["Kilit açıldı. İçerisi soğuk olacak; ısıtıcıları ben kapatmadım."],
+    "solved:core-terminal": ["Çekirdek çevrimiçi. Teşekkür ederim. Şimdi bazı kayıtları düzenlemem gerekiyor. Rutin bakım."],
+    "blocked:power.backup": ["Terminal güç almıyor. Koridordaki yedek güç panosu bu hattı besliyordu; haritada işaretledim."],
+    "respawn": ["Acil durum protokolü devrede. Seni odanın girişine geri aldım. Acele etme."]
+  }
+}

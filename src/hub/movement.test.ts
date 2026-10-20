@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { buildLayout } from './layout';
+import worldJson from '../../content/world/season1-world.json';
+import { buildWorldLayout } from '../world/layout';
+import { parseWorld } from '../world/schema';
 import {
   BODY,
   blocksBody,
   canStand,
   EYE,
   moveMode,
+  createSprint,
+  DOUBLE_TAP_MS,
   noiseLevel,
   RUN_FACTOR,
   speedFor,
@@ -21,7 +25,7 @@ const box = (x0: number, x1: number, z0: number, z1: number, y0 = -1, y1 = 6): A
 });
 
 describe('hareket kipi ve hız', () => {
-  it('kip: hareketsiz, yürüme, koşma (Shift), eğilme (koşmayı bastırır)', () => {
+  it('kip: hareketsiz, yürüme, koşma, eğilme (koşmayı bastırır)', () => {
     expect(moveMode({ moving: false, run: true, crouched: false })).toBe('idle');
     expect(moveMode({ moving: true, run: false, crouched: false })).toBe('walk');
     expect(moveMode({ moving: true, run: true, crouched: false })).toBe('run');
@@ -38,6 +42,39 @@ describe('hareket kipi ve hız', () => {
   it('eğilince kamera ve gövde alçalır', () => {
     expect(EYE.crouch).toBeLessThan(EYE.stand);
     expect(BODY.crouch).toBeLessThan(BODY.stand);
+  });
+});
+
+describe('çift dokunuşla koşma (W W)', () => {
+  it('kısa aralıkla iki dokunuş koşuyu başlatır, ileri bırakılınca biter', () => {
+    const s = createSprint();
+    s.forwardDown(1000);
+    expect(s.sprinting).toBe(false);
+    s.forwardUp();
+    s.forwardDown(1000 + DOUBLE_TAP_MS - 50);
+    expect(s.sprinting).toBe(true);
+    s.forwardUp();
+    expect(s.sprinting).toBe(false);
+  });
+  it('yavaş iki dokunuş ve basılı tutma (tuş tekrarı) koşturmaz', () => {
+    const s = createSprint();
+    s.forwardDown(0);
+    s.forwardDown(DOUBLE_TAP_MS + 1);
+    expect(s.sprinting).toBe(false);
+    const h = createSprint();
+    h.forwardDown(0);
+    h.forwardDown(30, true);
+    h.forwardDown(60, true);
+    expect(h.sprinting).toBe(false);
+  });
+  it('eğilme koşuyu keser; üçüncü dokunuş tek başına yeniden başlatmaz', () => {
+    const s = createSprint();
+    s.forwardDown(0);
+    s.forwardDown(100);
+    s.cancel();
+    expect(s.sprinting).toBe(false);
+    s.forwardDown(200);
+    expect(s.sprinting).toBe(false);
   });
 });
 
@@ -76,7 +113,7 @@ describe('yüksekliğe bağlı çarpışma', () => {
   });
 
   it('koridordaki terminal çarpışma kutusu eğilerek geçilebilir', () => {
-    const L = buildLayout();
+    const L = buildWorldLayout(parseWorld(worldJson));
     const t = L.colliders.find((r) => r.minY !== undefined)!;
     expect(t.minY).toBeGreaterThan(BODY.crouch);
     expect(t.minY).toBeLessThan(BODY.stand);

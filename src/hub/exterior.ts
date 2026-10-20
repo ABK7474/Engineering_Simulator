@@ -7,10 +7,10 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createRng } from '../core/rng';
-import { MODULE, WALL_INNER, type CorridorLayout } from './layout';
+import { edgeMid, INWARD, MODULE, neighborCell, SIDE_ROT, WALL_DEPTH, type Rect, type WindowLayout, type WorldLayout } from '../world/layout';
 
-/** Dış sahnenin başladığı x (sol duvar modülünün dış yüzü −2,77'de). */
-export const OUTSIDE_X = -2.9;
+/** Dış nesneler iç hacimlerden (oda + duvar kalınlığı) en az bu kadar uzakta. */
+export const WALL_OUT = 0.9;
 const WATER_TOP = new THREE.Color(0x3fb8c4);
 const WATER_BOTTOM = new THREE.Color(0x020f17);
 const WATER_DENSITY = 0.045;
@@ -37,11 +37,33 @@ function valueNoise(x: number, z: number): number {
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 
-/** Deniz tabanı yüksekliği: istasyondan uzaklaştıkça iner; koridor zemininin (y = 0) hep altında. */
-export function seabedHeight(x: number, z: number): number {
-  const away = Math.max(0, -x - 3);
+export const expand = (r: Rect, d: number): Rect => ({ minX: r.minX - d, maxX: r.maxX + d, minZ: r.minZ - d, maxZ: r.maxZ + d });
+
+/** Noktanın dikdörtgenlerden en yakınına uzaklığı (içindeyse 0). */
+export function distanceToRects(rects: readonly Rect[], x: number, z: number): number {
+  return Math.min(
+    ...rects.map((r) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Math.max(r.minZ - z, 0, z - r.maxZ))),
+  );
+}
+
+/** Deniz tabanı yüksekliği: istasyondan uzaklaştıkça iner; zeminin (y = 0) hep altında. */
+export function seabedHeight(x: number, z: number, away = 0): number {
   const y = -1.0 - away * 0.06 + (valueNoise(x * 0.11, z * 0.11) - 0.5) * 1.6 + (valueNoise(x * 0.37 + 7, z * 0.37 - 3) - 0.5) * 0.5;
   return Math.min(y, -0.6);
+}
+
+/** Pencerelerden dışarıda rastgele bir nokta (iç hacimlerden `pad` kadar uzak). */
+export function outsidePoint(rng: () => number, windows: readonly WindowLayout[], interiors: readonly Rect[], out: [number, number], lateral: number, pad: number): [number, number] {
+  for (let tries = 0; tries < 40; tries++) {
+    const w = windows[Math.floor(rng() * windows.length)];
+    const d = out[0] + rng() * (out[1] - out[0]);
+    const l = (rng() - 0.5) * 2 * lateral;
+    const x = w.x + w.nx * d - w.nz * l;
+    const z = w.z + w.nz * d + w.nx * l;
+    if (distanceToRects(interiors, x, z) >= pad) return [x, z];
+  }
+  const w = windows[0];
+  return [w.x + w.nx * out[1], w.z + w.nz * out[1]];
 }
 
 export interface RockSpot {
@@ -53,14 +75,14 @@ export interface RockSpot {
   squash: number;
 }
 
-/** Kaya yerleşimi (deterministik): hepsi dışarıda, deniz tabanına oturuyor. */
-export function rockLayout(count = 28, seed = 4242): RockSpot[] {
+/** Kaya yerleşimi (deterministik): pencerelerin önünde, iç hacimlere değmeden, deniz tabanına oturur. */
+export function rockLayout(windows: readonly WindowLayout[], interiors: readonly Rect[], count = 28, seed = 4242): RockSpot[] {
   const rng = createRng(seed);
   return Array.from({ length: count }, () => {
-    const x = -6 - rng() * 30;
-    const z = -42 + rng() * 56;
     const scale = 0.6 + rng() ** 2 * 3.2;
-    return { x, z, y: seabedHeight(x, z) + scale * 0.25, scale, rotY: rng() * Math.PI * 2, squash: 0.45 + rng() * 0.4 };
+    const [x, z] = outsidePoint(rng, windows, interiors, [6, 32], 16, scale * 1.2 + 1);
+    const away = distanceToRects(interiors, x, z);
+    return { x, z, y: seabedHeight(x, z, away) + scale * 0.25, scale, rotY: rng() * Math.PI * 2, squash: 0.45 + rng() * 0.4 };
   });
 }
 
@@ -133,15 +155,18 @@ export interface Exterior {
   forcePass: (k: number) => void;
 }
 
-export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
+export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
   const outside = new THREE.Group();
   outside.name = 'exterior';
   scene.add(outside);
-  const zMid = (L.zStart + L.zEnd) / 2;
   const rng = createRng(77);
-  const windows = L.placements.filter((p) => p.model === 'WallAstra_Straight_Window');
+  const windows = L.windows;
+  const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
+  const cx = (L.bounds.minX + L.bounds.maxX) / 2;
+  const cz = (L.bounds.minZ + L.bounds.maxZ) / 2;
 
-  // Dikey renk geçişli su kubbesi (en önce çizilir, derinlik yazmaz)
+  // Dikey renk geçişli su kubbesi: yalnız bakış yönüne bağlı olduğu için kamerayı izler
+  // (en önce çizilir, derinlik yazmaz, kameranın uzak düzleminin hep içinde kalır).
   const dome = new THREE.Mesh(
     new THREE.SphereGeometry(30, 32, 16),
     new THREE.ShaderMaterial({
@@ -153,21 +178,40 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
       fog: false,
     }),
   );
-  dome.position.set(-6, 0, zMid);
   dome.renderOrder = -1;
   dome.frustumCulled = false;
   outside.add(dome);
 
-  // Deniz tabanı: koridorun dışından başlar
-  const width = 72;
-  const depth = 76;
-  const bedGeo = new THREE.PlaneGeometry(width, depth, 40, 42).rotateX(-Math.PI / 2);
-  bedGeo.translate(OUTSIDE_X - width / 2, 0, zMid);
+  // Deniz tabanı: istasyonun çevresinde; zeminlerin altında kalır
+  const width = L.bounds.maxX - L.bounds.minX + 90;
+  const depth = L.bounds.maxZ - L.bounds.minZ + 90;
+  const bedGeo = new THREE.PlaneGeometry(width, depth, 48, 56).rotateX(-Math.PI / 2);
+  bedGeo.translate(cx, 0, cz);
   const pos = bedGeo.getAttribute('position');
-  for (let i = 0; i < pos.count; i++) pos.setY(i, seabedHeight(pos.getX(i), pos.getZ(i)));
+  for (let i = 0; i < pos.count; i++) pos.setY(i, seabedHeight(pos.getX(i), pos.getZ(i), distanceToRects(interiors, pos.getX(i), pos.getZ(i))));
   bedGeo.computeVertexNormals();
   const seabed = new THREE.Mesh(bedGeo, withWaterFog(new THREE.MeshStandardMaterial({ color: 0x24322c, roughness: 1, flatShading: true })));
   outside.add(seabed);
+
+  // İstasyonun dış gövdesi: dışa bakan (penceresiz, kapısız) duvar hücrelerinin önünde koyu kaplama.
+  // Yalnız dışarıdan görünür (normal dışa bakar; içeriden arka yüz olduğu için çizilmez). Duvar
+  // modelleri tek yüzlü olduğundan, başka bir odanın penceresinden bu odanın içi görünmesin diye.
+  const hull: THREE.BufferGeometry[] = [];
+  for (const { def: r } of L.rooms) {
+    for (const side of ['north', 'south', 'east', 'west'] as const) {
+      const n = side === 'north' || side === 'south' ? r.size[0] : r.size[1];
+      for (let k = 0; k < n; k++) {
+        if (neighborCell(L.world.rooms, r, side, k) || r.walls[side]?.windows?.includes(k)) continue;
+        const [ix, iz] = INWARD[side];
+        const mid = edgeMid(r, side, k);
+        // Düzlemin normali (+z) dışa (−içe) döndürülür
+        const g = new THREE.PlaneGeometry(MODULE + 2 * WALL_OUT, 5.8).rotateY(Math.atan2(-ix, -iz));
+        g.translate(mid[0] - ix * (WALL_OUT - 0.05), 2.6, mid[1] - iz * (WALL_OUT - 0.05));
+        hull.push(g);
+      }
+    }
+  }
+  if (hull.length) outside.add(new THREE.Mesh(mergeGeometries(hull), withWaterFog(new THREE.MeshStandardMaterial({ color: 0x1a2327, roughness: 0.8, metalness: 0.5 }))));
 
   // Kayalar: pürüzlü ikosahedronlar, tek InstancedMesh
   const rockGeo = new THREE.IcosahedronGeometry(1, 1);
@@ -178,7 +222,7 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
     rp.setXYZ(i, v.x, v.y, v.z);
   }
   rockGeo.computeVertexNormals();
-  const spots = rockLayout();
+  const spots = rockLayout(windows, interiors);
   const rocks = new THREE.InstancedMesh(rockGeo, withWaterFog(new THREE.MeshStandardMaterial({ color: 0x2f3b3a, roughness: 1, flatShading: true })), spots.length);
   const m = new THREE.Matrix4();
   spots.forEach((r, k) =>
@@ -196,7 +240,8 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
   for (let k = 0; k < 7; k++) {
     const g = new THREE.PlaneGeometry(1.2 + rng() * 1.6, 24);
     g.rotateZ(-0.35 - rng() * 0.15).rotateY(rng() * Math.PI);
-    g.translate(-6 - rng() * 16, 6, L.zEnd + 4 + rng() * (L.zStart - L.zEnd));
+    const [sx, sz] = outsidePoint(rng, windows, interiors, [6, 18], 10, 3.5);
+    g.translate(sx, 6, sz);
     g.setAttribute('aPhase', new THREE.Float32BufferAttribute(new Array(g.getAttribute('position').count).fill(rng() * 6.28), 1));
     shafts.push(g);
   }
@@ -223,11 +268,12 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
   // Deniz karı: yavaşça süzülen parçacıklar
   const dot = softDot();
   const SNOW = 700;
-  const box = { x0: -26, x1: OUTSIDE_X - 0.4, y0: -3, y1: 13, z0: L.zEnd - 10, z1: L.zStart + 8 };
+  const box = { y0: -3, y1: 13 };
   const snowPos = new Float32Array(SNOW * 3);
   const snowVel = new Float32Array(SNOW * 2); // düşüş hızı, salınım fazı
   for (let i = 0; i < SNOW; i++) {
-    snowPos.set([box.x0 + rng() * (box.x1 - box.x0), box.y0 + rng() * (box.y1 - box.y0), box.z0 + rng() * (box.z1 - box.z0)], i * 3);
+    const [x, z] = outsidePoint(rng, windows, interiors, [1.2, 22], 12, 0.3);
+    snowPos.set([x, box.y0 + rng() * (box.y1 - box.y0), z], i * 3);
     snowVel.set([0.04 + rng() * 0.1, rng() * 6.28], i * 2);
   }
   const snowGeo = new THREE.BufferGeometry();
@@ -250,14 +296,12 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
   outside.add(bubbles);
   let nextBurst = 3 + rng() * 5;
   const burst = (time: number) => {
-    const w = windows[Math.floor(rng() * windows.length)];
-    const cx = -4.5 - rng() * 7;
-    const cz = (w?.z ?? zMid) + (rng() - 0.5) * 5;
+    const [bx, bz] = outsidePoint(rng, windows, interiors, [3, 10], 4, 1);
     let n = 6 + Math.floor(rng() * 6);
     for (let i = 0; i < BUBBLES && n > 0; i++) {
       if (bub[i].alive) continue;
-      bub[i] = { alive: true, vy: 0.45 + rng() * 0.45, phase: rng() * 6.28, x: cx + (rng() - 0.5) * 0.6, z: cz + (rng() - 0.5) * 0.6 };
-      bubPos.set([bub[i].x, seabedHeight(cx, cz) - rng() * 0.8, bub[i].z], i * 3);
+      bub[i] = { alive: true, vy: 0.45 + rng() * 0.45, phase: rng() * 6.28, x: bx + (rng() - 0.5) * 0.6, z: bz + (rng() - 0.5) * 0.6 };
+      bubPos.set([bub[i].x, seabedHeight(bx, bz, distanceToRects(interiors, bx, bz)) - rng() * 0.8, bub[i].z], i * 3);
       n--;
     }
     nextBurst = time + 5 + rng() * 9;
@@ -270,12 +314,20 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
   const shadow = new THREE.Mesh(mergeGeometries([bodyGeo, tailGeo, finGeo, finGeo.clone().rotateY(Math.PI)]), withWaterFog(new THREE.MeshBasicMaterial({ color: 0x041c22 })));
   shadow.visible = false;
   outside.add(shadow);
-  const pass = { active: false, start: 0, next: 25 + rng() * 25, duration: 42, x: -15 };
+  // Geçiş: bir pencerenin önünden, duvara paralel, 18–24 m uzaktan
+  const pass = { active: false, start: 0, next: 25 + rng() * 25, duration: 42, base: [0, 0] as [number, number], dir: [0, 1] as [number, number] };
+  const startPass = (time: number, k = 0) => {
+    const w = windows[Math.floor(rng() * windows.length)];
+    const d = 18 + rng() * 6;
+    Object.assign(pass, { active: true, start: time - k * pass.duration, base: [w.x + w.nx * d, w.z + w.nz * d], dir: [-w.nz, w.nx] });
+  };
 
   // Pencere önü zeminde dalgalı ışık deseni (koridorun içinde; dış grup gizliyken de görünür)
   const patches = windows.map((w) => {
-    const g = new THREE.PlaneGeometry(1.5, MODULE * 0.85).rotateX(-Math.PI / 2);
-    g.translate(-WALL_INNER + 0.75, 0.012, w.z);
+    // uv.x = 0 duvar tarafı; SIDE_ROT ile içe doğru döner
+    const g = new THREE.PlaneGeometry(1.5, MODULE * 0.85).rotateX(-Math.PI / 2).rotateY(SIDE_ROT[w.side]);
+    const [ix, iz] = INWARD[w.side];
+    g.translate(w.x + ix * (WALL_DEPTH + 0.75), 0.012, w.z + iz * (WALL_DEPTH + 0.75));
     return g;
   });
   const causticMat = new THREE.ShaderMaterial({
@@ -302,7 +354,11 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
   if (patches.length) scene.add(new THREE.Mesh(mergeGeometries(patches), causticMat));
 
   // Görünürlük: pencere modüllerinin kutuları görüş alanında mı
-  const windowBoxes = windows.map((w) => new THREE.Box3(new THREE.Vector3(-2.9, 0, w.z - MODULE / 2), new THREE.Vector3(-1.5, 3.2, w.z + MODULE / 2)));
+  const windowBoxes = windows.map((w) => {
+    const hx = w.nx !== 0 ? 1.2 : MODULE / 2;
+    const hz = w.nz !== 0 ? 1.2 : MODULE / 2;
+    return new THREE.Box3(new THREE.Vector3(w.x - hx, 0, w.z - hz), new THREE.Vector3(w.x + hx, 3.2, w.z + hz));
+  });
   const frustum = new THREE.Frustum();
   const vp = new THREE.Matrix4();
 
@@ -312,25 +368,28 @@ export function buildExterior(scene: THREE.Scene, L: CorridorLayout): Exterior {
       return outside.visible;
     },
     forcePass(k) {
-      Object.assign(pass, { active: true, start: now - k * pass.duration, x: -20 });
+      startPass(now, k);
     },
     update(dt, time, camera) {
       now = time;
       causticMat.uniforms.uTime.value = time;
       camera.updateMatrixWorld();
+      dome.position.setFromMatrixPosition(camera.matrixWorld);
       vp.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(vp);
       outside.visible = windowBoxes.some((b) => frustum.intersectsBox(b));
 
       // Zamanlayıcılar görünmezken de işler; parçacıklar yalnız görünürken güncellenir.
       if (time > nextBurst) burst(time);
-      if (!pass.active && time > pass.next) Object.assign(pass, { active: true, start: time, x: -19 - rng() * 5 });
+      if (!pass.active && time > pass.next) startPass(time);
       if (pass.active) {
         const k = (time - pass.start) / pass.duration;
         if (k >= 1) Object.assign(pass, { active: false, next: time + 50 + rng() * 60 });
         shadow.visible = pass.active;
-        shadow.position.set(pass.x + Math.sin(time * 0.15) * 1.5, 4.5 + Math.sin(time * 0.4) * 0.6, L.zStart + 16 - k * (L.zStart - L.zEnd + 32));
-        shadow.rotation.set(Math.sin(time * 0.4) * 0.05, Math.sin(time * 0.15) * 0.12, 0);
+        const along = (k - 0.5) * 70;
+        shadow.position.set(pass.base[0] + pass.dir[0] * along, 4.5 + Math.sin(time * 0.4) * 0.6, pass.base[1] + pass.dir[1] * along);
+        // Gövdenin uzun ekseni (+z) hareketin tersine bakar (kuyruk arkada)
+        shadow.rotation.set(Math.sin(time * 0.4) * 0.05, Math.atan2(-pass.dir[0], -pass.dir[1]) + Math.sin(time * 0.15) * 0.12, 0);
       }
       if (!outside.visible) return;
 

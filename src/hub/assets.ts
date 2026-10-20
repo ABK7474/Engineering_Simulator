@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import type { ModelId, Placement } from './layout';
+import type { ModelId, Placement } from '../world/layout';
 
 const MODELS = [
   'WallAstra_Straight',
@@ -15,6 +15,7 @@ const MODELS = [
   'Door_Frame_Square',
   'Door_Metal',
   'Prop_AccessPoint',
+  'Prop_Computer',
   'Prop_Light_Wide',
   'Prop_Vent_Wide',
   'Prop_Cable_1',

@@ -1,10 +1,9 @@
-// Bağlama: hub ↔ bulmaca ↔ çözücü ↔ olay raporu ↔ ses ↔ kaynaklar ↔ ilerleme.
-// Hub ve 2D paneller kaynakları bilmez; bedel ve geri kazanım burada core/resources ile uygulanır.
+// Bağlama: dünya ↔ hub ↔ bulmaca ↔ çözücü ↔ olay raporu ↔ ses ↔ kaynaklar ↔ ilerleme ↔ harita ↔ replikler.
+// Hub ve 2D paneller kaynakları ve dünya durumunu bilmez; kararlar burada core/ ve world/ ile verilir.
 
 import './style.css';
 import balanceJson from '../content/balance/resources.json';
 import coursesJson from '../content/courses.json';
-import fault from '../content/faults/door-power-01.json';
 import { mountAudioControls, loadSettings } from './audio/controls';
 import { AudioEngine } from './audio/engine';
 import { tensionChanged } from './audio/mix';
@@ -36,7 +35,6 @@ import {
   isCritical,
   level,
   parseBalance,
-  resetEpisode,
   tensionFor,
   tick,
   type Amounts,
@@ -44,7 +42,7 @@ import {
 } from './core/resources';
 import { createRng } from './core/rng';
 import { clearApiKey, getApiKey, getModel, maskKey, setApiKey, setModel } from './core/secrets';
-import type { FaultCard, StageDef } from './core/types';
+import type { StageDef } from './core/types';
 import { createHub } from './hub/hub';
 import { showIncidentReport } from './puzzles/incident-report/report';
 import { prepareStage, validateStage, type StageRun } from './puzzles/stages';
@@ -52,15 +50,27 @@ import { getProvider, LLM_DEFAULTS, type LlmSettings } from './llm/llm';
 import { createTopicDraft, generateTopicTemplates, type Course } from './pipeline/topic-pipeline';
 import { mountBackupMenu } from './ui/backup';
 import { showEpisodeClosed } from './ui/episode-closed';
+import { mountMap, type MapView } from './ui/map';
+import { mountSubtitles } from './ui/subtitle';
+import { loadWorld } from './world/content';
+import { respawnInRoom } from './world/respawn';
+import { doorOpen, missingFor, nextGoal, withProvided } from './world/state';
 import { mountHud } from './ui/hud';
 import { openLibraryView } from './ui/library-view';
 import { openSettings } from './ui/settings';
 import { openTopicFlow } from './ui/topic-flow';
 
-const card = fault as FaultCard;
-const FAULT_ID = card.id;
-const STAGES = card.stages;
-STAGES.forEach(validateStage); // içerik hatası açılışta yakalansın
+// --- Dünya içeriği (JSON): doğrulanır; bozuksa açıklamalı hata verir ---
+const content = loadWorld(undefined, undefined, undefined, { verifySeeds: 3 });
+const W = content.world;
+const L = content.layout;
+const FAULTS = new Map(W.faults.map((f) => [f.id, f]));
+const stagesOf = (fid: string) => content.stages[fid];
+Object.values(content.stages).flat().forEach(validateStage);
+const MIGRATION = {
+  startRoom: W.start.room,
+  faults: W.faults.map((f) => ({ id: f.id, card: f.card, provides: f.provides, stageCount: stagesOf(f.id).length })),
+};
 const balance = parseBalance(balanceJson);
 const ASSETS = `${import.meta.env.BASE_URL}assets/`;
 /** Onarımdan sonra müziğin kaynak seviyesine dönüş süresi (s). */
@@ -79,7 +89,8 @@ const ui = document.getElementById('ui')!;
 // --- İlerleme ---
 const kv = await openKv();
 const store = progressStore(kv);
-let progress = await loadProgress(store, balance);
+let progress = await loadProgress(store, balance, MIGRATION);
+if (!W.rooms.some((r) => r.id === progress.world.room)) progress.world.room = W.start.room;
 let lastSave = 0;
 const persist = async () => {
   progress.savedAt = new Date().toISOString();
@@ -119,7 +130,10 @@ const renderHud = () => {
 renderHud();
 // --- Konu kütüphanesi ve içerik hattı (LLM yalnız burada; oyun sırasında çağrılmaz) ---
 const COURSES = coursesJson as Course[];
-const BASES = Object.fromEntries(STAGES.map((s) => [s.type, s])) as Record<StageDef['type'], StageDef>;
+/** Konu şablonlarının temel aldığı yapılandırmalar: her türün içerikteki ilk aşaması. */
+const BASES = Object.fromEntries(
+  [...Object.values(content.stages).flat()].reverse().map((s) => [s.type, s]),
+) as Record<StageDef['type'], StageDef>;
 /** Yüklenen kütüphanedeki şablonlar yeniden doğrulanır; geçersiz olan oyuna girmez. */
 function sanitize(lib: Library): Library {
   return {
@@ -152,8 +166,9 @@ const providerLabel = () => (MOCK_LLM ? 'Sahte istemci' : `${LLM_DEFAULTS.label}
 /** Menüden açılan ekranlar: koridordaki girdiyi askıya alır, kapanınca geri verir. */
 const withHubPaused = (open: (onClose: () => void) => void) => {
   hub.suspend();
+  map.toggle(false);
   open(() => {
-    prepareCurrent(); // yeni ya da silinen şablonlar sıradaki aşamaya yansısın
+    runs.clear(); // yeni ya da silinen şablonlar sıradaki aşamalara yansısın
     hub.resume();
   });
 };
@@ -230,7 +245,7 @@ mountBackupMenu(ui, {
   ],
   exportJson: () => toExportJson(progress, library),
   importJson: async (text) => {
-    const imported = fromExportJson(text, balance);
+    const imported = fromExportJson(text, balance, MIGRATION);
     const rawLib = libraryFromExportJson(text);
     if (rawLib !== undefined) {
       const lib = validateLibrary(rawLib);
@@ -243,42 +258,133 @@ mountBackupMenu(ui, {
     location.reload();
   },
   reset: async () => {
-    progress = defaultProgress(balance);
+    progress = defaultProgress(balance, W.start.room);
     await persist();
     location.reload();
   },
 });
 
+const spawnRoom = W.rooms.find((r) => r.id === progress.world.room)!;
 const hub = await createHub(app, {
   assetBase: ASSETS,
   sounds: audio,
-  onInteract: openPuzzle,
-  onStart: () => void audioReady.then(() => audio.start()),
+  layout: L,
+  spawn: spawnRoom.entrance,
+  onInteract: interact,
+  hintFor,
+  onRoomChange,
+  onStart: () => {
+    void audioReady.then(() => audio.start());
+    if (started) return;
+    // Replikler oyuncu başlayınca: önce açılış, sonra bulunulan odanın girişi (giriş ekranının arkasında kalmasın).
+    started = true;
+    say('start');
+    say(`enter:${progress.world.room}`);
+  },
 });
 
-// --- Arıza zinciri: ardışık aşamalar ---
-const stagesDone = () => progress.faults[FAULT_ID]?.stagesDone ?? 0;
-const currentIndex = () => Math.min(stagesDone(), STAGES.length - 1);
-const allDone = () => stagesDone() >= STAGES.length;
-const progressText = (done: number) => `AŞAMA ${done}/${STAGES.length}\nTAMAM`;
-/** Aşama problemi: tohum taban + deneme + aşama; ?seed ile tekrarlanabilir. */
-const stageSeed = () => baseSeed + attempt + 1000 * currentIndex();
-/**
- * Aşamanın tanımı: kullanıcının onaylı konularından o türde şablon varsa onlardan biri (kendi
- * notundan çalışsın diye öncelikli), yoksa yerleşik içerik. Seçim aşama tohumuyla belirlenir.
- */
-const pickStageDef = (): StageDef => {
-  const base = STAGES[currentIndex()];
-  const pool = templatePool(library, base.type);
-  return pool.length ? pool[stageSeed() % pool.length] : base;
-};
-let currentDef = pickStageDef();
-let run: StageRun = prepareStage(currentDef, stageSeed());
-function prepareCurrent(): void {
-  currentDef = pickStageDef();
-  run = prepareStage(currentDef, stageSeed());
+// --- Replikler ve harita ---
+const subtitles = mountSubtitles(ui, content.story.speaker);
+/** Oyuncu "Tıkla ve başla"ya bastı mı (öncesinde söylenen replik görünmezdi). */
+let started = false;
+/** Yapay zekâ repliği; `once` ise oturumlar boyunca bir kez (seenLines). */
+function say(key: string, once = true): void {
+  const lines = content.story.lines[key];
+  if (!lines) return;
+  if (once) {
+    if (progress.world.seenLines.includes(key)) return;
+    progress.world.seenLines.push(key);
+    void persist();
+  } else if (subtitles.busy()) return;
+  subtitles.say(lines);
 }
-const showStageProgress = () => hub.showProgress(!allDone() && stagesDone() > 0 ? progressText(stagesDone()) : null);
+const map = mountMap(ui);
+let mapTarget: string | null = null;
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyM' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  map.toggle();
+  renderMap();
+});
+
+// --- Arızalar: ardışık aşamalar, koşullar (requires) ve sağladıkları durumlar (provides) ---
+const states = () => progress.world.states;
+const stagesDone = (fid: string) => progress.faults[fid]?.stagesDone ?? 0;
+const isSolved = (fid: string) => stagesDone(fid) >= stagesOf(fid).length;
+const solvedSet = () => new Set(W.faults.filter((f) => isSolved(f.id)).map((f) => f.id));
+const stageIndex = (fid: string) => Math.min(stagesDone(fid), stagesOf(fid).length - 1);
+const progressText = (fid: string, done: number) => `AŞAMA ${done}/${stagesOf(fid).length}\nTAMAM`;
+const fidSalt = (fid: string) => [...fid].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7);
+/** Aşama problemi: tohum taban + deneme + aşama + arıza; ?seed ile tekrarlanabilir. */
+const stageSeed = (fid: string) => baseSeed + attempt + 1000 * stageIndex(fid) + fidSalt(fid);
+/** Bu arızanın açtığı kapı (motor sonuçları kapıyı oynatır). */
+const doorFor = (fid: string) => W.doors.find((d) => d.opensWhen.some((s) => FAULTS.get(fid)!.provides.includes(s)))?.id;
+
+/**
+ * Aşamanın tanımı: arıza konu şablonlarına izin veriyorsa ve kullanıcının onaylı konularından o türde
+ * şablon varsa onlardan biri (kendi notundan çalışsın diye öncelikli); yoksa içerikteki (oda zorluklu) aşama.
+ */
+function pickStageDef(fid: string): StageDef {
+  const base = stagesOf(fid)[stageIndex(fid)];
+  if (!FAULTS.get(fid)!.allowTopicTemplates) return base;
+  const pool = templatePool(library, base.type);
+  return pool.length ? pool[stageSeed(fid) % pool.length] : base;
+}
+const runs = new Map<string, { def: StageDef; run: StageRun; index: number }>();
+function getRun(fid: string) {
+  const cur = runs.get(fid);
+  if (cur && cur.index === stageIndex(fid)) return cur;
+  const def = pickStageDef(fid);
+  const r = { def, run: prepareStage(def, stageSeed(fid)), index: stageIndex(fid) };
+  runs.set(fid, r);
+  return r;
+}
+
+/** Terminal ekranı arızanın durumuna göre. */
+function refreshTerminal(fid: string): void {
+  const f = FAULTS.get(fid)!;
+  if (isSolved(fid)) hub.showSolved(fid, f.screen?.solved ?? 'ONARILDI');
+  else if (missingFor(f, states()).length) hub.setScreen(fid, f.screen?.blocked ?? 'KOŞUL\nEKSİK', '#8aa0a4');
+  else if (stagesDone(fid) > 0) hub.showProgress(fid, progressText(fid, stagesDone(fid)));
+  else hub.setScreen(fid, f.screen?.fault ?? 'ARIZA', '#ff5040', true);
+}
+const refreshAll = () => W.faults.forEach((f) => refreshTerminal(f.id));
+
+function hintFor(fid: string): string | null {
+  const f = FAULTS.get(fid);
+  if (!f || isSolved(fid)) return null;
+  return missingFor(f, states()).length ? (f.blockedHint ?? 'E: Koşul eksik — haritaya bak') : 'E: Paneli aç';
+}
+
+function onRoomChange(roomId: string): void {
+  progress.world.room = roomId;
+  if (!progress.world.discovered.includes(roomId)) progress.world.discovered.push(roomId);
+  if (started) say(`enter:${roomId}`);
+  void persist();
+  renderMap();
+}
+
+function buildMapView(): MapView {
+  const disc = progress.world.discovered;
+  return {
+    title: 'Kat planı',
+    rooms: L.rooms.map(({ def, rect }) => ({ id: def.id, name: def.name, rect, discovered: disc.includes(def.id), current: def.id === progress.world.room })),
+    doors: L.doors.map((d) => ({ id: d.def.id, x: d.x, z: d.z, horizontal: d.rotY === 0, open: doorOpen(d.def, states()), visible: d.def.rooms.some((r) => disc.includes(r)) })),
+    faults: W.faults.map((f) => ({
+      id: f.id,
+      label: content.cards[f.card].title,
+      ...hub.terminalPosition(f.id),
+      status: isSolved(f.id) ? 'solved' : missingFor(f, states()).length ? 'blocked' : 'open',
+      visible: disc.includes(f.room) || f.id === mapTarget,
+    })),
+    player: hub.pose(),
+    target: mapTarget,
+    bounds: L.bounds,
+  };
+}
+function renderMap(): void {
+  if (map.isOpen()) map.render(buildMapView());
+}
+setInterval(renderMap, 200);
 
 // --- Gerilim ve uyarı ışığı: hata darbesi (onarıma kadar) ya da kaynakların durumu ---
 let failurePulse = false;
@@ -298,29 +404,35 @@ const fmtAmounts = (a: Amounts, sign: '−' | '+') =>
     .map(([id, v]) => `${balance.resources[id].label} ${sign}${(Math.round(v * 10) / 10).toString().replace('.', ',')}`)
     .join(' · ');
 
+// --- Kritik kaynak: oyun bitmez, bulunulan odanın girişinden devam edilir ---
 let closing = false;
 function closeEpisode(): void {
   if (closing) return;
   closing = true;
   hub.suspend();
+  const roomId = progress.world.room;
+  const room = W.rooms.find((r) => r.id === roomId)!;
   const [id, value] = Object.entries(progress.resources.values).sort((a, b) => a[1] - b[1])[0];
   showEpisodeClosed(ui, {
+    title: 'Acil durum protokolü',
     reason: `${balance.resources[id].label} %${Math.floor(value)} — kritik seviye`,
+    body: `${room.name} girişine dönüyorsun. Çözdüğün arızalar çözülmüş kalır; bu odadaki yarım onarımlar baştan başlar.`,
+    button: 'Girişten devam et',
     episode: progress.episode,
     attempts: progress.attemptsThisEpisode,
     worst: progress.worstEvent?.label ?? null,
     onRestart: () => {
-      progress.resources = resetEpisode(progress.resources, balance);
-      progress.episode++;
-      progress.attemptsThisEpisode = 0;
-      progress.worstEvent = null;
-      progress.faults[FAULT_ID] = { stagesDone: 0 };
+      progress = respawnInRoom(progress, balance, W, roomId, (fid) => stagesOf(fid).length);
       attempt++;
-      prepareCurrent();
+      const roomFaults = W.faults.filter((f) => f.room === roomId).map((f) => f.id);
+      roomFaults.forEach((fid) => runs.delete(fid));
       failurePulse = false;
-      hub.resetEpisode();
+      hub.resetTerminals(roomFaults);
+      refreshAll();
+      hub.teleport(room.entrance.x, room.entrance.z, room.entrance.yaw);
       renderHud();
       updateMood(3);
+      say('respawn', false);
       void persist();
       closing = false;
       hub.resume();
@@ -328,7 +440,7 @@ function closeEpisode(): void {
   });
 }
 
-// Koridorda tüketimden gelen olaylar (hata anındaki olaylar için siren zaten hub'da çalar).
+// Tüketimden gelen olaylar (hata anındaki olaylar için siren zaten hub'da çalar).
 function onDrainEvents(events: ResourceEvent[]): void {
   if (events.some((e) => e.type === 'crossedWarning' || e.type === 'critical')) audio.alarm(ALARM_SECONDS);
   if (events.some((e) => e.type === 'critical')) {
@@ -338,13 +450,13 @@ function onDrainEvents(events: ResourceEvent[]): void {
 }
 
 // --- Kayıttan geri yükleme ---
-if (allDone()) hub.restoreSolved();
-else showStageProgress();
-hub.restoreScars(progress.scars);
+for (const d of W.doors) hub.setDoorOpen(d.id, doorOpen(d, states()));
+refreshAll();
+hub.restoreScars(progress.world.scorched);
 updateMood(0.1);
 if (isCritical(progress.resources, balance)) closeEpisode();
 
-// --- Kalıcı hasar tüketimi: oyun saatiyle, yalnız koridorda dolaşırken ---
+// --- Kalıcı hasar tüketimi: oyun saatiyle, yalnız dolaşırken ---
 let lastTick = performance.now();
 setInterval(() => {
   const now = performance.now();
@@ -366,8 +478,9 @@ if (import.meta.env.DEV) {
       audio,
       hub,
       progress: () => structuredClone(progress),
-      stage: () => ({ index: currentIndex(), baseSeed, attempt, seed: stageSeed(), def: structuredClone(currentDef) }),
+      stage: (fid: string) => ({ fid, index: stageIndex(fid), baseSeed, attempt, seed: stageSeed(fid), def: structuredClone(getRun(fid).def) }),
       library: () => structuredClone(library),
+      map: () => buildMapView(),
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
         renderHud();
@@ -377,14 +490,34 @@ if (import.meta.env.DEV) {
   });
 }
 
-function openPuzzle(): void {
+/** E ile terminal: koşul eksikse "güç yok" + harita hedefi; değilse bulmaca paneli. */
+function interact(fid: string): void {
+  const f = FAULTS.get(fid)!;
+  if (isSolved(fid)) return;
+  const missing = missingFor(f, states());
+  if (missing.length) {
+    mapTarget = nextGoal(W, states(), solvedSet(), f)?.id ?? null;
+    map.toggle(true);
+    renderMap();
+    refreshTerminal(fid);
+    uiSound('switch');
+    say(`blocked:${missing[0]}`, false);
+    return;
+  }
+  openPuzzle(fid);
+}
+
+function openPuzzle(fid: string): void {
   uiSound('click');
   hub.suspend();
-  const i = currentIndex();
-  const def = currentDef;
+  map.toggle(false); // harita paneli bulmacanın ve raporun üstünü örtmesin
+  const f = FAULTS.get(fid)!;
+  const card = content.cards[f.card];
+  const i = stageIndex(fid);
+  const { def, run } = getRun(fid);
   run.open({
     root: ui,
-    title: `${card.title} — Aşama ${i + 1}/${STAGES.length}: ${def.title}`,
+    title: `${card.title} — Aşama ${i + 1}/${stagesOf(fid).length}: ${def.title}`,
     briefing: def.briefing,
     source: def.source && {
       label: `${def.source.topicName} (${def.source.courseName})`,
@@ -392,25 +525,27 @@ function openPuzzle(): void {
         // "Bu soru hatalı": şablon havuzdan çıkar; aşama başka bir problemle hazırlanır.
         library = flagTemplate(library, def.id);
         void persistLibrary();
-        prepareCurrent();
+        runs.delete(fid);
         hub.resume();
       },
     },
     onSound: uiSound,
     onCancel: () => hub.resume(),
-    onSubmit: (answer) => void runAttempt(answer),
+    onSubmit: (answer) => void runAttempt(fid, answer),
   });
 }
 
-async function runAttempt(answer: unknown): Promise<void> {
-  const i = currentIndex();
-  const { outcome, result } = run.evaluate(answer, createRng(baseSeed * 31 + attempt + 7 * i));
+async function runAttempt(fid: string, answer: unknown): Promise<void> {
+  const f = FAULTS.get(fid)!;
+  const i = stageIndex(fid);
+  const total = stagesOf(fid).length;
+  const { outcome, result } = getRun(fid).run.evaluate(answer, createRng(baseSeed * 31 + attempt + 7 * i + fidSalt(fid)));
   const success = outcome.kind === 'success';
-  const final = success && i + 1 === STAGES.length;
+  const final = success && i + 1 === total;
 
   // Bedel ya da geri kazanım: çözücünün fiziksel sonucundan; hasar bu aşamaya bağlanır.
   progress.attemptsThisEpisode++;
-  const step = applyOutcome(progress.resources, balance, stageKey(FAULT_ID, i), outcome);
+  const step = applyOutcome(progress.resources, balance, stageKey(fid, i), outcome);
   progress.resources = step.state;
   const lost: Amounts = {};
   for (const e of step.events) {
@@ -420,42 +555,52 @@ async function runAttempt(answer: unknown): Promise<void> {
   const damage = step.events.find((e) => e.type === 'damage');
   if (damage) {
     result.facts.push({ label: 'Kaynak etkisi', value: fmtAmounts(lost, '−') });
-    const total = Object.values(lost).reduce((a, b) => a + b, 0);
-    if (!progress.worstEvent || total > progress.worstEvent.total) progress.worstEvent = { label: damage.label, total };
+    const sum = Object.values(lost).reduce((a, b) => a + b, 0);
+    if (!progress.worstEvent || sum > progress.worstEvent.total) progress.worstEvent = { label: damage.label, total: sum };
   }
-  if (success) progress.faults[FAULT_ID] = { stagesDone: i + 1 };
+  const before = new Set(W.doors.filter((d) => doorOpen(d, states())).map((d) => d.id));
+  if (success) progress.faults[fid] = { stagesDone: i + 1 };
+  if (final) {
+    progress.world.states = withProvided(states(), f);
+    if (mapTarget === fid) mapTarget = null;
+  }
   failurePulse = !success;
   const critical = isCritical(progress.resources, balance);
-  if (critical) result.facts.push({ label: 'Durum', value: 'Kaynaklar kritik — bölüm kapanacak' });
+  if (critical) result.facts.push({ label: 'Durum', value: 'Kaynaklar kritik — odanın girişine dönülecek' });
   renderHud();
   updateMood(success ? CALM_DOWN_SECONDS : 2);
   void persist();
 
-  await hub.applyOutcome(outcome, { final, progressText: progressText(i + 1) });
-  if (hub.hasScorch() && !progress.scars.panelScorch) {
-    progress.scars.panelScorch = true;
+  await hub.applyOutcome(fid, outcome, { final, progressText: progressText(fid, i + 1), doorId: doorFor(fid) });
+  if (hub.hasScorch(fid) && !progress.world.scorched.includes(fid)) {
+    progress.world.scorched.push(fid);
     void persist();
   }
-  if (success && !final) prepareCurrent(); // sıradaki aşama
+  if (final) {
+    // Yeni sağlanan durumlar: kapılar açılır, bekleyen terminaller hazır olur.
+    for (const d of W.doors) if (!before.has(d.id) && doorOpen(d, states())) hub.setDoorOpen(d.id, true, true);
+    refreshAll();
+    say(`solved:${fid}`);
+  }
 
   const repair = () => {
     // Yedek parça: yeni deneme yeni sayılarla; kalıcı hasar onarılana kadar sürer.
     attempt++;
-    prepareCurrent();
-    hub.repairForRetry();
-    showStageProgress();
+    runs.delete(fid);
+    hub.repairForRetry(fid, doorFor(fid));
+    refreshTerminal(fid);
     failurePulse = false;
     updateMood(CALM_DOWN_SECONDS);
   };
 
   showIncidentReport(ui, result, {
     onSound: uiSound,
-    onNext: success && !final && !critical ? openPuzzle : undefined,
+    onNext: success && !final && !critical ? () => openPuzzle(fid) : undefined,
     onRetry: critical
       ? undefined
       : () => {
           repair();
-          openPuzzle();
+          openPuzzle(fid);
         },
     onClose: () => {
       if (critical) return closeEpisode();

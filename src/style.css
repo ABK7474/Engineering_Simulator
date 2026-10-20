@@ -222,3 +222,41 @@ button { font: inherit; cursor: pointer; }
 .source-line { margin: 8px 0 0; font-size: 13px; color: var(--accent); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .ghost.small { padding: 3px 8px; font-size: 12px; }
 .backup-menu .menu hr { width: 100%; border: none; border-top: 1px solid var(--line); margin: 2px 0; }
+
+/* --- Harita (M) ve yapay zekâ alt yazıları --- */
+.map-panel {
+  position: absolute; right: 12px; top: 100px; width: min(380px, calc(100% - 24px)); z-index: 6; pointer-events: none;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(4, 22, 27, 0.88);
+}
+.map-panel[hidden] { display: none; }
+.map-panel header { font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.map-svg { width: 100%; height: auto; max-height: 60vh; display: block; }
+.map-room rect { fill: #0d2f37; stroke: #5fa9b3; stroke-width: 0.25; }
+.map-room.current rect { fill: #13424d; stroke: var(--accent); }
+.map-room text { fill: var(--muted); font-size: 1.3px; font-family: system-ui, sans-serif; }
+.map-door { stroke-width: 0.7; stroke-linecap: round; }
+.map-door.locked { stroke: var(--fail); }
+.map-door.open { stroke: var(--ok); }
+.map-fault circle { fill: #04161b; stroke-width: 0.3; }
+.map-fault text { font-size: 1.25px; font-weight: 700; font-family: system-ui, sans-serif; }
+.map-fault.open circle { stroke: var(--warn); } .map-fault.open text { fill: var(--warn); }
+.map-fault.blocked circle { stroke: #8aa0a4; } .map-fault.blocked text { fill: #8aa0a4; }
+.map-fault.solved circle { stroke: var(--ok); } .map-fault.solved text { fill: var(--ok); }
+.map-fault .pulse { fill: none; stroke: var(--warn); stroke-width: 0.35; animation: map-pulse 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes map-pulse { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .map-fault .pulse { animation: none; } }
+.map-player circle, .map-player path { fill: var(--accent); }
+.map-goal { margin: 6px 0 0; font-size: 13px; color: var(--warn); }
+.map-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.map-legend .sw { display: inline-block; width: 14px; text-align: center; font-weight: 700; }
+.map-legend .sw.open { color: var(--warn); } .map-legend .sw.blocked { color: #8aa0a4; } .map-legend .sw.solved { color: var(--ok); }
+.map-legend .door { display: inline-block; width: 14px; height: 3px; vertical-align: middle; border-radius: 2px; }
+.map-legend .door.locked { background: var(--fail); } .map-legend .door.open { background: var(--ok); }
+
+.subtitle {
+  position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); max-width: min(760px, calc(100% - 32px));
+  padding: 10px 16px; border-radius: 8px; background: rgba(2, 12, 15, 0.82); border: 1px solid var(--line);
+  z-index: 7; pointer-events: none; line-height: 1.5; font-size: 15px;
+}
+.subtitle[hidden] { display: none; }
+.subtitle .speaker { color: var(--accent); font-family: monospace; font-weight: 700; margin-right: 10px; letter-spacing: 0.08em; }

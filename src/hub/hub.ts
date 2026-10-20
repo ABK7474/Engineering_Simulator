@@ -1,18 +1,20 @@
-// Hub cephesi: sahneyi kurar, gezinmeyi ve etkileşimi yönetir, Outcome'u görsel efekte çevirir.
-// Bulmaca mantığını ve ses motorunu bilmez; Outcome'u okur, sesleri HubSounds arayüzüyle ister.
+// Hub cephesi: dünyayı (bütün odalar, kapılar, terminaller) kurar, gezinmeyi ve etkileşimi yönetir,
+// Outcome'u görsel efekte çevirir. Bulmaca mantığını, kaynakları ve dünya durumunu bilmez: hangi
+// terminalin ne göstereceğini, kapıların ne zaman açılacağını dışarısı söyler.
 
 import * as THREE from 'three';
-import type { Outcome } from '../core/types';
 import { StrideCounter } from '../audio/mix';
+import type { Outcome } from '../core/types';
+import { CEILING, roomAt, type WorldLayout } from '../world/layout';
 import { loadAssets } from './assets';
-import { buildCorridor } from './corridor';
-import { createDoorPanel } from './door-panel';
-import { buildExterior } from './exterior';
+import { buildBuilding } from './building';
+import { createDoor, type Door } from './door';
 import { Effects, Tweens } from './effects';
-import { buildLayout } from './layout';
+import { buildExterior } from './exterior';
 import { noiseLevel, stepProfile } from './movement';
 import { createPlayer } from './player';
 import { createSceneKit } from './scene';
+import { createTerminal, type Terminal } from './terminal';
 
 export type HubSfx = 'door_open' | 'door_close' | 'spark' | 'led_pop' | 'fuse' | 'jam' | 'step';
 
@@ -28,9 +30,25 @@ export interface HubOptions {
   /** public/assets'in URL'si (sonunda / ile). */
   assetBase: string;
   sounds: HubSounds;
-  onInteract: () => void;
+  layout: WorldLayout;
+  /** Oyuncunun başlayacağı konum. */
+  spawn: { x: number; z: number; yaw: number };
+  /** E ile bir terminalle etkileşim. */
+  onInteract: (terminalId: string) => void;
+  /** Terminalin yanında gösterilecek ipucu; null = etkileşim yok (ör. onarılmış). */
+  hintFor: (terminalId: string) => string | null;
+  /** Oyuncu başka bir odaya geçti. */
+  onRoomChange: (roomId: string) => void;
   /** "Tıkla ve başla" tıklaması: kullanıcı etkileşimi (ses burada başlatılabilir). */
   onStart: () => void;
+}
+
+export interface OutcomeOptions {
+  /** false: ara aşama başarısı (LED yeşil, ekranda progressText). */
+  final?: boolean;
+  progressText?: string;
+  /** Bu arızanın sürdüğü kapı (motor sonuçları kapıyı oynatır). */
+  doorId?: string;
 }
 
 export interface Hub {
@@ -38,49 +56,48 @@ export interface Hub {
   suspend: () => void;
   /** Girdiyi açar; oyuncu tıklayınca yürümeye devam eder. */
   resume: () => void;
-  /** Sonucu sahnede oynatır; izlenebilir kısım bitince çözülür. */
-  /**
-   * Sonucu sahnede oynatır; izlenebilir kısım bitince çözülür. `final: false` ara aşama başarısıdır:
-   * LED yeşil yanar, ekranda `progressText` görünür, kapı açılmaz.
-   */
-  applyOutcome: (o: Outcome, opts?: { final?: boolean; progressText?: string }) => Promise<void>;
-  /** Arıza kısmen onarılmışken panel durumu (LED yeşil + metin); null = arıza ekranı. */
-  showProgress: (text: string | null) => void;
-  /** Başarısızlık sonrası yedek parça: ışıklar, LED, kapı eski hâline (yanık izi kalır). */
-  repairForRetry: () => void;
+  /** Sonucu bir terminalde oynatır; izlenebilir kısım bitince çözülür. */
+  applyOutcome: (terminalId: string, o: Outcome, opts?: OutcomeOptions) => Promise<void>;
+  setScreen: (terminalId: string, text: string, color: string, blink?: boolean) => void;
+  /** Arıza kısmen onarılmışken: LED yeşil + metin. */
+  showProgress: (terminalId: string, text: string) => void;
+  /** Onarılmış terminal: LED yeşil, ekran metni. */
+  showSolved: (terminalId: string, text: string) => void;
+  /** Başarısızlık sonrası yedek parça: ışıklar, LED, (varsa) kapı eski hâline; yanık izi kalır. */
+  repairForRetry: (terminalId: string, doorId?: string) => void;
+  /** Kapıyı aç/kapat; `animate` ise kayarak ve sesle. */
+  setDoorOpen: (doorId: string, open: boolean, animate?: boolean) => void;
+  /** Kritik kaynakta odadan yeniden başlama: terminaller yenilenir, ışıklar geri gelir. */
+  resetTerminals: (terminalIds: string[]) => void;
+  /** Oyuncuyu bir noktaya taşır (oda girişi). */
+  teleport: (x: number, z: number, yaw: number) => void;
   /** Kırmızı uyarı ışığı (hata onarılana kadar ya da kaynaklar azken; kararı dışarısı verir). */
   setWarningLight: (on: boolean) => void;
-  /** Oyuncu koridorda serbestçe dolaşıyor mu (panel/rapor/giriş ekranı kapalı, sekme görünür). */
   isRoaming: () => boolean;
-  /** Bölüm baştan: kapı kilitli, ışıklar ve LED yenilenir; yanık izi kalır. */
-  resetEpisode: () => void;
-  /** Kayıttan: arıza önceden onarılmış, kapı açık başlar. */
-  restoreSolved: () => void;
-  /** Kayıttan: önceki hataların izi. */
-  restoreScars: (s: { panelScorch: boolean }) => void;
-  /** Panelde yanık izi oluştu mu (kalıcı iz olarak kaydedilmek için). */
-  hasScorch: () => boolean;
+  restoreScars: (terminalIds: string[]) => void;
+  hasScorch: (terminalId: string) => boolean;
+  /** Harita için: oyuncunun konumu ve bakış yönü. */
+  pose: () => { x: number; z: number; yaw: number };
+  terminalPosition: (terminalId: string) => { x: number; z: number };
   /** Oyuncunun gürültü seviyesi: hareketsiz/eğilme 0, yürüme 1, koşma 2 (henüz kullanılmıyor). */
   noiseLevel: () => 0 | 1 | 2;
   /** Geliştirme/test kancaları (oyunda kullanılmaz). */
-  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void };
-  /** Geliştirme/test için çizim istatistikleri. */
-  stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean };
+  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void; teleport: (x: number, z: number, yaw?: number) => void };
+  stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean; room: string | null };
 }
 
 const INTERACT_RANGE = 1.8;
 const ALARM_SECONDS = 4.5;
-const STRIDE = 0.65;
-const FAULT_SCREEN = ['KİLİT ARIZASI\nPANELİ ONAR', '#ff5040'] as const;
+const PROGRESS_COLOR = '#ffd040';
 
 export async function createHub(container: HTMLElement, opts: HubOptions): Promise<Hub> {
-  const { sounds } = opts;
+  const { sounds, layout } = opts;
 
   // --- DOM: başlangıç/devam katmanı (yükleme sırasında da görünür) ---
   const gate = document.createElement('div');
   gate.className = 'gate';
   gate.innerHTML = `<div><h1>Derin Mühendis</h1><p class="gate-action">Yükleniyor…</p>
-    <p class="keys">WASD / oklar: yürü · Shift: koş · C: eğil (aç/kapa) · Fare: bak · E: etkileşim · M: sessiz · Esc: imleci bırak</p></div>`;
+    <p class="keys">WASD / oklar: yürü · W W (çift dokun): koş · C: eğil (aç/kapa) · Fare: bak · E: etkileşim · M: harita · N: sessiz · Esc: imleci bırak</p></div>`;
   container.appendChild(gate);
   const gateAction = gate.querySelector<HTMLParagraphElement>('.gate-action')!;
 
@@ -93,22 +110,25 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     gateAction.textContent = `Yükleme hatası: ${e instanceof Error ? e.message : String(e)}`;
     throw e;
   }
-  const layout = buildLayout();
-  const corridor = buildCorridor(scene, assets, layout);
-  const door = createDoorPanel(scene, assets, layout);
+  const building = buildBuilding(scene, assets, layout);
+  const doors = new Map<string, Door>(layout.doors.map((d) => [d.def.id, createDoor(scene, assets, d)]));
+  // LED'lerin paylaştığı tek dinamik ışık (ışık bütçesi)
+  const ledLight = new THREE.PointLight(0xffffff, 0, 3, 2);
+  scene.add(ledLight);
+  const terminals = new Map<string, Terminal>(layout.terminals.map((t) => [t.fault.id, createTerminal(scene, t, ledLight)]));
   const exterior = buildExterior(scene, layout);
-  const effects = new Effects(scene, new THREE.Vector3(layout.alarm.x, layout.alarm.y, layout.alarm.z));
+  const first = layout.terminals[0];
+  const effects = new Effects(scene, new THREE.Vector3(first?.x ?? 0, CEILING - 0.3, first?.z ?? 0));
   const tweens = new Tweens();
-  const player = createPlayer(camera, renderer.domElement, new THREE.Vector3(layout.spawn.x, 0, layout.spawn.z));
-  const leak = new THREE.Vector3(layout.leak.x, layout.leak.y, layout.leak.z);
-  const strides = new StrideCounter(STRIDE);
+  const player = createPlayer(camera, renderer.domElement, new THREE.Vector3(opts.spawn.x, 0, opts.spawn.z));
+  camera.rotation.set(0, opts.spawn.yaw, 0, 'YXZ');
+  const leaks = layout.leaks.map((l) => new THREE.Vector3(l.x, l.y, l.z));
+  const strides = new StrideCounter(stepProfile('walk').stride);
   kit.bakeShadows();
 
-  door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
-
   let active = true; // false: 2D panel ya da sonuç oynatımı sürüyor
-  let solved = false;
-  let ledFlicker: { color: number; lo: number; hi: number } | null = null;
+  let ledFlicker: { t: Terminal; color: number; lo: number; hi: number } | null = null;
+  let room: string | null = null;
 
   gateAction.textContent = 'Tıkla ve başla';
   gate.addEventListener('click', () => {
@@ -118,9 +138,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
 
   const hint = document.createElement('div');
   hint.className = 'hint';
-  hint.textContent = 'E: Paneli aç';
   container.appendChild(hint);
-
   const crosshair = document.createElement('div');
   crosshair.className = 'crosshair';
   container.appendChild(crosshair);
@@ -140,37 +158,54 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     refreshGate();
   });
 
-  let nearPanel = false;
+  let nearest: string | null = null;
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyE' && active && nearPanel && locked) opts.onInteract();
+    if (e.code === 'KeyE' && active && nearest && locked) opts.onInteract(nearest);
   });
 
   // --- Döngü ---
   const timer = new THREE.Timer();
   let elapsed = 0;
   timer.connect(document);
-  const tmp = new THREE.Vector2();
+  const flat = new THREE.Vector2();
   renderer.setAnimationLoop((now) => {
     timer.update(now);
     const dt = Math.min(timer.getDelta(), 0.05);
     elapsed += dt;
-    const colliders = door.openAmount > 0.95 ? corridor.colliders : [...corridor.colliders, door.collider];
+    const colliders = [...building.colliders, ...[...doors.values()].filter((d) => d.openAmount < 0.95).map((d) => d.collider)];
     const { distance, mode } = player.update(dt, colliders);
     const prof = stepProfile(mode);
     strides.setStride(prof.stride);
     for (let k = strides.add(distance); k > 0; k--) sounds.play('step', { volume: prof.volume, pitchJitter: 0.08 });
-    const leakNear = Math.max(0, 1 - camera.position.distanceTo(leak) / 7);
+    const leakNear = Math.max(0, 1 - Math.min(...leaks.map((l) => camera.position.distanceTo(l)), Infinity) / 7);
     sounds.setLeakVolume(leakNear * leakNear);
 
-    nearPanel =
-      !solved &&
-      tmp.set(camera.position.x - door.panelPosition.x, camera.position.z - door.panelPosition.z).length() < INTERACT_RANGE;
-    hint.style.display = active && nearPanel && locked ? 'block' : 'none';
+    // En yakın, etkileşime açık terminal
+    nearest = null;
+    let best = INTERACT_RANGE;
+    for (const t of terminals.values()) {
+      const d = flat.set(camera.position.x - t.panelPosition.x, camera.position.z - t.panelPosition.z).length();
+      if (d < best && opts.hintFor(t.id) !== null) {
+        best = d;
+        nearest = t.id;
+      }
+    }
+    const hintText = nearest ? opts.hintFor(nearest) : null;
+    hint.style.display = active && hintText && locked ? 'block' : 'none';
+    if (hintText && hint.textContent !== hintText) hint.textContent = hintText;
 
-    if (ledFlicker) door.setLed(ledFlicker.color, THREE.MathUtils.lerp(ledFlicker.lo, ledFlicker.hi, Math.random()));
+    // Oda geçişi (kesintisiz; bütün odalar zaten kurulu)
+    const r = roomAt(layout, camera.position.x, camera.position.z);
+    if (r && r !== room) {
+      room = r;
+      opts.onRoomChange(r);
+    }
+
+    if (ledFlicker) ledFlicker.t.setLed(ledFlicker.color, THREE.MathUtils.lerp(ledFlicker.lo, ledFlicker.hi, Math.random()), true);
     tweens.update(dt);
     effects.update(dt);
-    door.update(dt);
+    for (const d of doors.values()) d.update();
+    for (const t of terminals.values()) t.update(dt);
     exterior.update(dt, elapsed, camera);
     renderer.render(scene, camera);
   });
@@ -192,15 +227,16 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     });
   const ease = (k: number) => k * k * (3 - 2 * k);
 
-  const focusCamera = (dur: number) => {
+  const focusCamera = (target: THREE.Vector3, dur: number) => {
     const from = camera.quaternion.clone();
     const probe = camera.clone();
-    probe.lookAt(door.focusPoint);
+    probe.lookAt(target);
     const to = probe.quaternion.clone();
     anim(0, dur, (k) => camera.quaternion.slerpQuaternions(from, to, ease(k)));
   };
 
-  const moveDoor = (start: number, dur: number, to: number, shake = 0) => {
+  const moveDoor = (door: Door | undefined, start: number, dur: number, to: number, shake = 0) => {
+    if (!door) return;
     let from: number | null = null;
     anim(start, dur, (k, t) => {
       from ??= door.openAmount;
@@ -209,116 +245,116 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   };
 
   const T0 = 0.6; // kamera odaklandıktan sonra
-  // Kilit motoru kapının üst kasasında; motor sonuçları duman/kıvılcımı orada gösterir.
-  const motorPos = new THREE.Vector3(0.6, 4.2, layout.doorZ + 0.3);
-  const PROGRESS_COLOR = '#ffd040';
+  const get = (id: string) => {
+    const t = terminals.get(id);
+    if (!t) throw new Error(`Bilinmeyen terminal: ${id}`);
+    return t;
+  };
 
-  const play = (o: Outcome, final: boolean, progressText: string): number => {
+  const play = (t: Terminal, door: Door | undefined, o: Outcome, final: boolean, progressText: string): number => {
+    // Motor kapının üst kasasında; kapı yoksa (ör. fan) terminalin yanında
+    const motorPos = door ? door.position.clone().add(new THREE.Vector3(0.6, 2.2, 0.3)) : t.ledPosition.clone();
     switch (o.kind) {
       case 'success':
-        if (!final) {
-          at(T0, () => {
-            door.setLed(0x30ff70, 1);
-            door.setScreen(progressText, PROGRESS_COLOR);
-          });
-          return T0 + 1.6;
-        }
         at(T0, () => {
-          door.setLed(0x30ff70, 1);
-          door.setScreen('KİLİT AÇIK', '#40ff80');
+          t.setLed(0x30ff70, 1, true);
+          t.setScreen(final ? 'ONARILDI' : progressText, final ? '#40ff80' : PROGRESS_COLOR);
         });
-        moveDoor(T0 + 0.4, 1.6, 1);
-        at(T0 + 0.4, () => sounds.play('door_open'));
-        solved = true;
-        return T0 + 2.2;
+        return T0 + 1.6;
       case 'dim':
         at(T0, () => {
-          ledFlicker = { color: 0xffa040, lo: 0.08, hi: 0.3 };
-          door.setScreen('SİNYAL ZAYIF', '#ffb030', true);
+          ledFlicker = { t, color: 0xffa040, lo: 0.08, hi: 0.3 };
+          t.setScreen('SİNYAL ZAYIF', '#ffb030', true);
         });
-        moveDoor(T0 + 0.3, 1.2, 0.12, 0.015);
+        moveDoor(door, T0 + 0.3, 1.2, 0.12, 0.015);
         at(T0 + 0.3, () => sounds.play('jam', { volume: 0.8 }));
         return T0 + 2.2;
       case 'no_light':
-        at(T0, () => door.setScreen('SİNYAL YOK', '#ffb030', true));
-        moveDoor(T0 + 0.2, 0.3, 0.03, 0.01);
+        at(T0, () => t.setScreen('SİNYAL YOK', '#ffb030', true));
+        moveDoor(door, T0 + 0.2, 0.3, 0.03, 0.01);
         at(T0 + 0.2, () => sounds.play('jam', { volume: 0.4 }));
-        moveDoor(T0 + 0.6, 0.3, 0);
+        moveDoor(door, T0 + 0.6, 0.3, 0);
         return T0 + 1.8;
       case 'led_stressed':
-        anim(T0, 0.8, (k) => door.setLed(0xfff0d0, 1 + 2.5 * k));
-        at(T0 + 0.8, () => (ledFlicker = { color: 0xfff0d0, lo: 0.2, hi: 3.5 }));
+        anim(T0, 0.8, (k) => t.setLed(0xfff0d0, 1 + 2.5 * k, true));
+        at(T0 + 0.8, () => (ledFlicker = { t, color: 0xfff0d0, lo: 0.2, hi: 3.5 }));
         at(T0 + 1.4, () => {
           ledFlicker = null;
-          door.setLed(0, 0);
+          t.setLed(0, 0, true);
           sounds.sparks(0.3);
-          door.setScreen('AŞIRI AKIM\nHAT KESİLDİ', '#ff5040', true);
+          t.setScreen('AŞIRI AKIM\nHAT KESİLDİ', '#ff5040', true);
         });
-        moveDoor(T0 + 0.2, 0.6, 0.08);
-        moveDoor(T0 + 1.4, 0.4, 0);
+        moveDoor(door, T0 + 0.2, 0.6, 0.08);
+        moveDoor(door, T0 + 1.4, 0.4, 0);
         return T0 + 2.4;
       case 'led_burnt':
-        at(T0, () => door.setLed(0xffffff, 4));
+        at(T0, () => t.setLed(0xffffff, 4, true));
         at(T0 + 0.15, () => {
-          effects.sparkBurst(door.ledPosition);
+          effects.sparkBurst(t.ledPosition);
           sounds.play('led_pop');
           sounds.sparks(0.6);
-          door.burnLed();
-          door.showScorch();
-          door.setScreen('LED ARIZASI', '#ff5040', true);
+          t.burnLed();
+          t.showScorch();
+          t.setScreen('LED ARIZASI', '#ff5040', true);
         });
         return T0 + 2.2;
       case 'fuse_blown':
         at(T0, () => {
-          effects.sparkBurst(door.ledPosition, 90);
+          effects.sparkBurst(t.ledPosition, 90);
           sounds.sparks(0.5);
         });
         at(T0 + 0.1, () => {
           sounds.play('fuse');
-          corridor.setPower(0);
-          door.setScreen('', '#000');
+          building.setPower(0);
+          t.setScreen('', '#000');
         });
         return T0 + 2.6;
       case 'motor_stall':
         at(T0, () => {
           sounds.play('jam', { volume: 0.5 });
-          door.setScreen('MOTOR\nDÖNMÜYOR', '#ffb030', true);
+          t.setScreen('MOTOR\nDÖNMÜYOR', '#ffb030', true);
         });
-        moveDoor(T0, 0.25, 0.015, 0.006);
-        moveDoor(T0 + 0.4, 0.25, 0);
+        moveDoor(door, T0, 0.25, 0.015, 0.006);
+        moveDoor(door, T0 + 0.4, 0.25, 0);
         return T0 + 1.8;
       case 'motor_slow':
-        at(T0, () => door.setScreen('MOTOR ZAYIF', '#ffb030', true));
-        moveDoor(T0 + 0.2, 2.2, 0.22, 0.01);
+        at(T0, () => t.setScreen('MOTOR ZAYIF', '#ffb030', true));
+        moveDoor(door, T0 + 0.2, 2.2, 0.22, 0.01);
         at(T0 + 2.2, () => sounds.play('jam', { volume: 0.8 }));
         return T0 + 2.8;
       case 'motor_overheat':
-        moveDoor(T0 + 0.1, 0.9, 0.35);
+        moveDoor(door, T0 + 0.1, 0.9, 0.35);
         at(T0 + 1.0, () => {
           sounds.play('jam', { volume: 0.6 });
           effects.smokePuff(motorPos, 2);
-          door.setScreen('TERMİK\nKORUMA', '#ff5040', true);
+          t.setScreen('TERMİK\nKORUMA', '#ff5040', true);
         });
         return T0 + 2.6;
       case 'motor_burnt':
-        moveDoor(T0 + 0.1, 0.5, 0.15, 0.01);
+        moveDoor(door, T0 + 0.1, 0.5, 0.15, 0.01);
         at(T0 + 0.5, () => {
           effects.sparkBurst(motorPos, 70);
           sounds.sparks(0.7);
           sounds.play('fuse', { volume: 0.6 });
           effects.smokePuff(motorPos, 3.5);
-          door.setScreen('MOTOR YANDI', '#ff5040', true);
+          t.setScreen('MOTOR YANDI', '#ff5040', true);
         });
         return T0 + 2.8;
       case 'resistor_burnt':
         at(T0, () => {
-          effects.smokePuff(door.ledPosition, 3);
+          effects.smokePuff(t.ledPosition, 3);
           sounds.sparks(0.3);
-          door.showScorch();
-          door.setScreen('DİRENÇ ARIZASI', '#ff5040', true);
+          t.showScorch();
+          t.setScreen('DİRENÇ ARIZASI', '#ff5040', true);
         });
         return T0 + 2.4;
     }
+  };
+
+  const yawOf = () => new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
+  const teleport = (x: number, z: number, yaw: number) => {
+    camera.position.set(x, camera.position.y, z);
+    camera.rotation.set(0, yaw, 0, 'YXZ');
   };
 
   return {
@@ -333,10 +369,13 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       player.enabled = true;
       refreshGate();
     },
-    applyOutcome(o, opts = {}) {
+    applyOutcome(id, o, oo = {}) {
+      const t = get(id);
+      const door = oo.doorId ? doors.get(oo.doorId) : undefined;
       tweens.clear();
-      focusCamera(T0);
-      const duration = play(o, opts.final ?? true, opts.progressText ?? '');
+      focusCamera(t.focusPoint, T0);
+      effects.moveAlarm(new THREE.Vector3(t.panelPosition.x, CEILING - 0.3, t.panelPosition.z));
+      const duration = play(t, door, o, oo.final ?? true, oo.progressText ?? '');
       if (o.kind !== 'success') {
         // Her yanlış cevapta: siren en fazla ALARM_SECONDS; kırmızı ışık onarıma kadar sürer.
         at(T0 + 0.2, () => {
@@ -346,65 +385,76 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       }
       if (o.resistorOverheat && o.kind !== 'resistor_burnt') {
         at(T0 + 0.2, () => {
-          effects.smokePuff(door.ledPosition, 2.5);
-          door.showScorch();
+          effects.smokePuff(t.ledPosition, 2.5);
+          t.showScorch();
         });
       }
       return new Promise((done) => at(duration, done));
     },
-    repairForRetry() {
-      ledFlicker = null;
-      corridor.setPower(1);
-      effects.setAlarm(false);
-      door.replaceLed();
-      door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
-      if (door.openAmount > 0.01) sounds.play('door_close', { volume: 0.7 });
-      moveDoor(0, 0.5, 0);
+    setScreen(id, text, color, blink = false) {
+      get(id).setScreen(text, color, blink);
     },
-    showProgress(text) {
-      if (solved) return;
-      if (text) {
-        door.setLed(0x30ff70, 1);
-        door.setScreen(text, PROGRESS_COLOR);
-      } else {
-        door.replaceLed();
-        door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
+    showProgress(id, text) {
+      const t = get(id);
+      t.setLed(0x30ff70, 1);
+      t.setScreen(text, PROGRESS_COLOR);
+    },
+    showSolved(id, text) {
+      const t = get(id);
+      t.setLed(0x30ff70, 1);
+      t.setScreen(text, '#40ff80');
+    },
+    repairForRetry(id, doorId) {
+      ledFlicker = null;
+      building.setPower(1);
+      effects.setAlarm(false);
+      get(id).replaceLed();
+      const door = doorId ? doors.get(doorId) : undefined;
+      if (door && door.openAmount > 0.01) {
+        sounds.play('door_close', { volume: 0.7 });
+        moveDoor(door, 0, 0.5, 0);
       }
     },
+    setDoorOpen(id, open, animate = false) {
+      const door = doors.get(id);
+      if (!door) return;
+      const target = open ? 1 : 0;
+      if (!animate) {
+        door.openAmount = target;
+        return;
+      }
+      if (Math.abs(door.openAmount - target) < 0.01) return;
+      sounds.play(open ? 'door_open' : 'door_close');
+      moveDoor(door, 0, 1.6, target);
+    },
+    resetTerminals(ids) {
+      tweens.clear();
+      ledFlicker = null;
+      building.setPower(1);
+      effects.setAlarm(false);
+      for (const id of ids) get(id).replaceLed();
+    },
+    teleport,
     setWarningLight(on) {
       effects.setAlarm(on);
     },
     isRoaming: () => active && locked && document.visibilityState === 'visible',
-    resetEpisode() {
-      tweens.clear();
-      ledFlicker = null;
-      solved = false;
-      corridor.setPower(1);
-      effects.setAlarm(false);
-      door.replaceLed();
-      door.setScreen(FAULT_SCREEN[0], FAULT_SCREEN[1], true);
-      if (door.openAmount > 0.01) sounds.play('door_close', { volume: 0.7 });
-      moveDoor(0, 0.8, 0);
+    restoreScars(ids) {
+      for (const id of ids) terminals.get(id)?.showScorch();
     },
-    restoreSolved() {
-      solved = true;
-      door.openAmount = 1;
-      door.setLed(0x30ff70, 1);
-      door.setScreen('KİLİT AÇIK', '#40ff80');
-    },
-    restoreScars(sc) {
-      if (sc.panelScorch) door.showScorch();
-    },
-    hasScorch: () => door.hasScorch(),
+    hasScorch: (id) => get(id).hasScorch(),
+    pose: () => ({ x: camera.position.x, z: camera.position.z, yaw: yawOf() }),
+    terminalPosition: (id) => ({ x: get(id).panelPosition.x, z: get(id).panelPosition.z }),
     noiseLevel: () => noiseLevel(player.mode),
     debug: {
       setYaw: (rad) => camera.rotation.set(0, rad, 0, 'YXZ'),
       forceShadowPass: (k) => exterior.forcePass(k),
+      teleport: (x, z, yaw) => teleport(x, z, yaw ?? yawOf()),
     },
     stats() {
       const { calls, triangles } = renderer.info.render;
       const { geometries, textures } = renderer.info.memory;
-      return { calls, triangles, geometries, textures, x: camera.position.x, z: camera.position.z, y: camera.position.y, mode: player.mode, exterior: exterior.visible };
+      return { calls, triangles, geometries, textures, x: camera.position.x, z: camera.position.z, y: camera.position.y, mode: player.mode, exterior: exterior.visible, room };
     },
   };
 }

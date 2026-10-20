@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "start": {
+    "room": "corridor-b2"
+  },
+  "initialStates": [],
+  "rooms": [
+    {
+      "id": "corridor-b2",
+      "name": "B-2 koridoru",
+      "type": "corridor",
+      "origin": [
+        -2,
+        2
+      ],
+      "size": [
+        1,
+        7
+      ],
+      "walls": {
+        "west": {
+          "windows": [
+            1,
+            5
+          ],
+          "broken": [
+            3
+          ],
+          "hangingCables": [
+            4
+          ]
+        },
+        "east": {},
+        "north": {},
+        "south": {}
+      },
+      "entrance": {
+        "x": 0,
+        "z": -0.7,
+        "yaw": 0
+      },
+      "props": [
+        {
+          "model": "Prop_Crate",
+          "u": 1.23,
+          "v": 1.5,
+          "rotY": 0
+        },
+        {
+          "model": "Prop_Locker",
+          "u": 3.28,
+          "v": 7,
+          "rotY": -1.5708
+        },
+        {
+          "model": "Prop_Vent_Wide",
+          "u": 2,
+          "v": 6,
+          "rotY": 0
+        },
+        {
+          "model": "Prop_Cable_1",
+          "u": 1.2,
+          "v": 13.2,
+          "rotY": 0.4
+        }
+      ],
+      "difficulty": {
+        "binSize": 6,
+        "tolerance": 0.04
+      }
+    },
+    {
+      "id": "lab-c1",
+      "name": "Kontrol odası C-1",
+      "type": "room",
+      "origin": [
+        -6,
+        -26
+      ],
+      "size": [
+        3,
+        3
+      ],
+      "walls": {
+        "west": {
+          "windows": [
+            0,
+            1,
+            2
+          ]
+        },
+        "east": {},
+        "north": {},
+        "south": {}
+      },
+      "entrance": {
+        "x": 0,
+        "z": -27.6,
+        "yaw": 0
+      },
+      "props": [
+        {
+          "model": "Prop_Crate_Large",
+          "u": 10.8,
+          "v": 6.5,
+          "rotY": 1.5708
+        },
+        {
+          "model": "Prop_Crate",
+          "u": 1.55,
+          "v": 10.6,
+          "rotY": 0.3
+        },
+        {
+          "model": "Prop_Locker",
+          "u": 11.28,
+          "v": 1.6,
+          "rotY": -1.5708
+        }
+      ],
+      "difficulty": {
+        "binSize": 8,
+        "tolerance": 0.025,
+        "ledWindow_mA": [
+          12,
+          16
+        ]
+      }
+    }
+  ],
+  "doors": [
+    {
+      "id": "b2-c1",
+      "rooms": [
+        "corridor-b2",
+        "lab-c1"
+      ],
+      "at": {
+        "room": "corridor-b2",
+        "wall": "south",
+        "index": 0
+      },
+      "opensWhen": [
+        "door.b2c1.unlocked"
+      ]
+    }
+  ],
+  "faults": [
+    {
+      "id": "backup-power",
+      "card": "backup-power-01",
+      "room": "corridor-b2",
+      "model": "Prop_AccessPoint",
+      "anchor": {
+        "wall": "east",
+        "index": 2,
+        "along": 0.5
+      },
+      "requires": [],
+      "provides": [
+        "power.backup"
+      ],
+      "screen": {
+        "fault": "YEDEK HAT\nARIZALI",
+        "solved": "YEDEK GÜÇ\nAÇIK"
+      }
+    },
+    {
+      "id": "door-lock",
+      "card": "door-power-01",
+      "room": "corridor-b2",
+      "model": "Prop_AccessPoint",
+      "anchor": {
+        "wall": "west",
+        "index": 6,
+        "along": 0.45
+      },
+      "requires": [],
+      "provides": [
+        "door.b2c1.unlocked"
+      ],
+      "allowTopicTemplates": true,
+      "screen": {
+        "fault": "KİLİT ARIZASI\nPANELİ ONAR",
+        "solved": "KİLİT AÇIK"
+      }
+    },
+    {
+      "id": "core-terminal",
+      "card": "computer-core-01",
+      "room": "lab-c1",
+      "model": "Prop_Computer",
+      "anchor": {
+        "wall": "south",
+        "index": 1,
+        "along": 0.5
+      },
+      "requires": [
+        "power.backup"
+      ],
+      "provides": [
+        "core.online"
+      ],
+      "screen": {
+        "fault": "ÇEKİRDEK\nÇEVRİMDIŞI",
+        "blocked": "GÜÇ YOK",
+        "solved": "ÇEKİRDEK\nÇEVRİMİÇİ"
+      },
+      "blockedHint": "E: Güç yok — haritaya bak"
+    }
+  ]
+}

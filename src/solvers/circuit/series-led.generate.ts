@@ -94,8 +94,8 @@ function buildCandidate(config: SeriesLedConfig, rng: Rng, seed: number): Series
   const correctId = choices.find((c) => c.r === correctR)!.id;
 
   const prompt =
-    `Kilit sürücüsü, durum LED'inden ${formatAmp(spec.targetMin)} – ${formatAmp(spec.targetMax)} arası akım ` +
-    `görmeden kapıyı açmıyor. Kaynak: ${formatVolt(vs)}. LED: ${led.color}, Vf ≈ ${formatVolt(led.vf)}, ` +
+    `Sürücü, durum LED'inden ${formatAmp(spec.targetMin)} – ${formatAmp(spec.targetMax)} arası akım ` +
+    `görmeden devreyi onaylamıyor. Kaynak: ${formatVolt(vs)}. LED: ${led.color}, Vf ≈ ${formatVolt(led.vf)}, ` +
     `mutlak en yüksek akım ${formatAmp(spec.absMax)}. Hat sigortası ${formatAmp(spec.fuse)}. ` +
     `Kutudaki dirençler ${formatWatt(spec.resistorRating)} anma gücünde. Seri hatta hangi direnci takarsın?`;
 

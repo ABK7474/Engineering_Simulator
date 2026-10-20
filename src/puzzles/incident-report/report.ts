@@ -41,7 +41,7 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
       <footer>
         ${!r.success && opts.onRetry ? '<button class="primary" data-act="retry">Yedek parçayla tekrar dene</button>' : ''}
         ${r.success && opts.onNext ? '<button class="primary" data-act="next">Sonraki aşama →</button>' : ''}
-        <button class="${r.success && !opts.onNext ? 'primary' : 'ghost'}" data-act="close">Koridora dön</button>
+        <button class="${r.success && !opts.onNext ? 'primary' : 'ghost'}" data-act="close">İstasyona dön</button>
       </footer>
     </div>`;
   root.appendChild(el);

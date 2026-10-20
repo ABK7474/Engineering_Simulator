@@ -1,10 +1,10 @@
-// Birinci şahıs hareket: PointerLock + WASD, Shift ile koşma, C ile eğilme (aç/kapa).
+// Birinci şahıs hareket: PointerLock + WASD, W'ye çift dokunuşla koşma, C ile eğilme (aç/kapa).
 // XZ düzleminde daire-kutu çarpışması; kutunun yüksekliği gövdeden yüksekse altından geçilir.
 // Ctrl kullanılmaz (Ctrl+W sekmeyi kapatır).
 
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { BODY, blocksBody, canStand, EYE, moveMode, speedFor, type MoveMode } from './movement';
+import { BODY, blocksBody, canStand, createSprint, EYE, moveMode, speedFor, type MoveMode } from './movement';
 
 const RADIUS = 0.3;
 /** Göz yüksekliğinin hedefe yaklaşma hızı (1/s). */
@@ -32,16 +32,27 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
   let mode: MoveMode = 'idle';
   let lastColliders: readonly THREE.Box3[] = [];
 
+  const sprint = createSprint();
+  const isForward = (code: string) => code === 'KeyW' || code === 'ArrowUp';
   window.addEventListener('keydown', (e) => {
     keys.add(e.code);
+    if (isForward(e.code) && player.enabled && controls.isLocked) sprint.forwardDown(e.timeStamp, e.repeat);
     if (e.code === 'KeyC' && !e.repeat && player.enabled && controls.isLocked) {
       // Aç/kapa. Başın üstünde engel varsa (ör. terminalin altı) ayağa kalkılmaz.
-      if (!crouched) crouched = true;
-      else if (canStand(camera.position.x, camera.position.z, RADIUS, lastColliders)) crouched = false;
+      if (!crouched) {
+        crouched = true;
+        sprint.cancel();
+      } else if (canStand(camera.position.x, camera.position.z, RADIUS, lastColliders)) crouched = false;
     }
   });
-  window.addEventListener('keyup', (e) => keys.delete(e.code));
-  window.addEventListener('blur', () => keys.clear());
+  window.addEventListener('keyup', (e) => {
+    keys.delete(e.code);
+    if (isForward(e.code) && !keys.has('KeyW') && !keys.has('ArrowUp')) sprint.forwardUp();
+  });
+  window.addEventListener('blur', () => {
+    keys.clear();
+    sprint.cancel();
+  });
 
   const forward = new THREE.Vector3();
   const right = new THREE.Vector3();
@@ -64,12 +75,13 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
       camera.position.y += (eye - camera.position.y) * Math.min(1, EYE_RATE * dt);
 
       if (!player.enabled || !controls.isLocked) {
+        sprint.cancel(); // panel açılınca ya da imleç bırakılınca koşu biter
         mode = 'idle';
         return { distance: 0, mode };
       }
       const f = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
       const s = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
-      mode = moveMode({ moving: f !== 0 || s !== 0, run: keys.has('ShiftLeft') || keys.has('ShiftRight'), crouched });
+      mode = moveMode({ moving: f !== 0 || s !== 0, run: sprint.sprinting && f > 0, crouched });
       if (mode === 'idle') return { distance: 0, mode };
 
       camera.getWorldDirection(forward);

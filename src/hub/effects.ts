@@ -147,6 +147,12 @@ export class Effects {
     tick();
   }
 
+  /** Alarm ışığını (ve tavandaki lambasını) arızanın bulunduğu yere taşır. */
+  moveAlarm(pos: THREE.Vector3): void {
+    this.alarmLight.position.copy(pos);
+    this.alarmLamp.position.copy(pos).setY(pos.y + 0.15);
+  }
+
   setAlarm(on: boolean): void {
     this.alarmOn = on;
     if (!on) {

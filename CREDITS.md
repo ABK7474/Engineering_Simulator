@@ -51,7 +51,7 @@ Tümü Quaternius (https://quaternius.com), **CC0**. Lisans metinleri:
   `WallAstra_Straight_Broken`, `TopCables_Straight`, `TopCables_Straight_Hanging`,
   `BottomMetal_Straight`, `Platform_DarkPlates`, `Platform_CenterPlate`, `Door_Frame_Square`,
   `Door_Metal`, `Prop_AccessPoint`, `Prop_Light_Wide`, `Prop_Light_Small`, `Prop_Vent_Wide`,
-  `Prop_Cable_1`, `Column_Simple`
+  `Prop_Cable_1`, `Column_Simple`, `Prop_Computer` (kontrol odası konsolu)
 - **Sci-Fi Essentials Kit (Standard):** `Prop_Crate`, `Prop_Crate_Large`, `Prop_Locker`
 
 Değişiklikler:

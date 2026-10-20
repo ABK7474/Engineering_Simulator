@@ -1,0 +1,35 @@
+{
+  "id": "backup-power-01",
+  "title": "Yedek güç panosu",
+  "briefing": "Yedek güç hattının gösterge sürücüsü bozuk. Pano, hat göstergesini doğru akımda görmeden yedek hattı açmaz.",
+  "stages": [
+    {
+      "id": "backup-indicator",
+      "type": "series-led",
+      "title": "Yedek hat göstergesi",
+      "briefing": "Seri devrede tek akım vardır; LED üzerindeki gerilim yaklaşık sabittir (Vf). Bu panoda kaynak gerilimi yüksek: direncin harcadığı gücü (P = I²R) de kontrol et.",
+      "config": {
+        "supplyVoltages": [
+          24,
+          36
+        ],
+        "leds": [
+          {
+            "color": "beyaz",
+            "vf": 3.1
+          },
+          {
+            "color": "mavi",
+            "vf": 3.2
+          }
+        ],
+        "targetMin_mA": 15,
+        "targetMax_mA": 25,
+        "absMax_mA": 40,
+        "visibleMin_mA": 1,
+        "fuse_mA": 300,
+        "resistorRating_W": 1
+      }
+    }
+  ]
+}

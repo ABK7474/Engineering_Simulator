@@ -26,8 +26,8 @@ function sample(): ProgressData {
   p.episode = 3;
   p.attemptsThisEpisode = 2;
   p.worstEvent = { label: 'LED yandı', total: 20 };
-  p.faults = { 'door-power-01': { stagesDone: 1 } };
-  p.scars.panelScorch = true;
+  p.faults = { 'door-lock': { stagesDone: 1 } };
+  p.world = { room: 'lab-c1', discovered: ['corridor-b2', 'lab-c1'], states: ['door.b2c1.unlocked'], seenLines: ['start'], scorched: ['door-lock'] };
   p.savedAt = '2026-10-20T12:00:00.000Z';
   return p;
 }
@@ -50,36 +50,59 @@ describe('validateProgress', () => {
     ['NaN değer', { ...sample(), resources: { ...sample().resources, values: { oxygen: Number.NaN, power: 50 } } }],
     ['bilinmeyen kaynakta tüketim', { ...sample(), resources: { ...sample().resources, damages: [{ faultId: 'x', source: 'dim', label: 'x', drainPerMinute: { water: 1 } }] } }],
     ['bölüm 0', { ...sample(), episode: 0 }],
-    ['bozuk iz', { ...sample(), scars: {} }],
+    ['bozuk dünya alanı', { ...sample(), world: { room: 'x', discovered: 'hepsi' } }],
   ])('bozuk veriyi reddeder: %s', (_n, raw) => {
     expect(validateProgress(raw, B)).toBeNull();
   });
 });
 
-describe('v1 → v2 göçü', () => {
-  const v1 = () => {
-    const p = JSON.parse(JSON.stringify(sample()));
-    p.version = 1;
-    p.faults = { 'door-power-01': { repaired: true }, 'baska': { repaired: false } };
-    p.resources.damages = p.resources.damages.map((d: { faultId: string }) => ({ ...d, faultId: 'door-power-01' }));
-    return p;
-  };
+// Eski sürümlerin göçü: v1 (tek aşamalı kapı) → v2 (aşamalı) → v3 (dünya)
+const CTX = {
+  startRoom: 'corridor-b2',
+  faults: [
+    { id: 'door-lock', card: 'door-power-01', provides: ['door.b2c1.unlocked'], stageCount: 2 },
+    { id: 'backup-power', card: 'backup-power-01', provides: ['power.backup'], stageCount: 1 },
+  ],
+};
+const legacy = (version: 1 | 2, faults: Record<string, unknown>, scorch = false) => {
+  const p = JSON.parse(JSON.stringify(sample()));
+  delete p.world;
+  p.version = version;
+  p.faults = faults;
+  p.scars = { panelScorch: scorch };
+  p.resources.damages = p.resources.damages.map((d: { faultId: string }) => ({ ...d, faultId: version === 1 ? 'door-power-01' : 'door-power-01#1' }));
+  return p;
+};
 
-  it('onarılmış arıza yalnız 1. aşaması bitmiş sayılır (v1\'de tek aşama vardı); onarılmamış 0', () => {
-    // Hata: önce "tüm aşamalar bitti" sayılıyordu; eski kaydı olan oyuncuda kapı aşama 2 oynanmadan açık başlıyordu.
-    const m = validateProgress(v1(), B)!;
-    expect(m.version).toBe(2);
-    expect(m.faults).toEqual({ 'door-power-01': { stagesDone: 1 }, baska: { stagesDone: 0 } });
+describe('v2 → v3 göçü (tek koridordan dünyaya)', () => {
+  it('kart kimliği dünya arıza kimliğine çevrilir; bitmiş arızanın durumu eklenir', () => {
+    const m = validateProgress(legacy(2, { 'door-power-01': { stagesDone: 2 } }, true), B, CTX)!;
+    expect(m.version).toBe(3);
+    expect(m.faults).toEqual({ 'door-lock': { stagesDone: 2 } });
+    expect(m.world).toEqual({ room: 'corridor-b2', discovered: ['corridor-b2'], states: ['door.b2c1.unlocked'], seenLines: [], scorched: ['door-lock'] });
+    expect(m.resources.damages.every((d) => d.faultId === 'door-lock#1')).toBe(true);
   });
 
-  it('kalıcı hasar anahtarı arıza#0 olur (v1\'de tek aşama vardı)', () => {
-    const m = validateProgress(v1(), B)!;
-    expect(m.resources.damages.every((d) => d.faultId === stageKey('door-power-01', 0))).toBe(true);
-    expect(m.resources.values).toEqual(sample().resources.values);
+  it('yarım kalmış arıza durum sağlamaz', () => {
+    const m = validateProgress(legacy(2, { 'door-power-01': { stagesDone: 1 } }), B, CTX)!;
+    expect(m.world.states).toEqual([]);
+    expect(m.world.scorched).toEqual([]);
   });
 
-  it('bozuk v1 kaydı reddedilir', () => {
-    expect(validateProgress({ ...v1(), faults: { 'door-power-01': { repaired: 'evet' } } }, B)).toBeNull();
+  it('v1 → v2 → v3 zinciri: v1\'de onarılmış = yalnız 1. aşama tamam (kapı açık sayılmaz)', () => {
+    const m = validateProgress(legacy(1, { 'door-power-01': { repaired: true } }), B, CTX)!;
+    expect(m.faults).toEqual({ 'door-lock': { stagesDone: 1 } });
+    expect(m.world.states).toEqual([]);
+    expect(m.resources.damages.every((d) => d.faultId === stageKey('door-lock', 0))).toBe(true);
+  });
+
+  it('göç bilgisi olmadan eski kayıt reddedilir; bozuk v1 de', () => {
+    expect(validateProgress(legacy(2, { 'door-power-01': { stagesDone: 2 } }), B)).toBeNull();
+    expect(validateProgress(legacy(1, { 'door-power-01': { repaired: 'evet' } }), B, CTX)).toBeNull();
+  });
+
+  it('varsayılan ilerleme başlangıç odasını keşfedilmiş sayar', () => {
+    expect(defaultProgress(B, 'corridor-b2').world).toEqual({ room: 'corridor-b2', discovered: ['corridor-b2'], states: [], seenLines: [], scorched: [] });
   });
 });
 

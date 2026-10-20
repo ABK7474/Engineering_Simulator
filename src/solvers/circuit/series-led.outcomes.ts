@@ -77,18 +77,18 @@ function describe(
   switch (kind) {
     case 'success':
       return {
-        headline: 'LED yandı, kilit açıldı',
-        explanation: `Akım ${i}; hedef aralık ${window} içinde. Sürücü LED'i gördü ve kapıyı açtı.`,
+        headline: 'LED yandı, devre onaylandı',
+        explanation: `Akım ${i}; hedef aralık ${window} içinde. Sürücü LED'i gördü ve devreyi onayladı.`,
       };
     case 'no_light':
       return {
         headline: 'LED hiç yanmadı',
-        explanation: `Akım yalnızca ${i}; gözle görülür ışık için en az ${formatAmp(spec.visibleMin)} gerekir. Kapı kıpırdamadı.`,
+        explanation: `Akım yalnızca ${i}; gözle görülür ışık için en az ${formatAmp(spec.visibleMin)} gerekir. Sürücü hiçbir şey görmedi.`,
       };
     case 'dim':
       return {
-        headline: 'LED sönük, kapı yarıda takıldı',
-        explanation: `Akım ${i}, hedefin altı (${window}). Sürücü sinyali kararsız gördü; motor zorlanıp durdu.`,
+        headline: 'LED sönük, sürücü kararsız',
+        explanation: `Akım ${i}, hedefin altı (${window}). Sürücü sinyali kararsız gördü; devre onaylanmadı.`,
       };
     case 'led_stressed':
       return {
