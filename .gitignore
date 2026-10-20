@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+
+# Ham ses formatları repoya girmez (oyun OGG kullanır; ham dosyalar ~/oyun-kaynak-assetler/ altında)
+*.wav
+*.flac

@@ -1,0 +1,26 @@
+{
+  "id": "door-power-01",
+  "title": "B-2 bölmesi kapı kilidi",
+  "briefing": "Kapı kilidinin sürücü devresi, durum LED'ini doğru akımda görmeden kilidi açmıyor. Seri devrede tek akım vardır; kaynak gerilimi direnç ve LED arasında paylaşılır (KVL). LED'in üzerindeki gerilim yaklaşık sabittir (Vf), akımı belirleyen dirençtir.",
+  "stages": [
+    {
+      "id": "led-driver",
+      "type": "series-led",
+      "config": {
+        "supplyVoltages": [5, 9, 12],
+        "leds": [
+          { "color": "kırmızı", "vf": 2.0 },
+          { "color": "sarı", "vf": 2.1 },
+          { "color": "yeşil", "vf": 2.2 },
+          { "color": "mavi", "vf": 3.0 }
+        ],
+        "targetMin_mA": 10,
+        "targetMax_mA": 20,
+        "absMax_mA": 30,
+        "visibleMin_mA": 1,
+        "fuse_mA": 200,
+        "resistorRating_W": 0.25
+      }
+    }
+  ]
+}
