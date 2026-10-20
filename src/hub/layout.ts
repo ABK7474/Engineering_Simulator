@@ -36,12 +36,15 @@ export interface Placement {
   flip?: boolean;
 }
 
-/** XZ düzleminde dikdörtgen. */
+/** XZ düzleminde dikdörtgen; isteğe bağlı yükseklik aralığı (yoksa yerden tavana). */
 export interface Rect {
   minX: number;
   maxX: number;
   minZ: number;
   maxZ: number;
+  /** Alt kenar (m). Gövdeden yüksekse altından geçilir (ör. duvar terminali). */
+  minY?: number;
+  maxY?: number;
 }
 
 export interface Point {
@@ -144,7 +147,8 @@ export function buildLayout(modules = 7): CorridorLayout {
   // Panel: sol duvarda, kapıdan 2,2 m önce. Terminal duvar boyunca uzanır, eğik ekranı
   // yaklaşan oyuncuya (+z) bakar; modelin arkası (−x) duvara yaslanır.
   const panel = { x: -(WALL_INNER - 0.22), z: doorZ + 2.2, rotY: ROT.left };
-  colliders.push(rect(panel.x, panel.z, 0.22, 0.66));
+  // Terminal yerden 1,1 m yukarıda başlar: ayaktaki oyuncuyu durdurur, eğilen altından geçer.
+  colliders.push({ ...rect(panel.x, panel.z, 0.22, 0.66), minY: 1.1, maxY: 1.6 });
 
   const lampLights = centers.filter((_, i) => i % 2 === 0 || i === modules).map((z) => ({ x: 0, y: CEILING - 0.6, z }));
 

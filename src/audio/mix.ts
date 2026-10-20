@@ -51,6 +51,10 @@ export class StrideCounter {
   reset(): void {
     this.acc = 0;
   }
+  /** Adım aralığını değiştirir (koşma/eğilme); birikmiş mesafe korunur. */
+  setStride(stride: number): void {
+    if (stride > 0) this.stride = stride;
+  }
 }
 
 /**

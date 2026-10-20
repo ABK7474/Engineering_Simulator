@@ -7,8 +7,10 @@ import { StrideCounter } from '../audio/mix';
 import { loadAssets } from './assets';
 import { buildCorridor } from './corridor';
 import { createDoorPanel } from './door-panel';
+import { buildExterior } from './exterior';
 import { Effects, Tweens } from './effects';
 import { buildLayout } from './layout';
+import { noiseLevel, stepProfile } from './movement';
 import { createPlayer } from './player';
 import { createSceneKit } from './scene';
 
@@ -58,8 +60,12 @@ export interface Hub {
   restoreScars: (s: { panelScorch: boolean }) => void;
   /** Panelde yanık izi oluştu mu (kalıcı iz olarak kaydedilmek için). */
   hasScorch: () => boolean;
+  /** Oyuncunun gürültü seviyesi: hareketsiz/eğilme 0, yürüme 1, koşma 2 (henüz kullanılmıyor). */
+  noiseLevel: () => 0 | 1 | 2;
+  /** Geliştirme/test kancaları (oyunda kullanılmaz). */
+  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void };
   /** Geliştirme/test için çizim istatistikleri. */
-  stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number };
+  stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean };
 }
 
 const INTERACT_RANGE = 1.8;
@@ -74,7 +80,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const gate = document.createElement('div');
   gate.className = 'gate';
   gate.innerHTML = `<div><h1>Derin Mühendis</h1><p class="gate-action">Yükleniyor…</p>
-    <p class="keys">WASD / oklar: yürü · Fare: bak · E: etkileşim · Esc: imleci bırak · M: sessiz</p></div>`;
+    <p class="keys">WASD / oklar: yürü · Shift: koş · C: eğil (aç/kapa) · Fare: bak · E: etkileşim · M: sessiz · Esc: imleci bırak</p></div>`;
   container.appendChild(gate);
   const gateAction = gate.querySelector<HTMLParagraphElement>('.gate-action')!;
 
@@ -90,6 +96,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const layout = buildLayout();
   const corridor = buildCorridor(scene, assets, layout);
   const door = createDoorPanel(scene, assets, layout);
+  const exterior = buildExterior(scene, layout);
   const effects = new Effects(scene, new THREE.Vector3(layout.alarm.x, layout.alarm.y, layout.alarm.z));
   const tweens = new Tweens();
   const player = createPlayer(camera, renderer.domElement, new THREE.Vector3(layout.spawn.x, 0, layout.spawn.z));
@@ -140,14 +147,18 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
 
   // --- Döngü ---
   const timer = new THREE.Timer();
+  let elapsed = 0;
   timer.connect(document);
   const tmp = new THREE.Vector2();
   renderer.setAnimationLoop((now) => {
     timer.update(now);
     const dt = Math.min(timer.getDelta(), 0.05);
+    elapsed += dt;
     const colliders = door.openAmount > 0.95 ? corridor.colliders : [...corridor.colliders, door.collider];
-    const walked = player.update(dt, colliders);
-    for (let k = strides.add(walked); k > 0; k--) sounds.play('step', { volume: 0.55, pitchJitter: 0.08 });
+    const { distance, mode } = player.update(dt, colliders);
+    const prof = stepProfile(mode);
+    strides.setStride(prof.stride);
+    for (let k = strides.add(distance); k > 0; k--) sounds.play('step', { volume: prof.volume, pitchJitter: 0.08 });
     const leakNear = Math.max(0, 1 - camera.position.distanceTo(leak) / 7);
     sounds.setLeakVolume(leakNear * leakNear);
 
@@ -160,6 +171,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     tweens.update(dt);
     effects.update(dt);
     door.update(dt);
+    exterior.update(dt, elapsed, camera);
     renderer.render(scene, camera);
   });
   refreshGate();
@@ -384,10 +396,15 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       if (sc.panelScorch) door.showScorch();
     },
     hasScorch: () => door.hasScorch(),
+    noiseLevel: () => noiseLevel(player.mode),
+    debug: {
+      setYaw: (rad) => camera.rotation.set(0, rad, 0, 'YXZ'),
+      forceShadowPass: (k) => exterior.forcePass(k),
+    },
     stats() {
       const { calls, triangles } = renderer.info.render;
       const { geometries, textures } = renderer.info.memory;
-      return { calls, triangles, geometries, textures, x: camera.position.x, z: camera.position.z };
+      return { calls, triangles, geometries, textures, x: camera.position.x, z: camera.position.z, y: camera.position.y, mode: player.mode, exterior: exterior.visible };
     },
   };
 }

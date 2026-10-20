@@ -17,8 +17,8 @@ export function buildCorridor(scene: THREE.Scene, assets: Assets, L: CorridorLay
 
   // Sabit modüller. Tavan gölge düşürmez: üstteki tek gölgeli ışığı kapatmasın.
   const statics = instanceAll(assets.models, L.placements);
-  // Lomboz camı: dışarıdaki okyanus görünsün (arka plan = su rengi).
-  const oceanGlass = new THREE.MeshBasicMaterial({ color: 0x0a5a6a, transparent: true, opacity: 0.45, depthWrite: false, fog: false });
+  // Lomboz camı şeffaf: dışarıdaki su altı sahnesi (hub/exterior.ts) görünür; çok hafif bir yansıma tonu.
+  const oceanGlass = new THREE.MeshBasicMaterial({ color: 0xc8f2ff, transparent: true, opacity: 0.06, depthWrite: false, fog: false });
   statics.traverse((o) => {
     if (!(o instanceof THREE.InstancedMesh)) return;
     if (o.name.startsWith('Platform_DarkPlates')) o.castShadow = false;
@@ -88,5 +88,5 @@ export function buildCorridor(scene: THREE.Scene, assets: Assets, L: CorridorLay
 }
 
 export function toBox(r: Rect): THREE.Box3 {
-  return new THREE.Box3(new THREE.Vector3(r.minX, -1, r.minZ), new THREE.Vector3(r.maxX, 6, r.maxZ));
+  return new THREE.Box3(new THREE.Vector3(r.minX, r.minY ?? -1, r.minZ), new THREE.Vector3(r.maxX, r.maxY ?? 6, r.maxZ));
 }

@@ -53,6 +53,16 @@ describe('StrideCounter', () => {
     expect(s.add(1.3)).toBe(3); // 1.8
   });
 
+  it('adım aralığı değişince birikmiş mesafe korunur', () => {
+    const s = new StrideCounter(0.65);
+    expect(s.add(0.5)).toBe(0);
+    s.setStride(0.85); // koşmaya geçti
+    expect(s.add(0.3)).toBe(0); // 0.8 < 0.85
+    expect(s.add(0.1)).toBe(1); // 0.9
+    s.setStride(-1); // geçersiz: yok sayılır
+    expect(s.add(0.85)).toBe(1);
+  });
+
   it('durunca/geri dönüşte sıfır ve negatif mesafe adım üretmez', () => {
     const s = new StrideCounter(0.6);
     expect(s.add(0)).toBe(0);
