@@ -1,6 +1,8 @@
 // Dünya içeriğinin tipleri ve yapısal ayrıştırması (content/world/*.json).
 // Anlamsal kurallar (komşuluk, erişilebilirlik, döngüler…) validate.ts'te.
 
+import { CORRUPTION_KINDS, type CorruptionKind, type Kind } from '../solvers/ds/ir';
+
 export type Side = 'north' | 'south' | 'east' | 'west';
 export const SIDES: readonly Side[] = ['north', 'south', 'east', 'west'];
 
@@ -17,6 +19,8 @@ export interface Difficulty {
   tolerance?: number;
   /** Seri LED aşamasında hedef akım aralığı [min, max] mA. */
   ledWindow_mA?: [number, number];
+  /** Trace (veri yapıları) aşaması: işlem sayısı, yapı türleri, hata türleri, sayaçları gizleme. */
+  trace?: { ops?: [number, number]; structures?: Kind[]; corruptions?: CorruptionKind[]; hideCounters?: boolean };
 }
 
 export interface PropDef {
@@ -137,6 +141,13 @@ export function parseWorld(raw: unknown): WorldDef {
     if (need(isObj(d), `oda '${id}': difficulty nesne olmalı`)) {
       need(d.binSize === undefined || (isInt(d.binSize) && (d.binSize as number) >= 4 && (d.binSize as number) <= 10), `oda '${id}': binSize 4–10 olmalı`);
       need(d.tolerance === undefined || (isNum(d.tolerance) && d.tolerance >= 0.015 && d.tolerance <= 0.1), `oda '${id}': tolerance 0,015–0,1 olmalı`);
+      const tr = d.trace as Record<string, unknown> | undefined;
+      if (tr !== undefined && need(isObj(tr), `oda '${id}': trace nesne olmalı`)) {
+        need(tr.ops === undefined || (pair(tr.ops) && isInt(tr.ops[0]) && isInt(tr.ops[1]) && tr.ops[0] >= 3 && tr.ops[0] <= tr.ops[1]), `oda '${id}': trace.ops [min, max] olmalı`);
+        need(tr.structures === undefined || (Array.isArray(tr.structures) && tr.structures.length > 0 && tr.structures.every((k) => ['stack', 'queue', 'list'].includes(k))), `oda '${id}': trace.structures stack/queue/list olmalı`);
+        need(tr.corruptions === undefined || (Array.isArray(tr.corruptions) && tr.corruptions.length > 0 && tr.corruptions.every((k) => (CORRUPTION_KINDS as readonly unknown[]).includes(k))), `oda '${id}': trace.corruptions ${CORRUPTION_KINDS.join('/')} olmalı`);
+        need(tr.hideCounters === undefined || typeof tr.hideCounters === 'boolean', `oda '${id}': trace.hideCounters true/false olmalı`);
+      }
       need(d.ledWindow_mA === undefined || (pair(d.ledWindow_mA) && d.ledWindow_mA[0] > 0 && d.ledWindow_mA[0] < d.ledWindow_mA[1]), `oda '${id}': ledWindow_mA [min, max] olmalı`);
     }
   });

@@ -481,6 +481,11 @@ if (import.meta.env.DEV) {
       stage: (fid: string) => ({ fid, index: stageIndex(fid), baseSeed, attempt, seed: stageSeed(fid), def: structuredClone(getRun(fid).def) }),
       library: () => structuredClone(library),
       map: () => buildMapView(),
+      /** Test kısayolu: durumları sağlanmış say (ör. yedek güç), terminalleri yenile. */
+      grant: (granted: string[]) => {
+        progress.world.states = [...new Set([...states(), ...granted])];
+        refreshAll();
+      },
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
         renderHud();

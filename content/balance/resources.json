@@ -23,7 +23,8 @@
       "led_stressed",
       "led_burnt",
       "motor_overheat",
-      "motor_burnt"
+      "motor_burnt",
+      "core_crash"
     ],
     "base": 0.75,
     "perSeverity": 0.25,
@@ -118,6 +119,37 @@
       },
       "drainPerMinute": {
         "oxygen": 0.7
+      }
+    },
+    "core_reboot": {
+      "label": "Çekirdek yeniden başladı",
+      "loss": {
+        "power": 4
+      }
+    },
+    "core_crash": {
+      "label": "AI çekirdeği çöktü, yaşam desteği korumasız",
+      "loss": {
+        "oxygen": 4,
+        "power": 10
+      },
+      "drainPerMinute": {
+        "power": 0.5
+      }
+    },
+    "sensor_misread": {
+      "label": "O₂ sensörü yanlış okuyor",
+      "loss": {
+        "oxygen": 3
+      },
+      "drainPerMinute": {
+        "oxygen": 0.3
+      }
+    },
+    "core_freeze": {
+      "label": "Zamanlayıcı dondu",
+      "loss": {
+        "power": 6
       }
     }
   },

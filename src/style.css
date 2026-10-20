@@ -260,3 +260,34 @@ button { font: inherit; cursor: pointer; }
 }
 .subtitle[hidden] { display: none; }
 .subtitle .speaker { color: var(--accent); font-family: monospace; font-weight: 700; margin-right: 10px; letter-spacing: 0.08em; }
+
+/* Trace paneli (veri yapıları) */
+.trace-panel { width: min(1180px, 100%); }
+.trace-body { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .trace-body { grid-template-columns: 1fr; } }
+.code {
+  margin: 0; padding: 8px 0; background: #061a1f; border: 1px solid var(--line); border-radius: 6px;
+  font: 12.5px/1.45 ui-monospace, 'Cascadia Code', monospace; overflow-x: auto; max-height: 60vh;
+}
+.code .ln { display: block; padding: 0 10px 0 0; white-space: pre; }
+.code .ln i { display: inline-block; width: 2.6em; padding-right: 0.8em; text-align: right; color: var(--muted); font-style: normal; opacity: 0.6; user-select: none; }
+.code .ln.hl { background: rgba(63, 214, 208, 0.16); }
+.trace-wrap { overflow: auto; max-height: 60vh; border: 1px solid var(--line); border-radius: 6px; }
+table.trace { border-collapse: collapse; width: 100%; font: 12.5px/1.4 ui-monospace, monospace; }
+table.trace th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 500; text-align: left; }
+table.trace th, table.trace td { padding: 4px 8px; border-bottom: 1px solid rgba(31, 85, 96, 0.6); white-space: nowrap; }
+table.trace code { font: inherit; color: var(--text); }
+table.trace tr[data-row] { cursor: pointer; }
+table.trace tr[data-row]:hover { background: rgba(63, 214, 208, 0.08); }
+table.trace tr.selected { background: rgba(63, 214, 208, 0.2); outline: 1px solid var(--accent); }
+table.trace tr.initial td { color: var(--muted); }
+table.trace tr.bad td { background: rgba(255, 96, 80, 0.18); }
+table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+.trace-edit { margin-top: 14px; padding: 12px 14px; background: var(--panel-2); border-radius: 6px; }
+.trace-edit h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 500; }
+.trace-edit .fields { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 10px; }
+.trace-edit label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.trace-edit input { font: 13px ui-monospace, monospace; padding: 6px 8px; background: #061a1f; color: var(--text); border: 1px solid var(--line); border-radius: 4px; min-width: 9em; }
+.trace-edit .err { color: var(--warn); font-size: 13px; margin: 0 0 8px; }
+.report .trace-wrap { margin-top: 14px; max-height: 40vh; }
+.report .trace-wrap h4 { margin: 8px 10px; }

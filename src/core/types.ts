@@ -11,7 +11,11 @@ export type OutcomeKind =
   | 'motor_stall' // motor akımı çok düşük: motor dönmez
   | 'motor_slow' // motor akımı düşük ya da besleme kararsız: kapı yavaş, takılır
   | 'motor_overheat' // aşırı akım, hafif: termik koruma motoru keser
-  | 'motor_burnt'; // aşırı akım, ağır: sargı yanar
+  | 'motor_burnt' // aşırı akım, ağır: sargı yanar
+  | 'core_reboot' // trace: komşu (yanlış) kayıt düzeltildi, çekirdek yeniden başladı
+  | 'core_crash' // trace: sağlam bellek kaydının üstüne yazıldı, AI çekirdeği çöktü
+  | 'sensor_misread' // trace: doğru kayıt, yanlış değer/eleman sayısı (sınır hatası): sensör yanlış okur
+  | 'core_freeze'; // trace: doğru kayıt, elemanlar doğru ama sıra ters: komutlar ters işlendi, panel donar
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -37,11 +41,13 @@ export interface StageResult {
   facts: ReportFact[];
   /** Adım adım çözüm, olay raporunda gösterilir. */
   steps: string[];
+  /** İsteğe bağlı tablo (ör. doğru trace); `bad` ve `chosen` satır dizinleri işaretlenir. */
+  table?: { caption: string; head: string[]; rows: string[][]; bad?: number; chosen?: number };
 }
 
 export interface StageDef {
   id: string;
-  type: 'series-led' | 'series-parallel';
+  type: 'series-led' | 'series-parallel' | 'ds-trace';
   title: string;
   /** Aşamanın konu özeti (brifing ekranı). */
   briefing: string;

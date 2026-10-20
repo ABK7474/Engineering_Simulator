@@ -38,6 +38,7 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
           <ol class="steps">${r.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
         </section>
       </div>
+      ${r.table ? tableHtml(r.table) : ''}
       <footer>
         ${!r.success && opts.onRetry ? '<button class="primary" data-act="retry">Yedek parçayla tekrar dene</button>' : ''}
         ${r.success && opts.onNext ? '<button class="primary" data-act="next">Sonraki aşama →</button>' : ''}
@@ -63,4 +64,12 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
     opts.onRetry?.();
   });
   return close;
+}
+
+function tableHtml(t: NonNullable<StageResult['table']>): string {
+  const cls = (k: number) => [k === t.bad ? 'bad' : '', k === t.chosen ? 'chosen' : ''].join(' ').trim();
+  return `<div class="trace-wrap"><h4>${esc(t.caption)}</h4><table class="trace">
+    <thead><tr>${t.head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${t.rows.map((r, k) => `<tr class="${cls(k)}">${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
 }

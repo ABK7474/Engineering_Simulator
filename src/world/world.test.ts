@@ -27,7 +27,8 @@ describe('içerik yüklenir ve doğrulanır', () => {
     const c = loadWorld();
     expect(c.world.rooms.map((r) => r.id)).toEqual(['corridor-b2', 'lab-c1']);
     expect(c.stages['core-terminal'][0].config).toMatchObject({ binSize: 8 });
-    expect((c.stages['core-terminal'][1].config as { targetMin_mA: number }).targetMin_mA).toBe(12);
+    expect(c.stages['core-terminal'][1].type).toBe('ds-trace');
+    expect(c.stages['core-terminal'][1].config).toMatchObject({ ops: [10, 16], hideCounters: false });
   });
 });
 
@@ -86,7 +87,7 @@ describe('anlamsal hatalar açıklamalı', () => {
 
   it('zorluk ayarı çözülemezse yükleme açıklamalı hata verir', () => {
     const raw = structuredClone(worldJson);
-    raw.rooms[1].difficulty = { binSize: 8, tolerance: 0.025, ledWindow_mA: [12, 12.2] };
+    (raw.rooms[1].difficulty as { trace?: { ops: number[] } }).trace = { ops: [3, 4] }; // hiçbir şablon bu kadar kısa değil
     expect(() => loadWorld(raw, storyJson as Story, CARDS, { verifySeeds: 3 })).toThrow(/zorluk ayarıyla doğrulanabilir problem üretilemiyor/);
   });
 });

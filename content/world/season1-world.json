@@ -122,10 +122,24 @@
       "difficulty": {
         "binSize": 8,
         "tolerance": 0.025,
-        "ledWindow_mA": [
-          12,
-          16
-        ]
+        "trace": {
+          "ops": [
+            10,
+            16
+          ],
+          "structures": [
+            "stack",
+            "queue",
+            "list"
+          ],
+          "corruptions": [
+            "order_confusion",
+            "skip_effect",
+            "off_by_one",
+            "wrong_end"
+          ],
+          "hideCounters": false
+        }
       }
     }
   ],

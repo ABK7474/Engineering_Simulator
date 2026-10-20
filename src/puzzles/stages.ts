@@ -11,8 +11,13 @@ import { parseSeriesParallelConfig } from '../solvers/circuit/series-parallel';
 import { generateSeriesParallel } from '../solvers/circuit/series-parallel.generate';
 import { evaluatePlacement } from '../solvers/circuit/series-parallel.outcomes';
 import { buildSeriesParallelReport } from '../solvers/circuit/series-parallel.report';
+import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
+import { resolveTraceOutcome, type TraceAnswer } from '../solvers/ds/ds-trace.outcomes';
+import { buildDsTraceReport } from '../solvers/ds/ds-trace.report';
+import { parseDsTraceConfig } from '../solvers/ds/ir';
 import { openCircuitBoardPanel } from './circuit-board/panel';
 import { openSeriesCircuitPanel } from './series-circuit/panel';
+import { openTracePanel } from './trace-table/panel';
 
 export interface StagePanelContext {
   root: HTMLElement;
@@ -84,6 +89,29 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
           const placement = answer as Record<string, string>;
           const ev = evaluatePlacement(config, problem, placement, rng);
           return { outcome: ev.outcome, result: buildSeriesParallelReport(def.id, config, problem, placement, ev, ev.outcome) };
+        },
+      };
+    },
+  },
+  'ds-trace': {
+    validate: (def) => void parseDsTraceConfig(structuredClone(def.config)),
+    prepare(def, seed) {
+      const problem = generateDsTrace(parseDsTraceConfig(structuredClone(def.config)), seed);
+      return {
+        open: (ctx) =>
+          openTracePanel(ctx.root, {
+            title: ctx.title,
+            briefing: ctx.briefing,
+            problem,
+            onSound: ctx.onSound,
+            onCancel: ctx.onCancel,
+            source: ctx.source,
+            onSubmit: (a) => ctx.onSubmit(a),
+          }),
+        evaluate(answer, rng) {
+          const a = answer as TraceAnswer;
+          const outcome = resolveTraceOutcome(problem, a, rng);
+          return { outcome, result: buildDsTraceReport(def.id, problem, a, outcome) };
         },
       };
     },

@@ -10,7 +10,8 @@ import { generateSeriesLed } from './circuit/series-led.generate';
 import { parseSeriesParallelConfig } from './circuit/series-parallel';
 import { generateSeriesParallel } from './circuit/series-parallel.generate';
 
-export type TemplateType = StageDef['type'];
+/** LLM'in aday önerebildiği türler. Trace (ds-trace) bu adımda yalnız elle yazılmış şablonlarla gelir. */
+export type TemplateType = Exclude<StageDef['type'], 'ds-trace'>;
 
 /** Kabul için her adayın bu kadar farklı tohumda doğrulanmış problem üretmesi gerekir. */
 export const TEMPLATE_SEEDS = 20;

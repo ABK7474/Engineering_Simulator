@@ -78,7 +78,7 @@ function describe(kind: OutcomeKind, zone: SpZone, r: Reading): Outcome {
   const text = (headline: string, explanation: string, severity: number): Outcome => ({ ...base, headline, explanation, severity });
   switch (kind) {
     case 'success':
-      return text('Motor döndü, kilit açıldı', `Motor ${im} (hedef ${tIm}), regülatör ${is} (hedef ${tIs}). İkisi de çalışma aralığında.`, 0);
+      return text('Motor döndü, sürücü çalışıyor', `Motor ${im} (hedef ${tIm}), regülatör ${is} (hedef ${tIs}). İkisi de çalışma aralığında.`, 0);
     case 'fuse_blown':
       return text(
         'Hat koruması attı',
@@ -91,10 +91,10 @@ function describe(kind: OutcomeKind, zone: SpZone, r: Reading): Outcome {
       return zone === 'regulator_low'
         ? text(
             'Regülatör kararsız, motor tekledi',
-            `Motor akımı doğru (${im}) ama regülatörden yalnız ${is} çekildi; minimum yükün (${tIs} − %${Math.round(r.supplyTol * 100)}) altında çıkış dalgalandı, kapı yarıda takıldı.`,
+            `Motor akımı doğru (${im}) ama regülatörden yalnız ${is} çekildi; minimum yükün (${tIs} − %${Math.round(r.supplyTol * 100)}) altında çıkış dalgalandı, motor yarıda takıldı.`,
             r.supplyTarget / Math.max(r.supply, 1e-9),
           )
-        : text('Motor zayıf, kapı takıldı', `Motor akımı ${im}, hedefin (${tIm}) altında. Kapı yavaş açılıp yarıda takıldı.`, r.loadTarget / Math.max(r.load, 1e-9));
+        : text('Motor zayıf, yarıda takıldı', `Motor akımı ${im}, hedefin (${tIm}) altında. Motor yavaş dönüp yarıda takıldı.`, r.loadTarget / Math.max(r.load, 1e-9));
     case 'motor_overheat':
       return text('Termik koruma motoru kesti', `Motor akımı ${im}, hedefin %${Math.round((lr - 1) * 100)} üstünde. Sargı ısındı, termik koruma devreye girdi.`, lr);
     case 'motor_burnt':

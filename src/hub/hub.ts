@@ -348,6 +348,39 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           t.setScreen('DİRENÇ ARIZASI', '#ff5040', true);
         });
         return T0 + 2.4;
+      // Veri yapıları (trace): bellek ve zamanlayıcı hataları ekranda ve ışıkta görünür
+      case 'core_reboot':
+        at(T0, () => {
+          t.setLed(0xffb030, 1, true);
+          t.setScreen('ÇEKİRDEK\nYENİDEN BAŞLIYOR', '#ffb030', true);
+          sounds.play('jam', { volume: 0.4 });
+        });
+        at(T0 + 0.6, () => building.setPower(0.5));
+        at(T0 + 1.4, () => building.setPower(1));
+        return T0 + 2.2;
+      case 'core_crash':
+        at(T0, () => {
+          t.setLed(0xff3020, 1.5, true);
+          ledFlicker = { t, color: 0xff3020, lo: 0.1, hi: 1.6 };
+          t.setScreen('ÇEKİRDEK ÇÖKTÜ\nBELLEK BOZUK', '#ff5040', true);
+          sounds.play('fuse', { volume: 0.5 });
+          building.setPower(0.25);
+        });
+        return T0 + 2.6;
+      case 'sensor_misread':
+        at(T0, () => {
+          ledFlicker = { t, color: 0xffb030, lo: 0.2, hi: 1 };
+          t.setScreen('SENSÖR\nOKUMA HATASI', '#ffb030', true);
+          sounds.play('jam', { volume: 0.3 });
+        });
+        return T0 + 2;
+      case 'core_freeze':
+        at(T0, () => {
+          t.setLed(0xffb030, 0.8, true);
+          t.setScreen('ZAMANLAYICI\nDONDU', '#ffb030', false);
+          sounds.play('jam', { volume: 0.5 });
+        });
+        return T0 + 2;
     }
   };
 

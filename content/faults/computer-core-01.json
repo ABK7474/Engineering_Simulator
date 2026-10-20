@@ -1,7 +1,7 @@
 {
   "id": "computer-core-01",
   "title": "Kontrol bilgisayarı C-1",
-  "briefing": "Kontrol bilgisayarı iki aşamada ayağa kalkar: önce çekirdek fan sürücüsü, sonra durum göstergesi. Yedek güç olmadan açılmaz.",
+  "briefing": "Kontrol bilgisayarı iki aşamada ayağa kalkar: önce çekirdek fan sürücüsü (devre), sonra görev zamanlayıcısının bozuk izleme kaydı (veri yapıları). Yedek güç olmadan açılmaz.",
   "stages": [
     {
       "id": "core-fan",
@@ -337,31 +337,539 @@
       }
     },
     {
-      "id": "core-status",
-      "type": "series-led",
-      "title": "Çekirdek durum göstergesi",
-      "briefing": "Çekirdek, durum LED'ini dar bir akım aralığında görmeden açılış sırasını tamamlamıyor. Seri devrede I = (Vs − Vf) / R; aralık dar olduğu için yuvarlama hatasına dikkat.",
+      "id": "core-scheduler",
+      "type": "ds-trace",
+      "title": "Çekirdek görev zamanlayıcısı",
+      "briefing": "Yığın (Stack) son giren ilk çıkar: Push tepeye koyar, Pop tepeden alır, Peek bakar ama almaz. Kuyruk (Queue) ilk giren ilk çıkar: Enqueue sona ekler, Dequeue baştan alır. LinkedList'te AddFirst/AddLast uçlara ekler, AddAfter(Find(v), x) ilk v'nin hemen arkasına ekler, Remove(v) ilk v'yi siler. Zamanlayıcının izleme kaydında tek satır bozuk: o adımı bul ve doğru durumu yaz.",
       "config": {
-        "supplyVoltages": [
-          12,
-          24
+        "ops": [
+          8,
+          18
         ],
-        "leds": [
+        "lines": [
+          15,
+          25
+        ],
+        "structures": [
+          "stack",
+          "queue",
+          "list"
+        ],
+        "corruptions": [
+          "order_confusion",
+          "skip_effect",
+          "off_by_one",
+          "wrong_end"
+        ],
+        "hideCounters": false,
+        "templates": [
           {
-            "color": "yeşil",
-            "vf": 2.2
+            "id": "stack-to-queue",
+            "story": "Görevler önce yığına itilir; çift numaralılar sırayla kuyruğa aktarılır.",
+            "structures": [
+              {
+                "name": "s",
+                "kind": "stack"
+              },
+              {
+                "name": "q",
+                "kind": "queue"
+              }
+            ],
+            "params": {
+              "N": [
+                4,
+                5,
+                6
+              ],
+              "K": [
+                2,
+                3,
+                5
+              ],
+              "M": [
+                1,
+                2
+              ]
+            },
+            "body": [
+              {
+                "for": "i",
+                "from": "1",
+                "to": "N",
+                "body": [
+                  {
+                    "call": "Push",
+                    "on": "s",
+                    "arg": "i*K"
+                  }
+                ]
+              },
+              {
+                "while": {
+                  "count": "s",
+                  "op": ">",
+                  "value": "M"
+                },
+                "body": [
+                  {
+                    "call": "Pop",
+                    "on": "s",
+                    "into": "x"
+                  },
+                  {
+                    "if": {
+                      "var": "x",
+                      "mod": 2,
+                      "eq": 0
+                    },
+                    "then": [
+                      {
+                        "call": "Enqueue",
+                        "on": "q",
+                        "arg": "x"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "call": "Dequeue",
+                "on": "q",
+                "into": "y"
+              },
+              {
+                "call": "Push",
+                "on": "s",
+                "arg": "y+1"
+              }
+            ]
           },
           {
-            "color": "sarı",
-            "vf": 2.1
+            "id": "queue-rotate",
+            "story": "Komut kuyruğu döndürülür: baştaki komut, sayaç kadar artırılıp sona yeniden yazılır.",
+            "structures": [
+              {
+                "name": "q",
+                "kind": "queue",
+                "init": [
+                  "A",
+                  "B",
+                  "C",
+                  "D"
+                ]
+              },
+              {
+                "name": "s",
+                "kind": "stack"
+              }
+            ],
+            "params": {
+              "A": [
+                4,
+                7
+              ],
+              "B": [
+                9,
+                12
+              ],
+              "C": [
+                15,
+                18
+              ],
+              "D": [
+                21,
+                24
+              ],
+              "R": [
+                3,
+                4,
+                5
+              ]
+            },
+            "body": [
+              {
+                "for": "i",
+                "from": "1",
+                "to": "R",
+                "body": [
+                  {
+                    "call": "Dequeue",
+                    "on": "q",
+                    "into": "x"
+                  },
+                  {
+                    "call": "Enqueue",
+                    "on": "q",
+                    "arg": "x+i"
+                  }
+                ]
+              },
+              {
+                "call": "Peek",
+                "on": "q",
+                "into": "y"
+              },
+              {
+                "call": "Push",
+                "on": "s",
+                "arg": "y"
+              },
+              {
+                "call": "Dequeue",
+                "on": "q",
+                "into": "z"
+              },
+              {
+                "call": "Push",
+                "on": "s",
+                "arg": "z*2"
+              }
+            ]
+          },
+          {
+            "id": "two-stacks",
+            "story": "İki yığınla kuyruk: giriş yığını boşaltılıp çıkış yığınına ters çevrilerek aktarılır.",
+            "structures": [
+              {
+                "name": "giris",
+                "kind": "stack"
+              },
+              {
+                "name": "cikis",
+                "kind": "stack"
+              }
+            ],
+            "params": {
+              "N": [
+                4,
+                5
+              ],
+              "K": [
+                3,
+                4,
+                7
+              ],
+              "D": [
+                10,
+                20
+              ]
+            },
+            "body": [
+              {
+                "for": "i",
+                "from": "1",
+                "to": "N",
+                "body": [
+                  {
+                    "call": "Push",
+                    "on": "giris",
+                    "arg": "i*K"
+                  }
+                ]
+              },
+              {
+                "while": {
+                  "count": "giris",
+                  "op": ">",
+                  "value": "0"
+                },
+                "body": [
+                  {
+                    "call": "Pop",
+                    "on": "giris",
+                    "into": "x"
+                  },
+                  {
+                    "call": "Push",
+                    "on": "cikis",
+                    "arg": "x"
+                  }
+                ]
+              },
+              {
+                "call": "Pop",
+                "on": "cikis",
+                "into": "y"
+              },
+              {
+                "call": "Push",
+                "on": "giris",
+                "arg": "y+D"
+              },
+              {
+                "call": "Peek",
+                "on": "cikis",
+                "into": "z"
+              },
+              {
+                "call": "Push",
+                "on": "giris",
+                "arg": "z-1"
+              }
+            ]
+          },
+          {
+            "id": "list-duplicates",
+            "story": "Sensör kayıt listesi: aynı değer birden çok kez geçiyor; Find ve Remove ilk eşleşmeyi bulur.",
+            "structures": [
+              {
+                "name": "list",
+                "kind": "list",
+                "init": [
+                  "A",
+                  "B",
+                  "A",
+                  "C"
+                ]
+              }
+            ],
+            "params": {
+              "A": [
+                3,
+                5
+              ],
+              "B": [
+                8,
+                9
+              ],
+              "C": [
+                12,
+                14
+              ],
+              "D": [
+                20,
+                30
+              ],
+              "N": [
+                2,
+                3
+              ]
+            },
+            "body": [
+              {
+                "call": "AddFirst",
+                "on": "list",
+                "arg": "B+1"
+              },
+              {
+                "call": "AddAfter",
+                "on": "list",
+                "arg": "D",
+                "after": "A"
+              },
+              {
+                "call": "Remove",
+                "on": "list",
+                "arg": "A"
+              },
+              {
+                "call": "AddLast",
+                "on": "list",
+                "arg": "D*2"
+              },
+              {
+                "call": "RemoveFirst",
+                "on": "list"
+              },
+              {
+                "for": "i",
+                "from": "1",
+                "to": "N",
+                "body": [
+                  {
+                    "call": "AddAfter",
+                    "on": "list",
+                    "arg": "i",
+                    "after": "D"
+                  }
+                ]
+              },
+              {
+                "call": "Remove",
+                "on": "list",
+                "arg": "A"
+              },
+              {
+                "call": "RemoveLast",
+                "on": "list"
+              }
+            ]
+          },
+          {
+            "id": "peek-pop",
+            "story": "Tanılama yığını: Peek ile bakılır, Pop ile alınır; okunan değerler kuyruğa yazılır.",
+            "structures": [
+              {
+                "name": "s",
+                "kind": "stack",
+                "init": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "name": "q",
+                "kind": "queue"
+              }
+            ],
+            "params": {
+              "A": [
+                2,
+                4
+              ],
+              "B": [
+                6,
+                7
+              ],
+              "C": [
+                10,
+                11
+              ],
+              "N": [
+                2,
+                3
+              ]
+            },
+            "body": [
+              {
+                "call": "Peek",
+                "on": "s",
+                "into": "x"
+              },
+              {
+                "call": "Enqueue",
+                "on": "q",
+                "arg": "x"
+              },
+              {
+                "call": "Pop",
+                "on": "s",
+                "into": "w"
+              },
+              {
+                "call": "Push",
+                "on": "s",
+                "arg": "w+B"
+              },
+              {
+                "for": "i",
+                "from": "1",
+                "to": "N",
+                "body": [
+                  {
+                    "call": "Pop",
+                    "on": "s",
+                    "into": "y"
+                  },
+                  {
+                    "call": "Enqueue",
+                    "on": "q",
+                    "arg": "y-i"
+                  }
+                ]
+              },
+              {
+                "call": "Dequeue",
+                "on": "q",
+                "into": "z"
+              },
+              {
+                "call": "Push",
+                "on": "s",
+                "arg": "z"
+              }
+            ]
+          },
+          {
+            "id": "queue-to-list",
+            "story": "Kuyruktaki ölçümler listenin iki ucuna dağıtılır; sondaki fazlalık atılır.",
+            "structures": [
+              {
+                "name": "q",
+                "kind": "queue",
+                "init": [
+                  "A",
+                  "B",
+                  "C",
+                  "D"
+                ]
+              },
+              {
+                "name": "list",
+                "kind": "list"
+              }
+            ],
+            "params": {
+              "A": [
+                1,
+                3
+              ],
+              "B": [
+                5,
+                6
+              ],
+              "C": [
+                8,
+                9
+              ],
+              "D": [
+                11,
+                13
+              ],
+              "K": [
+                2,
+                3
+              ]
+            },
+            "body": [
+              {
+                "while": {
+                  "count": "q",
+                  "op": ">",
+                  "value": "1"
+                },
+                "body": [
+                  {
+                    "call": "Dequeue",
+                    "on": "q",
+                    "into": "x"
+                  },
+                  {
+                    "call": "AddFirst",
+                    "on": "list",
+                    "arg": "x"
+                  },
+                  {
+                    "call": "AddLast",
+                    "on": "list",
+                    "arg": "x*K"
+                  }
+                ]
+              },
+              {
+                "call": "RemoveLast",
+                "on": "list"
+              },
+              {
+                "call": "Peek",
+                "on": "q",
+                "into": "y"
+              },
+              {
+                "call": "AddAfter",
+                "on": "list",
+                "arg": "y",
+                "after": "A"
+              },
+              {
+                "call": "RemoveFirst",
+                "on": "list"
+              }
+            ]
           }
-        ],
-        "targetMin_mA": 10,
-        "targetMax_mA": 20,
-        "absMax_mA": 30,
-        "visibleMin_mA": 1,
-        "fuse_mA": 200,
-        "resistorRating_W": 0.5
+        ]
       }
     }
   ]

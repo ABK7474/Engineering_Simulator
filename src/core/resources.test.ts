@@ -59,6 +59,7 @@ describe('denge kapsamı', () => {
     const kinds: OutcomeKind[] = [
       'no_light', 'dim', 'led_stressed', 'led_burnt', 'resistor_burnt', 'fuse_blown',
       'motor_stall', 'motor_slow', 'motor_overheat', 'motor_burnt',
+      'core_reboot', 'core_crash', 'sensor_misread', 'core_freeze',
     ];
     for (const k of kinds) expect(B.outcomes[k as Exclude<OutcomeKind, 'success'>], k).toBeDefined();
   });
