@@ -1,0 +1,259 @@
+{
+  "corridor": {
+    "label": "Geçiş koridoru",
+    "required": [
+      "locker",
+      "barrels"
+    ],
+    "wall": {
+      "barrels": 2,
+      "locker": 2,
+      "shelves": 1,
+      "greebles": 5,
+      "screen": 1,
+      "none": 3
+    },
+    "ceiling": {
+      "pipes": 0.6,
+      "fan": 0.1,
+      "vent": 0.25
+    },
+    "floor": {
+      "cables": 0.25,
+      "floorLight": 0.2
+    },
+    "grime": 0.7,
+    "flicker": 0.2,
+    "emitters": {
+      "steam": 1,
+      "drip": 2,
+      "gas": 0
+    },
+    "warnings": [
+      [
+        "BASINÇ HATTI",
+        "Bakım dışında dokunmayın"
+      ],
+      [
+        "ACİL ÇIKIŞ",
+        "Kilit odası →"
+      ]
+    ]
+  },
+  "control": {
+    "label": "Kontrol odası",
+    "required": [
+      "desk",
+      "desk",
+      "shelves",
+      "screen"
+    ],
+    "wall": {
+      "desk": 6,
+      "shelves": 3,
+      "locker": 1,
+      "crates": 1,
+      "greebles": 2,
+      "screen": 2
+    },
+    "ceiling": {
+      "pipes": 0.15,
+      "fan": 0.35,
+      "vent": 0.3
+    },
+    "floor": {
+      "cables": 0.35,
+      "floorLight": 0.25
+    },
+    "grime": 0.45,
+    "flicker": 0.15,
+    "emitters": {
+      "steam": 0,
+      "drip": 1,
+      "gas": 0
+    },
+    "warnings": [
+      [
+        "YETKİLİ PERSONEL",
+        "Çekirdek konsolu kayıt altındadır"
+      ],
+      [
+        "SESSİZ ÇALIŞMA",
+        "Sonar dinlemede"
+      ]
+    ]
+  },
+  "power": {
+    "label": "Güç dağıtımı",
+    "required": [
+      "pipeRack",
+      "pipeColumn",
+      "barrels",
+      "crates"
+    ],
+    "wall": {
+      "pipeRack": 3,
+      "pipeColumn": 3,
+      "barrels": 3,
+      "crates": 2,
+      "chest": 1,
+      "greebles": 4,
+      "screen": 1,
+      "none": 1
+    },
+    "ceiling": {
+      "pipes": 0.8,
+      "fan": 0.2,
+      "vent": 0.2
+    },
+    "floor": {
+      "cables": 0.8,
+      "floorLight": 0.3
+    },
+    "grime": 0.85,
+    "flicker": 0.35,
+    "emitters": {
+      "steam": 3,
+      "drip": 1,
+      "gas": 1
+    },
+    "warnings": [
+      [
+        "YÜKSEK GERİLİM",
+        "400 V DC — yalıtımlı eldiven"
+      ],
+      [
+        "TOPRAKLAMA",
+        "Bakımdan önce barayı ayırın"
+      ]
+    ]
+  },
+  "airlock": {
+    "label": "Hava kilidi",
+    "required": [
+      "locker",
+      "locker",
+      "chest"
+    ],
+    "wall": {
+      "locker": 4,
+      "chest": 2,
+      "barrels": 1,
+      "greebles": 3,
+      "screen": 1,
+      "none": 2
+    },
+    "ceiling": {
+      "pipes": 0.5,
+      "fan": 0.1,
+      "vent": 0.4
+    },
+    "floor": {
+      "cables": 0.2,
+      "floorLight": 0.5
+    },
+    "grime": 0.95,
+    "flicker": 0.25,
+    "emitters": {
+      "steam": 1,
+      "drip": 4,
+      "gas": 1
+    },
+    "warnings": [
+      [
+        "BASINÇ BÖLGESİ",
+        "İç kapı kapanmadan dış kapıyı açmayın"
+      ],
+      [
+        "DALIŞ DONANIMI",
+        "Kaskı kilitleyin"
+      ]
+    ]
+  },
+  "sensor": {
+    "label": "Sensör ve sonar",
+    "required": [
+      "desk",
+      "desk",
+      "screen",
+      "shelves"
+    ],
+    "wall": {
+      "desk": 5,
+      "shelves": 2,
+      "crates": 1,
+      "greebles": 2,
+      "screen": 4,
+      "none": 1
+    },
+    "ceiling": {
+      "pipes": 0.2,
+      "fan": 0.2,
+      "vent": 0.3
+    },
+    "floor": {
+      "cables": 0.5,
+      "floorLight": 0.2
+    },
+    "grime": 0.5,
+    "flicker": 0.1,
+    "emitters": {
+      "steam": 0,
+      "drip": 2,
+      "gas": 0
+    },
+    "warnings": [
+      [
+        "SONAR DİNLEMEDE",
+        "Gereksiz ses çıkarmayın"
+      ],
+      [
+        "ANTEN HATTI",
+        "Dış birim bağlantısı"
+      ]
+    ]
+  },
+  "core": {
+    "label": "Yapay zekâ çekirdeği",
+    "required": [
+      "pipeColumn",
+      "pipeColumn",
+      "screen"
+    ],
+    "wall": {
+      "pipeColumn": 3,
+      "shelves": 2,
+      "locker": 1,
+      "greebles": 5,
+      "screen": 3,
+      "none": 1
+    },
+    "ceiling": {
+      "pipes": 0.4,
+      "fan": 0.6,
+      "vent": 0.2
+    },
+    "floor": {
+      "cables": 0.9,
+      "floorLight": 0.6
+    },
+    "grime": 0.3,
+    "flicker": 0.3,
+    "emitters": {
+      "steam": 1,
+      "drip": 0,
+      "gas": 0
+    },
+    "columns": true,
+    "warnings": [
+      [
+        "ÇEKİRDEK ERİŞİMİ",
+        "Yalnız NEREUS yetkisiyle"
+      ],
+      [
+        "SOĞUTMA DÖNGÜSÜ",
+        "Sıcaklık izleniyor"
+      ]
+    ]
+  }
+}

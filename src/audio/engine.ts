@@ -13,7 +13,15 @@ export type SfxName =
   | 'led_pop'
   | 'fuse'
   | 'jam'
-  | 'step';
+  | 'step'
+  | 'steam'
+  | 'sonar'
+  | 'roar'
+  | 'rumble'
+  | 'splash';
+
+/** Mesafeye göre yüksekliği ayarlanan sürekli döngüler. */
+export type LoopName = 'leak' | 'gas' | 'drip';
 
 const SFX: Record<SfxName, string[]> = {
   door_open: ['kenney_sci-fi-sounds/doorOpen_000', 'kenney_sci-fi-sounds/doorOpen_001', 'kenney_sci-fi-sounds/doorOpen_002'],
@@ -25,8 +33,17 @@ const SFX: Record<SfxName, string[]> = {
   fuse: ['kenney_sci-fi-sounds/lowFrequency_explosion_001'],
   jam: ['kenney_impact-sounds/impactMetal_heavy_001'],
   step: [0, 1, 2, 3, 4].map((k) => `kenney_impact-sounds/footstep_concrete_00${k}`),
+  steam: ['station/steam_1', 'station/steam_2', 'station/steam_3'],
+  sonar: ['station/sonar_ping'],
+  roar: ['station/creature_roar'],
+  rumble: ['station/creature_rumble'],
+  splash: ['station/splash_1'],
 };
-const LEAK = 'kenney_sci-fi-sounds/slime_001';
+const LOOPS: Record<LoopName, string> = {
+  leak: 'kenney_sci-fi-sounds/slime_001',
+  gas: 'station/gas_leak',
+  drip: 'station/drip_loop',
+};
 
 const MUSIC = {
   calm: ['hub/underwater-theme-ii', 'hub/underwater-theme-2nd-variation', 'hub/submerge-coral-reef'],
@@ -48,7 +65,7 @@ export class AudioEngine {
   private sfxBus: GainNode;
   private calmGain: GainNode;
   private tensionGain: GainNode;
-  private leakGain: GainNode;
+  private loopGains = {} as Record<LoopName, GainNode>;
   private buffers = new Map<string, AudioBuffer>();
   private calmEl: HTMLAudioElement;
   private tensionEl: HTMLAudioElement;
@@ -62,14 +79,14 @@ export class AudioEngine {
     this.sfxBus = this.node(this.master);
     this.calmGain = this.node(this.musicBus);
     this.tensionGain = this.node(this.musicBus, 0);
-    this.leakGain = this.node(this.sfxBus, 0);
+    for (const k of Object.keys(LOOPS) as LoopName[]) this.loopGains[k] = this.node(this.sfxBus, 0);
     this.calmEl = this.playlist(MUSIC.calm, this.calmGain);
     this.tensionEl = this.playlist(MUSIC.tension, this.tensionGain);
   }
 
   /** Kısa efektleri indirip çözer (müzik akış olduğu için burada yüklenmez). */
   async load(): Promise<void> {
-    const names = [...new Set([...Object.values(SFX).flat(), LEAK])];
+    const names = [...new Set([...Object.values(SFX).flat(), ...Object.values(LOOPS)])];
     await Promise.all(
       names.map(async (n) => {
         const res = await fetch(`${this.base}audio/sfx/${n}.ogg`);
@@ -86,11 +103,13 @@ export class AudioEngine {
     this.started = true;
     void this.calmEl.play().catch(() => {});
     void this.tensionEl.play().catch(() => {});
-    const leak = this.ctx.createBufferSource();
-    leak.buffer = this.buffers.get(LEAK) ?? null;
-    leak.loop = true;
-    leak.connect(this.leakGain);
-    leak.start();
+    for (const [k, file] of Object.entries(LOOPS) as [LoopName, string][]) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.buffers.get(file) ?? null;
+      src.loop = true;
+      src.connect(this.loopGains[k]);
+      src.start();
+    }
   }
 
   applySettings(s: VolumeSettings): void {
@@ -165,7 +184,13 @@ export class AudioEngine {
 
   /** Sızıntı döngüsünün yüksekliği (0..1), mesafeye göre hub ayarlar. */
   setLeakVolume(v: number): void {
-    this.leakGain.gain.setTargetAtTime(v * 0.5, this.ctx.currentTime, 0.1);
+    this.setLoop('leak', v);
+  }
+
+  /** Döngü yüksekliği (0..1); hub mesafeye göre her kare ayarlar. */
+  setLoop(name: LoopName, v: number): void {
+    const scale = name === 'leak' ? 0.5 : name === 'gas' ? 0.35 : 0.45;
+    this.loopGains[name].gain.setTargetAtTime(v * scale, this.ctx.currentTime, 0.1);
   }
 
   /** Geliştirme/test için: hangi sesin kaç kez çaldığı. */

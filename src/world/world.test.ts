@@ -9,6 +9,9 @@ import { parseBalance } from '../core/resources';
 import { CARDS, KNOWN_MODELS, loadWorld } from './content';
 import { buildWorldLayout, CLEAR_PATH, insideAny, roomAt, WALL_DEPTH, WALL_INNER } from './layout';
 import { respawnInRoom } from './respawn';
+import { unreachable, walkTargets } from './walk';
+import themesJson from '../../content/world/themes.json';
+import { parseThemes } from './dressing';
 import { parseWorld, WorldError, type WorldDef } from './schema';
 import { findCycle, missingFor, nextGoal, openDoors, reachableRooms, simulate, withProvided } from './state';
 import { validateWorld, type Story } from './validate';
@@ -222,5 +225,75 @@ describe('kritik kaynakta oda girişinden yeniden başlama', () => {
 
   it('yalnız o odanın kalıcı hasarı silinir', () => {
     expect(r.resources.damages.map((d) => d.faultId)).toEqual(['other-room#0']);
+  });
+});
+
+describe('oda giydirme ve yürünebilirlik', () => {
+  const L = buildWorldLayout(W);
+
+  it('giydirme deterministik: aynı dünya iki kez aynı yerleşimi verir', () => {
+    expect(JSON.stringify(buildWorldLayout(W).placements)).toBe(JSON.stringify(L.placements));
+    expect(JSON.stringify(buildWorldLayout(W).decor)).toBe(JSON.stringify(L.decor));
+  });
+
+  it('her oda temasına göre giydirildi: duvar eşyası, süs, kir izi; eşyalar çakışmıyor', () => {
+    for (const { def } of L.rooms) {
+      const mine = L.placements.filter((p) => p.room === def.id && !['WallAstra_Straight', 'WallAstra_Straight_Window', 'WallAstra_Straight_Broken', 'TopCables_Straight', 'TopCables_Straight_Hanging', 'BottomMetal_Straight', 'Platform_DarkPlates', 'Prop_Light_Wide', 'Column_Simple'].includes(p.model));
+      expect(mine.length, def.id).toBeGreaterThan(5);
+      expect(mine.some((p) => p.model.startsWith('Details_')), def.id).toBe(true);
+      expect(L.decor.find((d) => d.room === def.id)!.grime.length, def.id).toBeGreaterThan(0);
+    }
+    const solids = L.colliders.filter((c) => c.tag !== 'wall');
+    for (let i = 0; i < solids.length; i++)
+      for (let j = i + 1; j < solids.length; j++) {
+        const [a, b] = [solids[i], solids[j]];
+        expect(a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ, `${i}-${j}`).toBe(false);
+      }
+  });
+
+  it('yürünebilirlik: bütün terminallerin önü, girişler ve kapıların iki yanı başlangıçtan erişilebilir', () => {
+    expect(unreachable(L)).toEqual([]);
+    expect(walkTargets(L).length).toBeGreaterThanOrEqual(L.terminals.length + L.rooms.length);
+  });
+
+  it('yürünebilirlik doğrulaması engeli yakalar: bir terminalin önüne dev kasa konursa hata', () => {
+    const raw = structuredClone(worldJson) as unknown as WorldDef;
+    const lab = raw.rooms.find((r) => r.id === 'lab-c1')!;
+    // Bilgisayarın (güney duvarı orta hücre) önünü tamamen kapatan sıra
+    for (let u = 0.9; u < 12; u += 3.5) lab.props.push({ model: 'Prop_Crate_Large', u, v: 9.6, rotY: 0 });
+    const L2 = buildWorldLayout(parseWorld(raw));
+    expect(unreachable(L2).map((t) => t.label)).toContain(`terminal 'core-terminal'`);
+  });
+
+  it('pencere hücrelerinin önüne uzun eşya konmaz; duvar süsü ve kir izi pencereye çizilmez', () => {
+    for (const w of L.windows) {
+      const tall = L.placements.filter((p) => p.room === w.roomId && Math.hypot(p.x - (w.x - w.nx * 0.8), p.z - (w.z - w.nz * 0.8)) < 1.4 && ['Prop_Locker', 'Prop_Shelves_WideTall', 'Column_Pipes'].includes(p.model));
+      expect(tall, `${w.roomId} ${w.x},${w.z}`).toEqual([]);
+    }
+  });
+});
+
+describe('temalar', () => {
+  it('tema dosyası doğrulanır: bilinmeyen set ve eksik tema açıklamalı hata verir', () => {
+    const bad = structuredClone(themesJson) as Record<string, { wall: Record<string, number> }>;
+    bad.power.wall.uzayGemisi = 2;
+    expect(() => parseThemes(bad)).toThrow(/bilinmeyen duvar seti 'uzayGemisi'/);
+    const missing = structuredClone(themesJson) as Record<string, unknown>;
+    delete missing.core;
+    expect(() => parseThemes(missing)).toThrow(/tema 'core' yok/);
+  });
+
+  it('zorunlu setler odanın karakterini garanti eder: kontrol odasında masa ve ekran, koridorda dolap', () => {
+    const L = buildWorldLayout(W);
+    const has = (room: string, model: string) => L.placements.some((p) => p.room === room && p.model === model);
+    expect(has('lab-c1', 'Prop_Desk_Medium') || has('lab-c1', 'Prop_Desk_Small')).toBe(true);
+    expect(L.decor.find((d) => d.room === 'lab-c1')!.screens.length).toBeGreaterThan(0);
+    expect(has('corridor-b2', 'Prop_Locker')).toBe(true);
+  });
+
+  it('kapı üstü tabelalar iki yönde de kapının açıldığı odanın adını gösterir', () => {
+    const L = buildWorldLayout(W);
+    const titles = L.decor.flatMap((d) => d.signs.filter((s) => s.kind === 'room').map((s) => `${d.room}:${s.title}`));
+    expect(titles).toEqual(expect.arrayContaining(['corridor-b2:KONTROL ODASI C-1', 'lab-c1:B-2 KORİDORU']));
   });
 });

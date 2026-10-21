@@ -44,6 +44,8 @@ export interface RoomDef {
   name: string;
   /** corridor: tek modül genişliğinde, kolonlu; room: gerçek oda. */
   type: 'corridor' | 'room';
+  /** Görsel karakter (content/world/themes.json); yoksa koridor → corridor, oda → control. */
+  theme?: 'corridor' | 'control' | 'power' | 'airlock' | 'sensor' | 'core';
   /** Kuzeybatı köşesi [x, z]; oda +x (doğu) ve −z (güney) yönünde uzanır. */
   origin: [number, number];
   /** Modül sayısı [doğu-batı, kuzey-güney]; modül 4 m. */
@@ -138,6 +140,7 @@ export function parseWorld(raw: unknown): WorldDef {
     }
     const e = o.entrance as Record<string, unknown>;
     need(isObj(e) && isNum(e.x) && isNum(e.z) && isNum(e.yaw), `oda '${id}': entrance {x, z, yaw} olmalı`);
+    need(o.theme === undefined || ['corridor', 'control', 'power', 'airlock', 'sensor', 'core'].includes(o.theme as string), `oda '${id}': theme corridor/control/power/airlock/sensor/core olmalı`);
     need(Array.isArray(o.props), `oda '${id}': props dizi olmalı`);
     if (Array.isArray(o.props)) {
       o.props.forEach((pr, k) => {

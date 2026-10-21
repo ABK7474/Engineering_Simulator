@@ -2,7 +2,13 @@
 // çarpışma kutuları, kapılar, pencereler, terminal yerleri ve lambalar üretir. Three.js'siz, saf veri;
 // görselden ayrı tutulur ki birim testi yazılabilsin. Bütün odalar baştan kurulur (geçişte yükleme yok).
 
+import themesJson from '../../content/world/themes.json';
+import type { ModelId } from './catalog';
+import { dressRoom, footprint, parseThemes, type RoomDecor, type ThemeId, type WallSlot } from './dressing';
 import type { DoorDef, FaultDef, RoomDef, Side, TerminalModel, WorldDef } from './schema';
+
+export type { ModelId } from './catalog';
+export const THEMES = parseThemes(themesJson);
 
 /** Quaternius modüler kitinin grid adımı (m). */
 export const MODULE = 4;
@@ -19,25 +25,6 @@ const CORNER_FILL_IN = 0.3;
 /** Koridor boyunca orta hatta engelsiz kalması gereken genişlik (m). */
 export const CLEAR_PATH = 2;
 
-export type ModelId =
-  | 'WallAstra_Straight'
-  | 'WallAstra_Straight_Window'
-  | 'WallAstra_Straight_Broken'
-  | 'TopCables_Straight'
-  | 'TopCables_Straight_Hanging'
-  | 'BottomMetal_Straight'
-  | 'Platform_DarkPlates'
-  | 'Door_Frame_Square'
-  | 'Prop_Light_Wide'
-  | 'Prop_Vent_Wide'
-  | 'Prop_Cable_1'
-  | 'Column_Simple'
-  | 'Prop_Crate'
-  | 'Prop_Crate_Large'
-  | 'Prop_Locker'
-  | 'Prop_AccessPoint'
-  | 'Prop_Computer';
-
 export interface Placement {
   model: ModelId;
   x: number;
@@ -46,6 +33,8 @@ export interface Placement {
   rotY: number;
   /** Tavan için modeli X ekseninde ters çevir. */
   flip?: boolean;
+  /** Ait olduğu oda (odalara göre gizleme/çizim grupları). */
+  room?: string;
 }
 
 /** XZ düzleminde dikdörtgen; isteğe bağlı yükseklik aralığı (yoksa yerden tavana). */
@@ -65,6 +54,11 @@ export interface Point {
   x: number;
   y: number;
   z: number;
+}
+
+/** Odası belli nokta (lamba, ışık). */
+export interface RoomPoint extends Point {
+  room: string;
 }
 
 export interface RoomLayout {
@@ -110,9 +104,13 @@ export interface WorldLayout {
   doors: DoorLayout[];
   terminals: TerminalLayout[];
   windows: WindowLayout[];
-  lampFixtures: Point[];
-  lampLights: Point[];
+  lampFixtures: RoomPoint[];
+  lampLights: RoomPoint[];
   leaks: Point[];
+  /** Oda başına görsel süsler: kir/pas, tabela, ekran, buhar/damla kaynakları, sıcak vurgu noktaları. */
+  decor: RoomDecor[];
+  /** Titreyen lamba armatürlerinin `lampFixtures` dizinleri. */
+  flicker: number[];
   /** Oda köşelerinin arkasındaki opak dolgu blokları (tabandan tavana). */
   cornerFills: Rect[];
   bounds: Rect;
@@ -188,12 +186,12 @@ function wallRect(r: RoomDef, side: Side, k: number): Rect {
 
 const rect = (cx: number, cz: number, hx: number, hz: number): Rect => ({ minX: cx - hx, maxX: cx + hx, minZ: cz - hz, maxZ: cz + hz });
 
-/** Eşyaların taban izi (model koordinatında yarı boyutlar); yoksa çarpışma yok. */
-const FOOTPRINT: Partial<Record<ModelId, [number, number]>> = {
-  Prop_Crate: [0.78, 0.75],
-  Prop_Crate_Large: [1.73, 0.75],
-  Prop_Locker: [0.49, 0.25],
-};
+/** Duvardaki bir noktanın önünde, odaya doğru `depth` derinliğinde, duvar boyunca ±`half` genişliğinde bölge. */
+function bandRect(ex: number, ez: number, ax: number, az: number, nx: number, nz: number, half: number, depth: number): Rect {
+  const xs = [ex - ax * half, ex + ax * half, ex - ax * half + nx * depth, ex + ax * half + nx * depth];
+  const zs = [ez - az * half, ez + az * half, ez - az * half + nz * depth, ez + az * half + nz * depth];
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+}
 
 /** Terminal modelleri: duvara yaslanma biçimi ve çarpışma kutusu. */
 export const TERMINAL_SPEC: Record<TerminalModel, { back: 'x' | 'z'; backDepth: number; alongHalf: number; depth: number; minY?: number; maxY?: number }> = {
@@ -203,7 +201,7 @@ export const TERMINAL_SPEC: Record<TerminalModel, { back: 'x' | 'z'; backDepth: 
   Prop_Computer: { back: 'z', backDepth: 0.22, alongHalf: 0.37, depth: 0.57 },
 };
 
-function along(side: Side): [number, number] {
+export function along(side: Side): [number, number] {
   return side === 'north' || side === 'south' ? [1, 0] : [0, -1];
 }
 
@@ -240,16 +238,19 @@ export function insideAny(rects: readonly Rect[], x: number, z: number): boolean
 
 // ---------------------------------------------------------------- üretici
 
-export function buildWorldLayout(world: WorldDef): WorldLayout {
+export function buildWorldLayout(world: WorldDef, opts: { trace?: string[] } = {}): WorldLayout {
   const P: Placement[] = [];
   const colliders: Rect[] = [];
   const windows: WindowLayout[] = [];
-  const lampFixtures: Point[] = [];
-  const lampLights: Point[] = [];
+  const lampFixtures: RoomPoint[] = [];
+  const lampLights: RoomPoint[] = [];
+  const decor: RoomDecor[] = [];
+  const flicker: number[] = [];
+  let curRoom: string | undefined;
   const leaks: Point[] = [];
   const cornerFills: Rect[] = [];
   const add = (model: ModelId, x: number, y: number, z: number, rotY = 0, flip = false) =>
-    P.push({ model, x, y, z, rotY, ...(flip ? { flip } : {}) });
+    P.push({ model, x, y, z, rotY, ...(flip ? { flip } : {}), ...(curRoom ? { room: curRoom } : {}) });
 
   // Kapı hücreleri (her iki odada da duvar konmaz)
   const doorCells = new Set<string>();
@@ -264,9 +265,25 @@ export function buildWorldLayout(world: WorldDef): WorldLayout {
     return { def: d, x, z, rotY: ns ? 0 : PI / 2, collider: ns ? rect(x, z, 2, 0.15) : rect(x, z, 0.15, 2) };
   });
 
+  // Terminaller
+  const terminals: TerminalLayout[] = world.faults.map((f) => {
+    const room = world.rooms.find((r) => r.id === f.room)!;
+    const t = placeTerminal(room, f);
+    curRoom = room.id;
+    add(f.model, t.x, 0, t.z, t.rotY);
+    curRoom = undefined;
+    colliders.push({ ...t.collider, tag: 'terminal' });
+    return { fault: f, model: f.model, ...t };
+  });
+
   const rooms: RoomLayout[] = world.rooms.map((r) => {
     const rc = roomRect(r);
     const [w, d] = r.size;
+    curRoom = r.id;
+    const firstCollider = colliders.length;
+    const slots: WallSlot[] = [];
+    const cells: { x: number; z: number }[] = [];
+    const lampStart = lampFixtures.length;
     // Tavan, lamba armatürleri
     for (let i = 0; i < w; i++) {
       for (let j = 0; j < d; j++) {
@@ -274,12 +291,13 @@ export function buildWorldLayout(world: WorldDef): WorldLayout {
         const cz = rc.maxZ - MODULE * (j + 0.5);
         add('Platform_DarkPlates', cx, CEILING, cz, 0, true);
         add('Prop_Light_Wide', cx + MODULE / 6, CEILING, cz);
-        lampFixtures.push({ x: cx, y: CEILING - 0.12, z: cz });
+        lampFixtures.push({ x: cx, y: CEILING - 0.12, z: cz, room: r.id });
+        cells.push({ x: cx, z: cz });
       }
     }
     // Gerçek ışıklar: koridorda iki modülde bir; odada en fazla iki
     if (r.type === 'corridor') {
-      for (let j = 0; j < d; j += 2) lampLights.push({ x: rc.minX + MODULE / 2, y: CEILING - 0.6, z: rc.maxZ - MODULE * (j + 0.5) });
+      for (let j = 0; j < d; j += 2) lampLights.push({ x: rc.minX + MODULE / 2, y: CEILING - 0.6, z: rc.maxZ - MODULE * (j + 0.5), room: r.id });
     } else {
       const long = w >= d;
       for (const f of [0.28, 0.72]) {
@@ -287,6 +305,7 @@ export function buildWorldLayout(world: WorldDef): WorldLayout {
           x: long ? rc.minX + (rc.maxX - rc.minX) * f : (rc.minX + rc.maxX) / 2,
           y: CEILING - 0.6,
           z: long ? (rc.minZ + rc.maxZ) / 2 : rc.minZ + (rc.maxZ - rc.minZ) * f,
+          room: r.id,
         });
       }
     }
@@ -308,6 +327,8 @@ export function buildWorldLayout(world: WorldDef): WorldLayout {
         const [nx, nz] = INWARD[side];
         if (isWindow) windows.push({ roomId: r.id, side, x: ex, z: ez, nx: -nx, nz: -nz });
         if (spec.broken?.includes(k)) leaks.push({ x: ex + nx * WALL_DEPTH, y: 1.2, z: ez + nz * WALL_DEPTH });
+        const [ax, az] = along(side);
+        slots.push({ side, index: k, x: ex + nx * WALL_DEPTH, z: ez + nz * WALL_DEPTH, ax, az, nx, nz, window: Boolean(isWindow), broken: Boolean(spec.broken?.includes(k)) });
       }
     }
 
@@ -348,28 +369,71 @@ export function buildWorldLayout(world: WorldDef): WorldLayout {
       const x = rc.minX + pr.u;
       const z = rc.maxZ - pr.v;
       add(pr.model as ModelId, x, pr.model === 'Prop_Vent_Wide' ? 0.001 : 0, z, pr.rotY);
-      const fp = FOOTPRINT[pr.model as ModelId];
-      if (fp) {
-        const swap = Math.abs(Math.sin(pr.rotY)) > 0.7;
-        colliders.push({ ...rect(x, z, swap ? fp[1] : fp[0], swap ? fp[0] : fp[1]), tag: 'prop' });
-      }
+      const f = footprint(pr.model as ModelId, x, z, pr.rotY);
+      if (f) colliders.push(f);
     }
+
+    // Tema giydirmesi: duvar boyu setler, tavan, zemin, süsler. Kapı önü, terminal önü ve giriş boş kalır.
+    const keepOut: Rect[] = [];
+    for (const key of doorCells) {
+      const [rid, side, idx] = key.split('/');
+      if (rid !== r.id) continue;
+      const [ex, ez] = edgeMid(r, side as Side, Number(idx));
+      const [nx, nz] = INWARD[side as Side];
+      const [ax, az] = along(side as Side);
+      keepOut.push(bandRect(ex, ez, ax, az, nx, nz, 1.4, 2.6));
+    }
+    for (const t of terminals.filter((x) => x.fault.room === r.id)) {
+      const [ex, ez] = edgeMid(r, t.fault.anchor.wall, t.fault.anchor.index);
+      const [nx, nz] = INWARD[t.fault.anchor.wall];
+      const [ax, az] = along(t.fault.anchor.wall);
+      const tx = t.x - nx * TERMINAL_SPEC[t.model].backDepth;
+      const tz = t.z - nz * TERMINAL_SPEC[t.model].backDepth;
+      keepOut.push(bandRect(ex + ax * ((tx - ex) * ax + (tz - ez) * az), ez + az * ((tx - ex) * ax + (tz - ez) * az), ax, az, nx, nz, 1.2, 2.2));
+    }
+    keepOut.push(rect(r.entrance.x, r.entrance.z, 0.9, 0.9));
+    const theme = THEMES[(r.theme ?? (r.type === 'corridor' ? 'corridor' : 'control')) as ThemeId];
+    const dressed = dressRoom({
+      room: r,
+      rect: rc,
+      theme,
+      slots,
+      blocked: colliders.slice(firstCollider).filter((c) => c.tag !== 'wall').concat(terminals.filter((x) => x.fault.room === r.id).map((x) => x.collider)),
+      keepOut,
+      cells,
+      ceiling: CEILING,
+      maxDepth: r.type === 'corridor' ? (2 * WALL_INNER - CLEAR_PATH) / 2 : 2.4,
+      lampIndices: Array.from({ length: lampFixtures.length - lampStart }, (_, k) => lampStart + k),
+      trace: opts.trace,
+    });
+    P.push(...dressed.placements);
+    colliders.push(...dressed.colliders);
+    decor.push(dressed.decor);
+    flicker.push(...dressed.flicker);
+    curRoom = undefined;
     return { def: r, rect: rc };
   });
 
-  // Terminaller
-  const terminals: TerminalLayout[] = world.faults.map((f) => {
-    const room = world.rooms.find((r) => r.id === f.room)!;
-    const t = placeTerminal(room, f);
-    add(f.model, t.x, 0, t.z, t.rotY);
-    colliders.push({ ...t.collider, tag: 'terminal' });
-    return { fault: f, model: f.model, ...t };
-  });
+  // Kapı üstü tabelalar: her iki yüzde, kapının açıldığı odanın adı
+  for (const d of doors) {
+    const a = world.rooms.find((r) => r.id === d.def.at.room)!;
+    const nb = neighborCell(world.rooms, a, d.def.at.wall, d.def.at.index);
+    if (!nb) continue;
+    for (const [here, side, there] of [
+      [a, d.def.at.wall, nb.room],
+      [nb.room, nb.side, a],
+    ] as const) {
+      const [nx, nz] = INWARD[side];
+      const dec = decor.find((x) => x.room === here.id)!;
+      const t = THEMES[(there.theme ?? (there.type === 'corridor' ? 'corridor' : 'control')) as ThemeId];
+      dec.signs.push({ x: d.x + nx * 0.32, y: 4.5, z: d.z + nz * 0.32, rotY: Math.atan2(nx, nz), w: 1.7, h: 0.5, title: there.name.toLocaleUpperCase('tr'), sub: `→ ${t.label}`, kind: 'room' });
+    }
+  }
 
   const bounds = rooms.reduce<Rect>(
     (b, { rect: c }) => ({ minX: Math.min(b.minX, c.minX), maxX: Math.max(b.maxX, c.maxX), minZ: Math.min(b.minZ, c.minZ), maxZ: Math.max(b.maxZ, c.maxZ) }),
     { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity },
   );
 
-  return { world, rooms, placements: P, colliders, doors, terminals, windows, lampFixtures, lampLights, leaks, cornerFills, bounds };
+  return { world, rooms, placements: P, colliders, doors, terminals, windows, lampFixtures, lampLights, leaks, decor, flicker, cornerFills, bounds };
 }

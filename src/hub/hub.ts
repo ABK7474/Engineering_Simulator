@@ -7,6 +7,7 @@ import { StrideCounter } from '../audio/mix';
 import type { Outcome } from '../core/types';
 import { CEILING, roomAt, type WorldLayout } from '../world/layout';
 import { loadAssets } from './assets';
+import { buildAtmosphere } from './atmosphere';
 import { buildBuilding } from './building';
 import { createDoor, type Door } from './door';
 import { Effects, Tweens } from './effects';
@@ -16,7 +17,7 @@ import { createPlayer } from './player';
 import { createSceneKit } from './scene';
 import { createTerminal, type Terminal } from './terminal';
 
-export type HubSfx = 'door_open' | 'door_close' | 'spark' | 'led_pop' | 'fuse' | 'jam' | 'step';
+export type HubSfx = 'door_open' | 'door_close' | 'spark' | 'led_pop' | 'fuse' | 'jam' | 'step' | 'steam' | 'sonar' | 'roar' | 'rumble' | 'splash';
 
 /** Hub'ın istediği sesler; uygulaması audio/ katmanında. */
 export interface HubSounds {
@@ -24,6 +25,7 @@ export interface HubSounds {
   sparks: (seconds?: number) => void;
   alarm: (seconds: number) => void;
   setLeakVolume: (v: number) => void;
+  setLoop: (name: 'leak' | 'gas' | 'drip', v: number) => void;
 }
 
 export interface HubOptions {
@@ -117,6 +119,43 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   scene.add(ledLight);
   const terminals = new Map<string, Terminal>(layout.terminals.map((t) => [t.fault.id, createTerminal(scene, t, ledLight)]));
   const exterior = buildExterior(scene, layout);
+  const atmosphere = buildAtmosphere(scene, layout);
+  // Güç seviyesi (sonuçlar ayarlar) ile geçici titreme düşüşü (gümbürtü) ayrı: çarpımları uygulanır
+  let powerLevel = 1;
+  let powerDip = 1;
+  const applyPower = () => {
+    building.setPower(powerLevel * powerDip);
+    atmosphere.setPower(powerLevel * powerDip);
+  };
+  const setPower = (level: number) => {
+    powerLevel = level;
+    applyPower();
+  };
+  // Görünürlük: bulunulan oda + AÇIK (ya da açılmakta olan) kapılarla bağlı komşular; kapalı metal kapının
+  // arkası görünmez, çizilmez. İlk karelerde hepsi çizilir ki sabit gölge haritası bütün odaları içersin.
+  const visibleFrom = (here: string): Set<string> => {
+    const out = new Set([here]);
+    for (const d of layout.doors) {
+      const [a, b2] = d.def.rooms;
+      if ((doors.get(d.def.id)?.openAmount ?? 0) <= 0.02) continue;
+      if (a === here) out.add(b2);
+      if (b2 === here) out.add(a);
+    }
+    return out;
+  };
+  let frames = 0;
+  let visKey = '';
+  // Uzak yaratık: ara sıra gövdeden gelen derin gümbürtü (nadiren kükreme); ışıklar bir an titrer
+  let rumbleIn = 50 + Math.random() * 60;
+  const refreshVisibility = () => {
+    if (!room || frames < 3) return;
+    const v = visibleFrom(room);
+    const key = [...v].sort().join(',');
+    if (key !== visKey) {
+      visKey = key;
+      building.setVisibleRooms(v);
+    }
+  };
   const first = layout.terminals[0];
   const effects = new Effects(scene, new THREE.Vector3(first?.x ?? 0, CEILING - 0.3, first?.z ?? 0));
   const tweens = new Tweens();
@@ -179,6 +218,13 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     for (let k = strides.add(distance); k > 0; k--) sounds.play('step', { volume: prof.volume, pitchJitter: 0.08 });
     const leakNear = Math.max(0, 1 - Math.min(...leaks.map((l) => camera.position.distanceTo(l)), Infinity) / 7);
     sounds.setLeakVolume(leakNear * leakNear);
+    const near = (kind: 'gas' | 'drip', range: number) => Math.max(0, 1 - atmosphere.nearest(kind, camera.position) / range) ** 2;
+    sounds.setLoop('gas', near('gas', 8));
+    sounds.setLoop('drip', near('drip', 7));
+    for (const p of atmosphere.takeBursts()) {
+      const d = camera.position.distanceTo(p);
+      if (d < 14) sounds.play('steam', { volume: 0.7 * (1 - d / 14) ** 1.5, pitchJitter: 0.1 });
+    }
 
     // En yakın, etkileşime açık terminal
     nearest = null;
@@ -200,6 +246,18 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       room = r;
       opts.onRoomChange(r);
     }
+    frames++;
+    refreshVisibility();
+    if (locked) rumbleIn -= dt;
+    if (rumbleIn <= 0) {
+      rumbleIn = 75 + Math.random() * 90;
+      const roar = Math.random() < 0.25;
+      sounds.play(roar ? 'roar' : 'rumble', { volume: roar ? 0.35 : 0.5, pitchJitter: 0.06 });
+      anim(0.4, 1.6, (k) => {
+        powerDip = k < 1 ? 1 - 0.35 * Math.sin(k * Math.PI) * (0.6 + 0.4 * Math.random()) : 1;
+        applyPower();
+      });
+    }
 
     if (ledFlicker) ledFlicker.t.setLed(ledFlicker.color, THREE.MathUtils.lerp(ledFlicker.lo, ledFlicker.hi, Math.random()), true);
     tweens.update(dt);
@@ -207,6 +265,8 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     for (const d of doors.values()) d.update();
     for (const t of terminals.values()) t.update(dt);
     exterior.update(dt, elapsed, camera);
+    building.update(dt, elapsed, camera);
+    atmosphere.update(dt, elapsed, camera);
     renderer.render(scene, camera);
   });
   refreshGate();
@@ -305,7 +365,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
         });
         at(T0 + 0.1, () => {
           sounds.play('fuse');
-          building.setPower(0);
+          setPower(0);
           t.setScreen('', '#000');
         });
         return T0 + 2.6;
@@ -355,8 +415,8 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           t.setScreen('ÇEKİRDEK\nYENİDEN BAŞLIYOR', '#ffb030', true);
           sounds.play('jam', { volume: 0.4 });
         });
-        at(T0 + 0.6, () => building.setPower(0.5));
-        at(T0 + 1.4, () => building.setPower(1));
+        at(T0 + 0.6, () => setPower(0.5));
+        at(T0 + 1.4, () => setPower(1));
         return T0 + 2.2;
       case 'core_crash':
         at(T0, () => {
@@ -364,7 +424,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           ledFlicker = { t, color: 0xff3020, lo: 0.1, hi: 1.6 };
           t.setScreen('ÇEKİRDEK ÇÖKTÜ\nBELLEK BOZUK', '#ff5040', true);
           sounds.play('fuse', { volume: 0.5 });
-          building.setPower(0.25);
+          setPower(0.25);
         });
         return T0 + 2.6;
       case 'sensor_misread':
@@ -471,7 +531,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     },
     repairForRetry(id, doorId) {
       ledFlicker = null;
-      building.setPower(1);
+      setPower(1);
       effects.setAlarm(false);
       get(id).replaceLed();
       const door = doorId ? doors.get(doorId) : undefined;
@@ -495,7 +555,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     resetTerminals(ids) {
       tweens.clear();
       ledFlicker = null;
-      building.setPower(1);
+      setPower(1);
       effects.setAlarm(false);
       for (const id of ids) get(id).replaceLed();
     },

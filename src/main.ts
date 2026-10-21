@@ -283,6 +283,11 @@ const hub = await createHub(app, {
   },
 });
 
+// --- Ortam: ana bara beslenince sonar yayında, düzenli ping (uzak, kısık) ---
+setInterval(() => {
+  if (started && progress.world.states.includes('power.main')) audio.play('sonar', { volume: 0.32, pitchJitter: 0.02 });
+}, 21_000);
+
 // --- Replikler ve harita ---
 const subtitles = mountSubtitles(ui, content.story.speaker);
 /** Oyuncu "Tıkla ve başla"ya bastı mı (öncesinde söylenen replik görünmezdi). */

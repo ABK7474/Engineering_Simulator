@@ -4,6 +4,7 @@
 import storyJson from '../../content/story/season1.json';
 import worldJson from '../../content/world/season1-world.json';
 import type { FaultCard, StageDef } from '../core/types';
+import { MODEL_IDS } from './catalog';
 import { faultStages, verifyFaultStages } from './difficulty';
 import { buildWorldLayout, type WorldLayout } from './layout';
 import { parseWorld, WorldError, type WorldDef } from './schema';
@@ -12,16 +13,8 @@ import { validateWorld, type Story } from './validate';
 const cardModules = import.meta.glob<{ default: FaultCard }>('../../content/faults/*.json', { eager: true });
 export const CARDS: Record<string, FaultCard> = Object.fromEntries(Object.values(cardModules).map((m) => [m.default.id, m.default]));
 
-/** Yerleşimde kullanılabilen model adları (assets.ts'te yüklenenler). */
-export const KNOWN_MODELS = new Set([
-  'Prop_Crate',
-  'Prop_Crate_Large',
-  'Prop_Locker',
-  'Prop_Vent_Wide',
-  'Prop_Cable_1',
-  'Prop_AccessPoint',
-  'Prop_Computer',
-]);
+/** Yerleşimde kullanılabilen model adları (katalog). */
+export const KNOWN_MODELS = new Set<string>(MODEL_IDS);
 
 export interface WorldContent {
   world: WorldDef;

@@ -2,29 +2,10 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import type { ModelId, Placement } from '../world/layout';
+import { MODEL_IDS, MODELS, type ModelId } from '../world/catalog';
+import type { Placement } from '../world/layout';
 
-const MODELS = [
-  'WallAstra_Straight',
-  'WallAstra_Straight_Window',
-  'WallAstra_Straight_Broken',
-  'TopCables_Straight',
-  'TopCables_Straight_Hanging',
-  'BottomMetal_Straight',
-  'Platform_DarkPlates',
-  'Door_Frame_Square',
-  'Door_Metal',
-  'Prop_AccessPoint',
-  'Prop_Computer',
-  'Prop_Light_Wide',
-  'Prop_Vent_Wide',
-  'Prop_Cable_1',
-  'Column_Simple',
-  'Prop_Crate',
-  'Prop_Crate_Large',
-  'Prop_Locker',
-] as const;
-export type LoadedModelId = (typeof MODELS)[number];
+export type LoadedModelId = ModelId;
 
 export interface PbrSet {
   map: THREE.Texture;
@@ -56,9 +37,11 @@ export async function loadAssets(base: string, renderer: THREE.WebGLRenderer): P
     return { map, normalMap, arm };
   };
 
-  const entries = await Promise.all(
-    MODELS.map(async (id) => [id, (await gltf.loadAsync(`${base}models/quaternius/${id}.gltf`)).scene] as const),
-  );
+  // Aynı PNG'yi kullanan modeller (trim dokuları onlarca modelde ortak) tek görüntü ve tek doku nesnesi paylaşsın:
+  // önbellek aynı URL için aynı görüntüyü döndürür, aşağıda aynı görüntüye bağlı dokular tekilleştirilir.
+  THREE.Cache.enabled = true;
+  const entries = await Promise.all(MODEL_IDS.map(async (id) => [id, (await gltf.loadAsync(`${base}models/${MODELS[id].file}`)).scene] as const));
+  shareTextures(entries.map(([, scene]) => scene));
   const [metalPlate, rustyMetal] = await Promise.all([
     pbr('metal_plate_02', 'metal_plate_02'),
     pbr('rusty_metal_04', 'rusty_metal_04'),
@@ -155,4 +138,30 @@ export function boxProjectUVs(geometry: THREE.BufferGeometry, scale: number): TH
   }
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   return g;
+}
+
+const TEXTURE_SLOTS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap'] as const;
+
+/** Aynı görüntüye bağlı dokuları tek nesneye indirger (GPU'ya bir kez yüklenir). */
+export function shareTextures(roots: THREE.Object3D[]): number {
+  const canon = new Map<unknown, THREE.Texture>();
+  let replaced = 0;
+  for (const root of roots)
+    root.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      for (const mat of Array.isArray(o.material) ? o.material : [o.material]) {
+        const m = mat as THREE.MeshStandardMaterial;
+        for (const slot of TEXTURE_SLOTS) {
+          const t = m[slot];
+          if (!t) continue;
+          const key = t.source.data;
+          const prev = canon.get(key);
+          if (prev && prev !== t && prev.colorSpace === t.colorSpace && prev.flipY === t.flipY) {
+            m[slot] = prev;
+            replaced++;
+          } else if (!prev) canon.set(key, t);
+        }
+      }
+    });
+  return replaced;
 }

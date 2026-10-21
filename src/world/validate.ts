@@ -1,6 +1,7 @@
 // Dünya içeriğinin anlamsal doğrulaması. Bütün sorunları açıklamalı olarak toplar.
 
 import { buildWorldLayout, cellCount, insideAny, neighborCell, roomRect, type Rect } from './layout';
+import { unreachable } from './walk';
 import { WorldError, type Side, type WorldDef } from './schema';
 import { findCycle, providersOf, simulate } from './state';
 
@@ -116,6 +117,8 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
     if (!(e.x > rect.minX && e.x < rect.maxX && e.z > rect.minZ && e.z < rect.maxZ)) p.push(`oda '${def.id}': giriş noktası odanın dışında`);
     else if (insideAny(L.colliders, e.x, e.z)) p.push(`oda '${def.id}': giriş noktası bir engelin içinde`);
   }
+  // Yürünebilirlik (kapılar açık sayılır): eşyalar hiçbir terminalin, girişin ya da kapının önünü kapatmasın
+  if (!p.length) for (const t of unreachable(L)) p.push(`yürünemez: ${t.label} başlangıçtan erişilemiyor (eşya/kolon yolu kapatıyor)`);
 
   // 9. Replikler
   if (ctx.story) {

@@ -30,6 +30,21 @@ Dosyalar değiştirilmeden kopyalandı.
 | | | `impactGlass_light_000` | LED patlaması |
 | | | `impactMetal_heavy_001` | Takılan kapı |
 
+### İstasyon sesleri — `public/assets/audio/sfx/station/`
+
+OpenGameArt kaynaklı, hepsi **CC0**. `scripts/import-assets.mjs` ile mono OGG Vorbis'e (q3) çevrildi;
+gerektiğinde kırpıldı ve filtrelendi (aşağıda). Ham dosyalar `~/oyun-kaynak-assetler/sesler/` altında,
+her klasörde kaynağı yazan `KAYNAK.txt` var.
+
+| Dosya | Eser | Yazar | Kaynak | Değişiklik | Kullanım |
+|---|---|---|---|---|---|
+| `steam_1/2/3.ogg` | Steam release sounds | bart | https://opengameart.org/content/steam-release-sounds | WAV → OGG | Buhar püskürmesi |
+| `gas_leak.ogg` | Compressed Gas Leak SFX | 0new4y | https://opengameart.org/content/compressed-gas-leak-sfx | — | Gaz kaçağı döngüsü |
+| `drip_loop.ogg`, `bubbles_loop.ogg`, `splash_1.ogg` | 40 CC0 water / splash / slime SFX | rubberduck | https://opengameart.org/node/60416 | — | Damla/su döngüsü |
+| `sonar_ping.ogg` | sonar ping | Spiceman | https://opengameart.org/content/sonar-ping | MP3 → OGG | Sonar |
+| `creature_roar.ogg` | CC0 Deep Monster Roar | trazzz123 | https://opengameart.org/content/cc0-deep-monster-roar | alçak geçiren 900 Hz, son 1,2 s sönüm | Uzak yaratık |
+| `creature_rumble.ogg` | Rumbling Sound Effects (rumbling17) | bretbernhoft | https://opengameart.org/content/rumbling-sound-effects | 20–28 s arası, alçak geçiren 260 Hz, giriş/çıkış sönümü | Uzak gümbürtü |
+
 Alarm sesi dosya değildir; oyun içinde Web Audio ile üretilir.
 
 ## PBR dokular — `public/assets/textures/`
@@ -52,9 +67,30 @@ Tümü Quaternius (https://quaternius.com), **CC0**. Lisans metinleri:
   `BottomMetal_Straight`, `Platform_DarkPlates`, `Platform_CenterPlate`, `Door_Frame_Square`,
   `Door_Metal`, `Prop_AccessPoint`, `Prop_Light_Wide`, `Prop_Light_Small`, `Prop_Vent_Wide`,
   `Prop_Cable_1`, `Column_Simple`, `Prop_Computer` (kontrol odası konsolu)
-- **Sci-Fi Essentials Kit (Standard):** `Prop_Crate`, `Prop_Crate_Large`, `Prop_Locker`
+  Oda giydirmesi için eklenenler: `Prop_Fan_Small`, `Prop_Vent_Small`, `Prop_Vent_Big`, `Prop_Barrel_Large`,
+  `Prop_Cable_3`, `Prop_Clamp`, `Prop_ItemHolder`, `Prop_Light_Floor`, `Prop_Chest`, `Prop_Crate3`,
+  `Prop_Crate4`, `Prop_PipeHolder`, `Column_Pipes`, `Column_Hollow`, `Column_Round`
+- **Sci-Fi Essentials Kit (Standard):** `Prop_Crate`, `Prop_Crate_Large`, `Prop_Locker`, `Prop_Desk_L`,
+  `Prop_Desk_Medium`, `Prop_Desk_Small`, `Prop_Chair`, `Prop_Shelves_WideTall`, `Prop_Shelves_WideShort`,
+  `Prop_Barrel1`, `Prop_Barrel2_Closed`, `Prop_SatelliteDish`, `Prop_Crate_Tarp`
 
 Değişiklikler:
 - glTF dosyalarındaki doku yolları ortak `textures/` klasörünü gösterecek şekilde yeniden yazıldı
   (iki kitin ortak trim dokuları birebir aynı olduğu için tek kopya tutuluyor).
 - `T_Props_Crates_*` dokuları 4096 px'ten 1024 px'e küçültüldü. Trim dokuları orijinal 2048 px.
+- `T_PaddedWall_*` dokuları 2048 px'ten 1024 px'e küçültüldü (boyut bütçesi). `Prop_Fan_Small`'ın
+  `T_Trim_01_BaseColor` dokusu, ayrıca 1 MB yüklememek için aynı trim'in kırmızı varyantına bağlandı.
+- Aynı PNG'yi kullanan modeller oyunda tek doku nesnesi paylaşır (`shareTextures`).
+
+## 3D modeller — `public/assets/models/umsf/`
+
+**Ultimate Modular Sci-Fi (Feb 2021)**, Quaternius (https://quaternius.com), **CC0**. Duvar süsleri:
+`Details_Pipes_Long`, `Details_Pipes_Medium`, `Details_Cylinder`, `Details_Cylinder_Long`, `Details_Vent_1`,
+`Details_Vent_3`, `Details_Output`, `Details_Output_Small`, `Details_Plate_Large`, `Details_Plate_Details`,
+`Details_Hexagon`, `Details_Triangles`. Paket yalnız FBX/OBJ/Blend; OBJ sürümü assimp ile GLB'ye çevrildi
+(FBX çevirisi santimetre ölçek ve Z-yukarı eksenle bozuk çıktığı için kullanılmadı).
+
+## Kodla üretilen görseller
+
+Kir/pas/damlama/su lekesi atlası, tabelalar, ekran içerikleri ve parçacık sprite'ı oyun açılırken canvas ile
+üretilir (`src/hub/procedural.ts`); dış varlık değildir.

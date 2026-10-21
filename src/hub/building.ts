@@ -1,5 +1,7 @@
-// Bina: dünya yerleşimindeki bütün odaları (koridor ve gerçek odalar) Quaternius modülleriyle
-// (instancing) kurar; zeminlere Poly Haven metal plaka dokusu. Çarpışma için XZ düzleminde kutular döner.
+// Bina: dünya yerleşimindeki bütün odaları (koridor ve gerçek odalar) Quaternius modülleriyle (instancing)
+// kurar; zeminlere Poly Haven metal plaka dokusu. Statik modeller oda başına gruplanır: görünmeyen odalar
+// gizlenir, bakış dışında kalanları çerçeve elemesi atar. Işıklar sabit sayılı bir havuzdur (shader yeniden
+// derlenmesin): soğuk lambalar kameraya en yakın lamba noktalarına, sıcak vurgular ekranlara dağıtılır.
 
 import * as THREE from 'three';
 import { CEILING, WALL_INNER, type Rect, type WorldLayout } from '../world/layout';
@@ -9,22 +11,52 @@ export interface Building {
   colliders: THREE.Box3[];
   /** 1 = normal aydınlatma, 0 = enerji kesik (acil durum loşluğu kalır). */
   setPower: (level: number) => void;
+  /** Işık havuzu ve titreyen lambalar; her kare. */
+  update: (dt: number, elapsed: number, camera: THREE.Camera) => void;
+  /** Yalnız bu odaların statik modelleri çizilir. */
+  setVisibleRooms: (rooms: ReadonlySet<string>) => void;
+}
+
+/** Havuzdaki soğuk (lamba) ve sıcak (ekran) ışık sayısı. */
+export const COLD_LIGHTS = 6;
+export const WARM_LIGHTS = 2;
+const COLD = { color: 0x9fe0f0, intensity: 22, distance: 12, decay: 1.4 };
+const WARM = { color: 0xff8a3a, intensity: 4, distance: 5, decay: 1.6 };
+
+/** Titreme deseni: çoğu zaman tam parlak, ara sıra kısa, düzensiz sönme patlamaları. */
+export function flickerLevel(t: number, k: number): number {
+  const window = (t * 0.23 + k * 0.618) % 1;
+  if (window > 0.1) return 1;
+  const s = Math.sin(t * 61 + k * 13) * Math.sin(t * 23 + k * 5);
+  return s > 0.2 ? 0.15 : 0.55 + 0.45 * Math.abs(s);
+}
+
+interface PoolLight {
+  light: THREE.PointLight;
+  target: number;
+  fade: number;
 }
 
 export function buildBuilding(scene: THREE.Scene, assets: Assets, L: WorldLayout): Building {
-  // Sabit modüller. Tavan gölge düşürmez: üstteki tek gölgeli ışığı kapatmasın.
-  const statics = instanceAll(assets.models, L.placements);
+  // Sabit modeller oda başına. Tavan gölge düşürmez: üstteki tek gölgeli ışığı kapatmasın.
+  const byRoom = new Map<string, THREE.Group>();
+  const roomKeys = [...new Set(L.placements.map((p) => p.room ?? ''))];
   // Lomboz camı şeffaf: dışarıdaki su altı sahnesi (hub/exterior.ts) görünür; çok hafif bir yansıma tonu.
   const oceanGlass = new THREE.MeshBasicMaterial({ color: 0xc8f2ff, transparent: true, opacity: 0.06, depthWrite: false, fog: false });
-  statics.traverse((o) => {
-    if (!(o instanceof THREE.InstancedMesh)) return;
-    if (o.name.startsWith('Platform_DarkPlates')) o.castShadow = false;
-    if ((o.material as THREE.Material).name === 'M_Glass') {
-      o.material = oceanGlass;
-      o.castShadow = false;
-    }
-  });
-  scene.add(statics);
+  for (const key of roomKeys) {
+    const g = instanceAll(assets.models, L.placements.filter((p) => (p.room ?? '') === key));
+    g.name = key ? `room:${key}` : 'shared';
+    g.traverse((o) => {
+      if (!(o instanceof THREE.InstancedMesh)) return;
+      if (o.name.startsWith('Platform_DarkPlates')) o.castShadow = false;
+      if ((o.material as THREE.Material).name === 'M_Glass') {
+        o.material = oceanGlass;
+        o.castShadow = false;
+      }
+    });
+    scene.add(g);
+    if (key) byRoom.set(key, g);
+  }
 
   // Köşe dolguları: duvar parçalarının köşede bıraktığı aralıktan dışarısı görünmesin.
   if (L.cornerFills.length) {
@@ -38,41 +70,60 @@ export function buildBuilding(scene: THREE.Scene, assets: Assets, L: WorldLayout
     scene.add(fill);
   }
 
-  // Zeminler (oda başına) ve koridorlarda kılavuz şeritleri
+  // Zeminler (oda başına, odanın grubunda) ve koridorlarda kılavuz şeritleri
   const stripMat = new THREE.MeshStandardMaterial({ color: 0x0a3a3a, emissive: 0x18c0c0, emissiveIntensity: 1 });
   for (const { def, rect: r } of L.rooms) {
     const w = r.maxX - r.minX;
     const d = r.maxZ - r.minZ;
+    const parent = byRoom.get(def.id) ?? scene;
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pbrMaterial(assets.metalPlate, new THREE.Vector2(w / 2, d / 2), { metalness: 0.9 }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set((r.minX + r.maxX) / 2, 0, (r.minZ + r.maxZ) / 2);
     floor.receiveShadow = true;
-    scene.add(floor);
+    parent.add(floor);
     if (def.type === 'corridor') {
       const cx = (r.minX + r.maxX) / 2;
       for (const x of [cx - (WALL_INNER - 0.12), cx + (WALL_INNER - 0.12)]) {
         const s = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, d - 1.2), stripMat);
         s.position.set(x, 0.008, (r.minZ + r.maxZ) / 2);
-        scene.add(s);
+        parent.add(s);
       }
     }
   }
 
-  // Lamba armatürlerinin altındaki parlak yüzey (modellerde emissive doku yok)
-  const lampMat = new THREE.MeshStandardMaterial({ color: 0x223040, emissive: 0xa8e8ff, emissiveIntensity: 1.2 });
+  // Lamba armatürlerinin altındaki parlak yüzey (aydınlanmaz; titreyenler örnek rengiyle kısılır)
+  const lampColor = new THREE.Color(0xa8e8ff);
+  const lampMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: true });
   const glow = new THREE.InstancedMesh(new THREE.BoxGeometry(1.15, 0.02, 0.22), lampMat, L.lampFixtures.length);
   const m = new THREE.Matrix4();
-  L.lampFixtures.forEach((p, k) => glow.setMatrixAt(k, m.makeTranslation(p.x, CEILING - 0.135, p.z)));
+  L.lampFixtures.forEach((p, k) => {
+    glow.setMatrixAt(k, m.makeTranslation(p.x, CEILING - 0.135, p.z));
+    glow.setColorAt(k, lampColor);
+  });
   glow.instanceMatrix.needsUpdate = true;
   scene.add(glow);
+  const flicker = new Set(L.flicker);
 
-  // Az sayıda gerçek ışık (gölgesiz)
-  const lamps = L.lampLights.map((p) => {
-    const l = new THREE.PointLight(0x9fe0f0, 22, 12, 1.4);
-    l.position.set(p.x, p.y, p.z);
-    scene.add(l);
-    return l;
+  // Işık havuzu (gölgesiz)
+  const pool = (n: number, spec: typeof COLD): PoolLight[] =>
+    Array.from({ length: n }, () => {
+      const light = new THREE.PointLight(spec.color, 0, spec.distance, spec.decay);
+      light.position.set(0, -50, 0);
+      scene.add(light);
+      return { light, target: -1, fade: 0 };
+    });
+  const cold = pool(COLD_LIGHTS, COLD);
+  const warm = pool(WARM_LIGHTS, WARM);
+  const lampSpots = L.lampLights.map((p) => ({ p: new THREE.Vector3(p.x, p.y, p.z), room: p.room }));
+  // Her lamba ışığına en yakın armatür (titreme onu izler)
+  const nearestFixture = L.lampLights.map((p) => {
+    let best = 0;
+    L.lampFixtures.forEach((f, k) => {
+      if (Math.hypot(f.x - p.x, f.z - p.z) < Math.hypot(L.lampFixtures[best].x - p.x, L.lampFixtures[best].z - p.z)) best = k;
+    });
+    return best;
   });
+  const accentSpots = L.decor.flatMap((d) => d.accents.map((a) => ({ p: new THREE.Vector3(a.x, a.y, a.z), room: d.room })));
 
   const hemi = new THREE.HemisphereLight(0x3f9fb0, 0x061a20, 0.7);
   scene.add(hemi);
@@ -93,16 +144,71 @@ export function buildBuilding(scene: THREE.Scene, assets: Assets, L: WorldLayout
   sun.shadow.normalBias = 0.02;
   scene.add(sun, sun.target);
 
-  const base = { lamp: lamps[0]?.intensity ?? 0, hemi: hemi.intensity, sun: sun.intensity, strip: 1, lampEm: lampMat.emissiveIntensity };
+  let power = 1;
+  let visible: ReadonlySet<string> = new Set(L.rooms.map((r) => r.def.id));
+  const base = { hemi: hemi.intensity, sun: sun.intensity, strip: 1 };
   const setPower = (level: number) => {
-    lamps.forEach((l) => (l.intensity = base.lamp * level));
+    power = level;
     hemi.intensity = base.hemi * (0.12 + 0.88 * level);
     sun.intensity = base.sun * level;
     stripMat.emissiveIntensity = base.strip * (0.25 + 0.75 * level);
-    lampMat.emissiveIntensity = base.lampEm * level;
   };
 
-  return { colliders: L.colliders.map(toBox), setPower };
+  /** Havuzu en yakın hedeflere dağıt: hedefi değişen ışık sönükten başlar (ani parlama yok). */
+  const assign = (lights: PoolLight[], spots: { p: THREE.Vector3; room: string }[], cam: THREE.Vector3) => {
+    const want = spots
+      .map((s, k) => ({ k, d: s.p.distanceToSquared(cam), ok: visible.has(s.room) }))
+      .filter((x) => x.ok)
+      .sort((a, b2) => a.d - b2.d)
+      .slice(0, lights.length)
+      .map((x) => x.k);
+    const free = lights.filter((l) => !want.includes(l.target));
+    const taken = new Set(lights.map((l) => l.target));
+    for (const k of want) {
+      if (taken.has(k)) continue;
+      const l = free.shift();
+      if (!l) break;
+      l.target = k;
+      l.fade = 0;
+      l.light.position.copy(spots[k].p);
+    }
+    for (const l of free) l.target = -1;
+  };
+  let assignClock = 1;
+
+  return {
+    colliders: L.colliders.map(toBox),
+    setPower,
+    setVisibleRooms(rooms) {
+      visible = rooms;
+      for (const [id, g] of byRoom) g.visible = rooms.has(id);
+      assignClock = 1;
+    },
+    update(dt, elapsed, camera) {
+      assignClock += dt;
+      if (assignClock > 0.4) {
+        assignClock = 0;
+        assign(cold, lampSpots, camera.position);
+        assign(warm, accentSpots, camera.position);
+      }
+      // Titreyen armatürler
+      for (const k of flicker) glow.setColorAt(k, lampColor.clone().multiplyScalar(flickerLevel(elapsed, k) * (0.15 + 0.85 * power)));
+      if (flicker.size || glow.userData.power !== power) {
+        if (glow.userData.power !== power) L.lampFixtures.forEach((_, k) => !flicker.has(k) && glow.setColorAt(k, lampColor.clone().multiplyScalar(0.15 + 0.85 * power)));
+        glow.userData.power = power;
+        glow.instanceColor!.needsUpdate = true;
+      }
+      for (const l of cold) {
+        l.fade = l.target < 0 ? Math.max(0, l.fade - dt * 3) : Math.min(1, l.fade + dt * 2.5);
+        const f = l.target < 0 ? 1 : flicker.has(nearestFixture[l.target]) ? flickerLevel(elapsed, nearestFixture[l.target]) : 1;
+        l.light.intensity = COLD.intensity * power * l.fade * f;
+      }
+      for (const l of warm) {
+        l.fade = l.target < 0 ? Math.max(0, l.fade - dt * 3) : Math.min(1, l.fade + dt * 2.5);
+        l.light.intensity = WARM.intensity * (0.3 + 0.7 * power) * l.fade * (0.92 + 0.08 * Math.sin(elapsed * 9 + l.target));
+      }
+    },
+  };
 }
 
 export function toBox(r: Rect): THREE.Box3 {

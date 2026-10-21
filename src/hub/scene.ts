@@ -27,7 +27,8 @@ export function createSceneKit(container: HTMLElement): SceneKit {
   scene.background = new THREE.Color(WATER_COLOR);
   scene.fog = new THREE.FogExp2(WATER_COLOR, 0.065);
 
-  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.05, 45);
+  // Uzak düzlem: su sisi ~30 m'de görüntüyü tamamen yutar; ötesini çizmek boşa (çerçeve elemesi atar).
+  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.05, 34);
 
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;

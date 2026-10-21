@@ -68,7 +68,8 @@
       "difficulty": {
         "binSize": 6,
         "tolerance": 0.04
-      }
+      },
+      "theme": "corridor"
     },
     {
       "id": "lab-c1",
@@ -99,26 +100,7 @@
         "z": -27.6,
         "yaw": 0
       },
-      "props": [
-        {
-          "model": "Prop_Crate_Large",
-          "u": 10.8,
-          "v": 6.5,
-          "rotY": 1.5708
-        },
-        {
-          "model": "Prop_Crate",
-          "u": 1.55,
-          "v": 10.6,
-          "rotY": 0.3
-        },
-        {
-          "model": "Prop_Locker",
-          "u": 11.28,
-          "v": 1.6,
-          "rotY": -1.5708
-        }
-      ],
+      "props": [],
       "difficulty": {
         "binSize": 8,
         "tolerance": 0.025,
@@ -161,7 +143,8 @@
           ],
           "window": 0.05
         }
-      }
+      },
+      "theme": "control"
     }
   ],
   "doors": [
