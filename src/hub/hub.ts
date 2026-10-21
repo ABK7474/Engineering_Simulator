@@ -473,6 +473,36 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           sounds.play('jam', { volume: 0.5 });
         });
         return T0 + 2;
+      case 'false_alarm':
+        at(T0, () => {
+          ledFlicker = { t, color: 0xff5040, lo: 0.1, hi: 1.2 };
+          t.setScreen('BOŞA TAHLİYE\nBÖLME KAPANDI', '#ffb030', true);
+          sounds.play('door_close', { volume: 0.8 });
+        });
+        at(T0 + 0.8, () => sounds.play('steam', { volume: 0.5 }));
+        return T0 + 2.2;
+      case 'leak_ignored':
+        at(T0, () => {
+          t.setLed(0xff5040, 1, true);
+          t.setScreen('KAÇAK\nSÜRÜYOR', '#ff5040', true);
+          sounds.play('splash', { volume: 0.9 });
+        });
+        return T0 + 2.2;
+      case 'redundancy_lost':
+        at(T0, () => {
+          t.setLed(0xff5040, 1, true);
+          t.setScreen('YEDEK YETMEDİ', '#ff5040', true);
+          sounds.play('jam', { volume: 0.6 });
+        });
+        at(T0 + 0.9, () => sounds.play('splash', { volume: 0.6 }));
+        return T0 + 2.2;
+      case 'power_waste':
+        at(T0, () => {
+          ledFlicker = { t, color: 0xffb030, lo: 0.3, hi: 0.9 };
+          t.setScreen('AŞIRI YÜK\nGÜÇ İSRAFI', '#ffb030', false);
+          sounds.play('jam', { volume: 0.3 });
+        });
+        return T0 + 2;
     }
   };
 

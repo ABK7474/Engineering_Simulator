@@ -11,15 +11,16 @@ const fmt = (x: number) => String(Number(x.toPrecision(3))).replace('.', ',');
 
 export function plotSvg(p: TimePlot): string {
   const xs = p.series.flatMap((s) => s.points.map(([x]) => x * p.xScale));
-  const ys = [...p.series.flatMap((s) => s.points.map(([, y]) => y * p.yScale)), p.threshold * p.yScale];
-  const x1 = Math.max(...xs, p.window[1] * p.xScale * 1.1);
+  const ys = [...p.series.flatMap((s) => s.points.map(([, y]) => y * p.yScale)), (p.threshold ?? 0) * p.yScale];
+  const x1 = Math.max(...xs, (p.window?.[1] ?? 0) * p.xScale * 1.1);
   const y0 = Math.min(0, ...ys);
   const y1 = Math.max(...ys) * 1.08;
   const X = (x: number) => PAD.l + ((x * p.xScale) / x1) * (W - PAD.l - PAD.r);
   const Y = (y: number) => H - PAD.b - ((y * p.yScale - y0) / (y1 - y0)) * (H - PAD.t - PAD.b);
   const parts: string[] = [];
-  // pencere bandı
-  parts.push(`<rect x="${X(p.window[0])}" y="${PAD.t}" width="${X(p.window[1]) - X(p.window[0])}" height="${H - PAD.t - PAD.b}" class="plot-window"/>`);
+  // pencere (dikey) ve bant (yatay)
+  if (p.window) parts.push(`<rect x="${X(p.window[0])}" y="${PAD.t}" width="${X(p.window[1]) - X(p.window[0])}" height="${H - PAD.t - PAD.b}" class="plot-window"/>`);
+  if (p.band) parts.push(`<rect x="${PAD.l}" y="${Y(p.band[1])}" width="${W - PAD.l - PAD.r}" height="${Y(p.band[0]) - Y(p.band[1])}" class="plot-window"/>`);
   // ızgara ve eksen yazıları
   for (let k = 0; k <= 4; k++) {
     const gx = PAD.l + (k / 4) * (W - PAD.l - PAD.r);
@@ -31,8 +32,10 @@ export function plotSvg(p: TimePlot): string {
   parts.push(`<text x="${(W + PAD.l) / 2}" y="${H - 6}" class="plot-lbl" text-anchor="middle">${esc(p.xLabel)}</text>`);
   parts.push(`<text x="${PAD.l - 6}" y="${PAD.t - 16}" class="plot-lbl" text-anchor="end">${esc(p.yLabel)}</text>`);
   // eşik
-  parts.push(`<line x1="${PAD.l}" y1="${Y(p.threshold)}" x2="${W - PAD.r}" y2="${Y(p.threshold)}" class="plot-th"/>`);
-  parts.push(`<text x="${W - PAD.r - 4}" y="${Y(p.threshold) - 5}" class="plot-lbl" text-anchor="end">eşik</text>`);
+  if (p.threshold !== undefined) {
+    parts.push(`<line x1="${PAD.l}" y1="${Y(p.threshold)}" x2="${W - PAD.r}" y2="${Y(p.threshold)}" class="plot-th"/>`);
+    parts.push(`<text x="${W - PAD.r - 4}" y="${Y(p.threshold) - 5}" class="plot-lbl" text-anchor="end">eşik</text>`);
+  }
   for (const s of p.series) {
     const pts = s.points.filter(([x]) => x * p.xScale <= x1).map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ');
     parts.push(`<polyline points="${pts}" class="plot-line ${s.kind}"><title>${esc(s.label)}</title></polyline>`);

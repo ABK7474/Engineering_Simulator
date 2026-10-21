@@ -1,0 +1,128 @@
+{
+  "id": "bilge-pumps-01",
+  "title": "Sintine pompaları",
+  "briefing": "Alt güvertede su sensörleri birbiriyle çelişiyor. Önce alarmın gerçekten kaçak mı olduğunu hesapla, sonra pompa ve yedek planını güvenilirlik şartına göre kur.",
+  "stages": [
+    {
+      "id": "leak-diagnosis",
+      "type": "probability",
+      "course": "olasilik-istatistik",
+      "topic": "bayes-teoremi",
+      "title": "Kaçak teşhisi",
+      "briefing": "Bayes: P(K | gözlem) = P(gözlem | K)·P(K) / P(gözlem). Payda toplam olasılıktır: P(gözlem | K)·P(K) + P(gözlem | ¬K)·P(¬K). Sensörler koşullu bağımsızsa olabilirlikler çarpılır; sessiz sensör için 1 − P(alarm) kullanılır. Kaçak nadirse yanlış alarmlar baskın çıkabilir.",
+      "config": {
+        "variants": [
+          "bayes"
+        ],
+        "bayes": {
+          "prior": [
+            0.5,
+            1,
+            2,
+            3,
+            5
+          ],
+          "sens": [
+            80,
+            85,
+            90,
+            95,
+            98
+          ],
+          "falseAlarm": [
+            2,
+            3,
+            5,
+            8,
+            10
+          ],
+          "observations": [
+            "both",
+            "firstOnly"
+          ]
+        },
+        "binomial": {
+          "q": [
+            80
+          ],
+          "need": [
+            2
+          ],
+          "reliability": [
+            99
+          ]
+        },
+        "poisson": {
+          "lambda": [
+            1.5
+          ],
+          "reliability": [
+            99
+          ]
+        }
+      }
+    },
+    {
+      "id": "pump-redundancy",
+      "type": "probability",
+      "course": "olasilik-istatistik",
+      "topic": "binom-poisson",
+      "title": "Pompa ve yedek planı",
+      "briefing": "Bağımsız n denemede başarı sayısı Binom(n, q): P(X = k) = C(n,k)·qᵏ·(1−q)ⁿ⁻ᵏ. Belirli sürede ortalama λ kez olan seyrek olaylar Poisson(λ): P(N = k) = e^(−λ)·λᵏ/k!. \"En az\" sorularında tümleyen olay ya da kümülatif toplam; n'yi (ya da yedek sayısını) adım adım artırıp şartı sağlayan ilk değeri bul.",
+      "config": {
+        "variants": [
+          "binomial",
+          "poisson"
+        ],
+        "bayes": {
+          "prior": [
+            1
+          ],
+          "sens": [
+            90
+          ],
+          "falseAlarm": [
+            5
+          ],
+          "observations": [
+            "both"
+          ]
+        },
+        "binomial": {
+          "q": [
+            70,
+            75,
+            80,
+            85,
+            90
+          ],
+          "need": [
+            2,
+            3,
+            4
+          ],
+          "reliability": [
+            99,
+            99.5,
+            99.9
+          ]
+        },
+        "poisson": {
+          "lambda": [
+            0.8,
+            1.2,
+            1.5,
+            2,
+            2.5,
+            3.2
+          ],
+          "reliability": [
+            95,
+            99,
+            99.5
+          ]
+        }
+      }
+    }
+  ]
+}

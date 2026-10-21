@@ -21,6 +21,9 @@ export interface SlotBoardOptions {
   info: { heading: string; text: string }[];
   slots: string[];
   bin: SlotCard[];
+  /** Kutu başlığı ve kullanım notu (varsayılan: direnç kutusu). */
+  binTitle?: string;
+  binHow?: string;
   /** Yuvalardaki değerlere göre çizim (SVG metni); yuvalar `data-slot` ile işaretli. */
   drawing: (filled: Partial<Record<string, number>>, armed: boolean, chosen: Partial<Record<string, string>>) => string;
   submitLabel: string;
@@ -51,8 +54,8 @@ export function openSlotBoard(root: HTMLElement, opts: SlotBoardOptions): () => 
         <div class="schematic"></div>
         <div class="task">
           ${opts.info.map((i) => `<div class="logbook"><h3>${esc(i.heading)}</h3><p>${esc(i.text)}</p></div>`).join('')}
-          <h3>Direnç kutusu</h3>
-          <p class="how">${opts.slots.length === 1 ? 'Bir direnç seç; yuvaya oturur.' : 'Bir direnç seç, sonra çizimdeki yuvaya tıkla.'} Dolu yuvaya tıklamak direnci kutuya geri koyar.</p>
+          <h3>${esc(opts.binTitle ?? 'Direnç kutusu')}</h3>
+          <p class="how">${esc(opts.binHow ?? `${opts.slots.length === 1 ? 'Bir direnç seç; yuvaya oturur.' : 'Bir direnç seç, sonra çizimdeki yuvaya tıkla.'} Dolu yuvaya tıklamak direnci kutuya geri koyar.`)}</p>
           <div class="bin"></div>
           <button class="primary" data-act="submit" disabled>${esc(opts.submitLabel)}</button>
         </div>

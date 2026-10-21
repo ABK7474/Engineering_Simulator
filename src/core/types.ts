@@ -20,7 +20,11 @@ export type OutcomeKind =
   | 'opamp_saturated' // op-amp: çıkış besleme rayını aştı, sinyal kırpıldı
   | 'valve_slam' // rc-rl: valf penceresinden erken kapandı, darbe
   | 'valve_late' // rc-rl: valf geç kapandı, basınç kaçağı
-  | 'valve_stuck'; // rc-rl: eşiğe hiç ulaşılmadı, valf kapanmadı
+  | 'valve_stuck' // rc-rl: eşiğe hiç ulaşılmadı, valf kapanmadı
+  | 'false_alarm' // olasılık: kaçak olasılığı abartıldı, boşa tahliye
+  | 'leak_ignored' // olasılık: kaçak olasılığı küçümsendi
+  | 'redundancy_lost' // olasılık: yedek/pompa yetmedi
+  | 'power_waste'; // olasılık: gereğinden fazla pompa/yedek
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -59,14 +63,18 @@ export interface TimePlot {
   /** Eksen ölçeği: gösterilen değer = gerçek · ölçek (ör. s → ms için 1000). */
   xScale: number;
   yScale: number;
-  threshold: number;
-  window: [number, number];
+  /** Yatay eşik çizgisi (isteğe bağlı). */
+  threshold?: number;
+  /** Dikey kabul penceresi (zaman aralığı; isteğe bağlı). */
+  window?: [number, number];
+  /** Yatay kabul bandı (değer aralığı; ör. hedefin ±%2'si; isteğe bağlı). */
+  band?: [number, number];
   series: { label: string; kind: 'correct' | 'chosen'; points: [number, number][] }[];
 }
 
 export interface StageDef {
   id: string;
-  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl' | 'superposition' | 'diode' | 'filter';
+  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl' | 'superposition' | 'diode' | 'filter' | 'damping' | 'stability' | 'laplace' | 'phasor' | 'probability';
   /** Ders kimliği (content/courses.json). Zorunlu; aralıklı tekrar için. */
   course: string;
   /** Konu etiketi (ör. "thevenin-norton"; kullanıcı konuları için "konu:<kimlik>"). Zorunlu. */

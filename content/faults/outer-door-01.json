@@ -1,0 +1,111 @@
+{
+  "id": "outer-door-01",
+  "title": "Hava kilidi dış kapısı",
+  "briefing": "Dış kapı her açılışta istasyona su sokuyor. Önce kapının amortisörünü kritik sönüme göre seç, sonra basınç denetleyicisini kararlı yap, en son dolum pompasının koruma eşiklerini yükle.",
+  "stages": [
+    {
+      "id": "door-damper",
+      "type": "damping",
+      "course": "diferansiyel-denklemler",
+      "topic": "ikinci-mertebe-sonum",
+      "title": "Kapı amortisörü",
+      "briefing": "m·x″ + c·x′ + k·x = k·x_h ikinci mertebe denklemdir. Karakteristik kökler s = −ζω_n ± ω_n·√(ζ² − 1); ζ < 1 salınımlı (aşar), ζ = 1 kritik (en hızlı, aşmasız), ζ > 1 aşırı sönümlü (yavaş). ω_n = √(k/m) = 2π/T₀, ζ = c / (2·√(m·k)). Önce serbest periyottan k'yı bul.",
+      "config": {
+        "mass": [
+          40,
+          60,
+          80,
+          120
+        ],
+        "period": [
+          0.4,
+          4
+        ],
+        "zeta": [
+          0.92,
+          1.08
+        ],
+        "answer": [
+          47,
+          6800
+        ],
+        "binSize": 5
+      }
+    },
+    {
+      "id": "pressure-controller",
+      "type": "stability",
+      "course": "muhendislik-matematigi",
+      "topic": "ozdeger-kararlilik",
+      "title": "Basınç denetleyicisi",
+      "briefing": "ẋ = A·x sisteminin yanıtı e^(λt) terimlerinden oluşur; λ'lar A'nın özdeğerleridir (det(λI − A) = 0). Re λ < 0 ise sapma söner; en yavaş kökün reel kısmı sönme hızını, kökler karmaşıksa ζ = −Re λ / |λ| salınımı belirler. 2×2'de λ² − iz(A)·λ + det(A) = 0.",
+      "config": {
+        "a": [
+          0.3,
+          0.5,
+          0.8
+        ],
+        "b": [
+          0.5,
+          1,
+          2
+        ],
+        "c": [
+          2,
+          3,
+          4
+        ],
+        "gains": {
+          "base": [
+            0.4,
+            0.6,
+            0.8,
+            1.0
+          ],
+          "ratio": 1.8,
+          "count": 6
+        }
+      }
+    },
+    {
+      "id": "fill-pump",
+      "type": "laplace",
+      "course": "muhendislik-matematigi",
+      "topic": "laplace-son-deger",
+      "title": "Dolum pompası koruması",
+      "briefing": "Basamak girişinde Y(s) = G(s)·U/s. Son değer teoremi: y(∞) = lim s→0 s·Y(s) (yalnız bütün kutuplar sol yarı düzlemdeyse). Başlangıç değeri teoremi: y(0⁺) = lim s→∞ s·Y(s); türev için y′(0⁺) = lim s→∞ s·[s·Y(s) − y(0⁺)]. Ters dönüşüm yapmadan iki limiti al.",
+      "config": {
+        "K": [
+          0.4,
+          0.6,
+          0.8,
+          1.2,
+          1.5
+        ],
+        "z": [
+          0.3,
+          0.5,
+          2,
+          3
+        ],
+        "p1": [
+          0.2,
+          0.4,
+          0.5
+        ],
+        "p2": [
+          1,
+          1.5,
+          2.5
+        ],
+        "U": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "tolerance": 0.04
+      }
+    }
+  ]
+}

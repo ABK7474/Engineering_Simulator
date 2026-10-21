@@ -38,17 +38,29 @@ import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
 import { resolveTraceOutcome, type TraceAnswer } from '../solvers/ds/ds-trace.outcomes';
 import { buildDsTraceReport } from '../solvers/ds/ds-trace.report';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
+import { parseDampingConfig } from '../solvers/ode/damping';
+import { generateDamping } from '../solvers/ode/damping.generate';
+import { buildDampingReport, resolveDampingOutcome } from '../solvers/ode/damping.outcomes';
+import { parseStabilityConfig } from '../solvers/math/stability';
+import { generateStability } from '../solvers/math/stability.generate';
+import { buildStabilityReport, resolveStabilityOutcome } from '../solvers/math/stability.outcomes';
+import { parseLaplaceConfig } from '../solvers/math/laplace';
+import { buildLaplaceReport, generateLaplace, resolveLaplaceOutcome, type LaplaceAnswer } from '../solvers/math/laplace.generate';
+import { parsePhasorConfig } from '../solvers/math/phasor';
+import { buildPhasorReport, generatePhasor, resolvePhasorOutcome, type PhasorAnswer } from '../solvers/math/phasor.generate';
+import { parseProbConfig } from '../solvers/prob/probability';
+import { buildProbReport, generateProb, resolveProbOutcome } from '../solvers/prob/probability.generate';
 import { parseRcRlConfig } from '../solvers/ode/rc-rl';
 import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { resolveRcRlOutcome } from '../solvers/ode/rc-rl.outcomes';
 import { buildRcRlReport } from '../solvers/ode/rc-rl.report';
-import { openOpampPanel, openRcRlPanel } from './airlock/panels';
+import { laplaceSvg, openDampingPanel, openOpampPanel, openRcRlPanel, openStabilityPanel } from './airlock/panels';
 import { schematicSvg } from './circuit-board/schematic';
 import { openNumericPanel } from './generic/numeric-panel';
 import { openCircuitBoardPanel } from './circuit-board/panel';
 import { openSeriesCircuitPanel } from './series-circuit/panel';
 import { openDiodePanel, openMaxPowerPanel, openTheveninPanel } from './power/panels';
-import { openFilterPanel } from './sensor/panels';
+import { bayesSvg, openFilterPanel, openRedundancyPanel, phasorWavesSvg } from './sensor/panels';
 import { openTracePanel } from './trace-table/panel';
 
 export interface StagePanelContext {
@@ -257,6 +269,123 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
           const id = answer as string;
           const outcome = resolveFilterOutcome(problem, id);
           return { outcome, result: buildFilterReport(def.id, problem, id, outcome) };
+        },
+      };
+    },
+  },
+  damping: {
+    validate: (def) => void parseDampingConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateDamping(parseDampingConfig(def.config), seed);
+      return {
+        open: (ctx) => openDampingPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveDampingOutcome(problem, id);
+          return { outcome, result: buildDampingReport(def.id, problem, id, outcome) };
+        },
+      };
+    },
+  },
+  stability: {
+    validate: (def) => void parseStabilityConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateStability(parseStabilityConfig(def.config), seed);
+      return {
+        open: (ctx) => openStabilityPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveStabilityOutcome(problem, id);
+          return { outcome, result: buildStabilityReport(def.id, problem, id, outcome) };
+        },
+      };
+    },
+  },
+  laplace: {
+    validate: (def) => void parseLaplaceConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateLaplace(parseLaplaceConfig(def.config), seed);
+      return {
+        open: (ctx) =>
+          openNumericPanel(ctx.root, {
+            ...ctx,
+            info: [
+              { heading: 'Pompa modeli', text: `Kilit basıncı y, dolum komutu U'ya G(s) transfer fonksiyonuyla bağlı; komut t = 0'da basamak olarak verilir, kilit başta boş (y(0) = 0).` },
+              { heading: 'Görev', text: 'Koruma denetleyicisine iki sayı girilecek: beklenen son basınç y(∞) ve ilk anki artış hızı y′(0⁺). Benzetim yapmadan, Laplace teoremleriyle bul.' },
+            ],
+            drawing: laplaceSvg(problem),
+            fields: [
+              { id: 'final', label: 'Son basınç y(∞) (bar)', unit: '' },
+              { id: 'slope', label: 'İlk artış hızı y′(0⁺) (bar/s)', unit: '' },
+            ],
+            note: `Kabul: her biri ±%${Math.round(problem.tolerance * 100)}. Virgül ya da nokta olur.`,
+            submitLabel: 'Eşikleri yükle',
+            onSubmit: (v) => ctx.onSubmit({ final: v.final, slope: v.slope }),
+          }),
+        evaluate(answer) {
+          const a = answer as LaplaceAnswer;
+          const outcome = resolveLaplaceOutcome(problem, a);
+          return { outcome, result: buildLaplaceReport(def.id, problem, a, outcome) };
+        },
+      };
+    },
+  },
+  phasor: {
+    validate: (def) => void parsePhasorConfig(def.config),
+    prepare(def, seed) {
+      const problem = generatePhasor(parsePhasorConfig(def.config), seed);
+      return {
+        open: (ctx) =>
+          openNumericPanel(ctx.root, {
+            ...ctx,
+            info: [
+              { heading: 'Hidrofon kaydı', text: `İki hidrofon aynı frekansta yankı alıyor: v₁ = ${problem.w1.a.toString().replace('.', ',')}·cos(ωt ${problem.w1.phi < 0 ? '−' : '+'} ${Math.abs(problem.w1.phi)}°) mV, v₂ = ${problem.w2.a.toString().replace('.', ',')}·cos(ωt ${problem.w2.phi < 0 ? '−' : '+'} ${Math.abs(problem.w2.phi)}°) mV.` },
+              { heading: 'Görev', text: 'Işın oluşturucu toplam sinyali v = A·cos(ωt + φ) biçiminde bekliyor. A ve φ\'yi gir (φ: −180° ile 180° arası).' },
+            ],
+            drawing: phasorWavesSvg(problem),
+            fields: [
+              { id: 'a', label: 'Genlik A (mV)', unit: '' },
+              { id: 'phi', label: 'Faz φ (derece)', unit: '', signed: true },
+            ],
+            note: `Kabul: genlik ±%${Math.round(problem.ampTol * 100)}, faz ±${problem.phaseTol}°. Virgül ya da nokta olur.`,
+            submitLabel: 'Işını eşle',
+            onSubmit: (v) => ctx.onSubmit({ a: v.a, phi: v.phi }),
+          }),
+        evaluate(answer) {
+          const a = answer as PhasorAnswer;
+          const outcome = resolvePhasorOutcome(problem, a);
+          return { outcome, result: buildPhasorReport(def.id, problem, a, outcome) };
+        },
+      };
+    },
+  },
+  probability: {
+    validate: (def) => void parseProbConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateProb(parseProbConfig(def.config), seed);
+      return {
+        open: (ctx) =>
+          problem.variant === 'bayes'
+            ? openNumericPanel(ctx.root, {
+                ...ctx,
+                info: [
+                  {
+                    heading: 'Sensör kaydı',
+                    text: `Bölmede kaçak olma olasılığı (bakım kayıtlarından) %${String(problem.input.prior).replace('.', ',')}. İki sensör birbirinden bağımsız çalışır. ${problem.input.obs === 'both' ? 'Şu an ikisi de alarm veriyor.' : 'Şu an S1 alarm veriyor, S2 sessiz.'}`,
+                  },
+                  { heading: 'Görev', text: 'Bu gözlem altında bölmede gerçekten kaçak olma olasılığını hesapla; tahliye kararı buna göre verilecek.' },
+                ],
+                drawing: bayesSvg(problem),
+                fields: [{ id: 'p', label: 'P(kaçak | gözlem) (%)', unit: '%' }],
+                note: `Kabul: ±${(problem.tolerance * 100).toFixed(1).replace('.', ',')} puan. "12,5" ya da "12,5%" yazabilirsin.`,
+                submitLabel: 'Kararı gönder',
+                onSubmit: (v) => ctx.onSubmit(v.p),
+              })
+            : openRedundancyPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const x = problem.variant === 'bayes' ? (answer as number) : problem.bin.find((b) => b.id === answer)!.n;
+          const outcome = resolveProbOutcome(problem, x);
+          return { outcome, result: buildProbReport(def.id, problem, x, outcome) };
         },
       };
     },

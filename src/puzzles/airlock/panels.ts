@@ -1,9 +1,12 @@
 // Hava kilidi panelleri: basınç sensörü şartlandırma (op-amp, 2–3 yuva) ve valf zamanlayıcı (RC/RL, tek yuva).
 // Çizimler programla üretilir (sabit topoloji); yuvalar `data-slot` taşır, etkileşim slot-board'da.
 
-import { formatAmp, formatOhm, formatVolt } from '../../core/format';
+import { formatAmp, formatOhm, formatSec, formatVolt } from '../../core/format';
 import { SLOTS, type OpampVariant } from '../../solvers/circuit/opamp';
 import type { OpampProblem } from '../../solvers/circuit/opamp.generate';
+import type { LaplaceProblem } from '../../solvers/math/laplace.generate';
+import type { StabilityProblem } from '../../solvers/math/stability.generate';
+import type { DampingProblem } from '../../solvers/ode/damping.generate';
 import type { RcRlProblem } from '../../solvers/ode/rc-rl.generate';
 import { fmtTime } from '../../solvers/ode/rc-rl.outcomes';
 import { esc } from '../dom';
@@ -140,4 +143,104 @@ export function openRcRlPanel(root: HTMLElement, opts: Common & { problem: RcRlP
     source: opts.source,
     onSound: opts.onSound,
   });
+}
+
+/** Kapı: kütle, yay, amortisör yuvası; seçilen amortisörün değeri yazılır. */
+export function damperSvg(label: string | undefined, armed: boolean): string {
+  return `<svg viewBox="0 0 520 220" class="circuit board" aria-label="Kapı, yay ve amortisör">
+    <rect x="20" y="30" width="16" height="160" class="sym"/><text x="10" y="210" class="lbl">gövde</text>
+    <polyline points="36,70 70,70 80,55 95,85 110,55 125,85 140,55 155,85 165,70 220,70" class="sym-arrow"/>
+    <text x="110" y="40" class="lbl" text-anchor="middle">yay k (T₀'dan)</text>
+    <g class="bslot${armed ? ' armed' : ''}${label ? ' filled' : ''}" data-slot="C" role="button" tabindex="-1" aria-label="Amortisör yuvası">
+      <rect x="36" y="120" width="184" height="60" class="slot-hit"/>
+      <polyline points="36,150 90,150" class="wire"/><rect x="90" y="132" width="70" height="36" class="${label ? 'sym' : 'slot-empty'}" rx="3"/>
+      <polyline points="120,150 220,150" class="wire"/><line x1="120" y1="138" x2="120" y2="162" class="sym"/>
+      <text x="128" y="200" class="lbl slot-lbl" text-anchor="middle">${esc(label ? `c = ${label}` : 'c = ?')}</text>
+    </g>
+    <rect x="220" y="40" width="130" height="140" rx="6" class="sym"/><text x="285" y="115" class="lbl" text-anchor="middle">dış kapı (m)</text>
+    <path d="M360 110 h80" class="sym-arrow"/><path d="M430 102 l10 8 l-10 8" class="sym-arrow"/><text x="400" y="96" class="lbl" text-anchor="middle">x</text>
+  </svg>`;
+}
+
+export function openDampingPanel(root: HTMLElement, opts: Common & { problem: DampingProblem; onSubmit: (cardId: string) => void }): () => void {
+  const p = opts.problem;
+  const num = (x: number) => String(Number(x.toPrecision(3))).replace('.', ',');
+  return openSlotBoard(root, {
+    title: opts.title,
+    briefing: opts.briefing,
+    info: [
+      { heading: 'Ölçüm kaydı', text: `Amortisör sökülüyken kapı (${num(p.m)} kg) serbest bırakılınca ${formatSec(p.t0)} periyotla salınmış.` },
+      { heading: 'Görev', text: `Kapı salınmadan ve gecikmeden kapanmalı: sönüm oranı ζ = ${num(p.zeta[0])}–${num(p.zeta[1])}. Katalogdan amortisörü seç.` },
+    ],
+    slots: ['C'],
+    bin: p.bin,
+    drawing: (_filled, armed, chosen) => damperSvg(chosen.C ? p.bin.find((b) => b.id === chosen.C)!.label : undefined, armed),
+    submitLabel: 'Tak ve kapıyı kapat',
+    onSubmit: (pl) => opts.onSubmit(pl.C),
+    onCancel: opts.onCancel,
+    source: opts.source,
+    onSound: opts.onSound,
+  });
+}
+
+/** Basınç denetleyicisinin A matrisi; k yuvası. */
+export function matrixSvg(p: StabilityProblem, label: string | undefined, armed: boolean): string {
+  const n = (x: number) => String(Number(x.toPrecision(3))).replace('.', ',');
+  return `<svg viewBox="0 0 520 220" class="circuit board" aria-label="Sistem matrisi">
+    <text x="30" y="118" class="lbl" style="font-size:22px">ẋ = </text>
+    <path d="M110 40 h-12 v140 h12" class="sym-arrow"/><path d="M380 40 h12 v140 h-12" class="sym-arrow"/>
+    <text x="170" y="90" class="lbl" text-anchor="middle" style="font-size:22px">${esc(n(p.plant.a))}</text>
+    <text x="310" y="90" class="lbl" text-anchor="middle" style="font-size:22px">${esc(n(p.plant.b))}</text>
+    <g class="bslot${armed ? ' armed' : ''}${label ? ' filled' : ''}" data-slot="K" role="button" tabindex="-1" aria-label="Kazanç yuvası">
+      <rect x="120" y="125" width="100" height="44" class="slot-hit"/>
+      <rect x="128" y="130" width="84" height="34" rx="4" class="${label ? 'sym' : 'slot-empty'}"/>
+      <text x="170" y="154" class="lbl slot-lbl" text-anchor="middle" style="font-size:18px">${esc(label ? `−${label.replace('k = ', '')}` : '−k')}</text>
+    </g>
+    <text x="310" y="155" class="lbl" text-anchor="middle" style="font-size:22px">−${esc(n(p.plant.c))}</text>
+    <text x="410" y="118" class="lbl" style="font-size:22px">· x</text>
+    <text x="40" y="205" class="lbl dim">x₁: basınç sapması, x₂: valf konumu</text>
+  </svg>`;
+}
+
+export function openStabilityPanel(root: HTMLElement, opts: Common & { problem: StabilityProblem; onSubmit: (cardId: string) => void }): () => void {
+  const p = opts.problem;
+  const n = (x: number) => String(Number(x.toPrecision(3))).replace('.', ',');
+  return openSlotBoard(root, {
+    title: opts.title,
+    briefing: opts.briefing,
+    info: [
+      { heading: 'Denetleyici modeli', text: `Basınç sapması kendiliğinden a = ${n(p.plant.a)} 1/s hızla büyür; valf b = ${n(p.plant.b)} ile basıncı düzeltir, c = ${n(p.plant.c)} 1/s ile söner. Geri besleme kazancı k seçilecek.` },
+      { heading: 'Şartlar', text: `Her mod en az σ = ${n(p.sigmaMin)} 1/s hızla sönmeli (Re λ ≤ −σ) ve sönüm oranı ζ ≥ ${n(p.zetaMin)} olmalı.` },
+    ],
+    slots: ['K'],
+    bin: p.bin,
+    binTitle: 'Kazanç seçenekleri',
+    binHow: 'Bir kazanç kartı seç; denetleyiciye yüklenir. Yeniden tıklamak geri alır.',
+    drawing: (_f, armed, chosen) => matrixSvg(p, chosen.K ? p.bin.find((b) => b.id === chosen.K)!.label : undefined, armed),
+    submitLabel: 'Kazancı yükle',
+    onSubmit: (pl) => opts.onSubmit(pl.K),
+    onCancel: opts.onCancel,
+    source: opts.source,
+    onSound: opts.onSound,
+  });
+}
+
+/** Dolum pompası blok şeması: basamak komutu → G(s) → kilit basıncı. */
+export function laplaceSvg(p: LaplaceProblem): string {
+  const { K, z, p1, p2 } = p.g;
+  return `<svg viewBox="0 0 460 200" class="circuit board" aria-label="Dolum pompası blok şeması">
+    <polyline points="30,140 60,140 60,70 100,70" class="sym"/>
+    <text x="40" y="170" class="lbl">U = ${esc(num(p.u))}</text>
+    <line x1="100" y1="100" x2="150" y2="100" class="wire"/>
+    <polygon points="150,100 140,95 140,105" style="fill:#9cc6cc"/>
+    <rect x="150" y="60" width="180" height="80" rx="6" class="sym"/>
+    <text x="240" y="92" class="lbl" text-anchor="middle">${esc(num(K))}(s + ${esc(num(z))})</text>
+    <line x1="170" y1="100" x2="310" y2="100" class="wire"/>
+    <text x="240" y="122" class="lbl" text-anchor="middle">(s + ${esc(num(p1))})(s + ${esc(num(p2))})</text>
+    <line x1="330" y1="100" x2="410" y2="100" class="wire"/>
+    <polygon points="410,100 400,95 400,105" style="fill:#9cc6cc"/>
+    <text x="420" y="104" class="lbl">y</text>
+    <text x="240" y="48" class="lbl dim" text-anchor="middle">dolum pompası + kilit hacmi, G(s)</text>
+    <text x="370" y="170" class="lbl dim" text-anchor="middle">y: kilit basıncı (bar)</text>
+  </svg>`;
 }

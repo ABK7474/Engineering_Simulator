@@ -196,6 +196,37 @@
       "drainPerMinute": {
         "oxygen": 0.3
       }
+    },
+    "false_alarm": {
+      "label": "Boşa tahliye, pompalar boşuna çalıştı",
+      "loss": {
+        "power": 5
+      }
+    },
+    "leak_ignored": {
+      "label": "Fark edilmeyen kaçak",
+      "loss": {
+        "oxygen": 4
+      },
+      "drainPerMinute": {
+        "oxygen": 0.4
+      }
+    },
+    "redundancy_lost": {
+      "label": "Yedekler yetmedi, bölme su aldı",
+      "loss": {
+        "oxygen": 6,
+        "power": 2
+      },
+      "drainPerMinute": {
+        "oxygen": 0.3
+      }
+    },
+    "power_waste": {
+      "label": "Gereksiz yük, güç israfı",
+      "loss": {
+        "power": 4
+      }
     }
   },
   "overheat": {

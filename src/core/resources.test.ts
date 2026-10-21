@@ -61,6 +61,7 @@ describe('denge kapsamı', () => {
       'motor_stall', 'motor_slow', 'motor_overheat', 'motor_burnt',
       'core_reboot', 'core_crash', 'sensor_misread', 'core_freeze', 'signal_weak',
       'opamp_saturated', 'valve_slam', 'valve_late', 'valve_stuck',
+      'false_alarm', 'leak_ignored', 'redundancy_lost', 'power_waste',
     ];
     for (const k of kinds) expect(B.outcomes[k as Exclude<OutcomeKind, 'success'>], k).toBeDefined();
   });

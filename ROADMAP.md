@@ -34,9 +34,11 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 ## Adım 2 — Dersler ve oyun (değer sırasıyla)
 ### 2a. Kalan devre/elektronik, DiffEq, Müh. Mat., Olasılık
 - [x] Diyot (Shockley; Newton + ikiye bölme), RC/RL filtre kesimi (kapalı form + karmaşık empedans), süperpozisyon (MNA doğrusallık + kapalı form). Kartlar: generator-sync-01 (süperpozisyon + diyot, güç odası için), sonar-frontend-01 (filtre, sensör odası için) — odalara 2c'de yerleşecek
-- [ ] RLC sönüm tasarımı
-- [ ] Kararlılık (özdeğer), Laplace, karmaşık sayı
-- [ ] Bayes, binom, Poisson
+- [x] RLC sönüm tasarımı (damping: kapalı form ζ + RK4 aşma/oturma ölçümü). Kart: outer-door-01 aşama 1
+- [x] Kararlılık (stability: 2×2 özdeğer kapalı form + benzetimle sönme hızı), Laplace (son değer + başlangıç eğimi, durum uzayı RK4 teyidi), karmaşık sayı/fazör (karmaşık toplam + örnekleme). Kartlar: outer-door-01 aşama 2–3, sonar-frontend-01 aşama 2
+- [x] Bayes (BigInt kesin kesir + Monte Carlo), binom ve Poisson yedeklilik (kesin/seri + gama integrali + Monte Carlo). Kart: bilge-pumps-01 (iki aşama). Yeni sonuçlar: false_alarm, leak_ignored, redundancy_lost, power_waste (denge satırı + hub efekti)
+- [x] İçerik testi: content/faults altındaki bütün kartlar doğrulanır ve 5 tohumda üretilir (src/puzzles/cards.test.ts)
+- Not: generator-sync-01, sonar-frontend-01, outer-door-01, bilge-pumps-01 henüz dünyada değil; odalarına 2c'de yerleşecek
 ### 2b. Veri yapıları + C#
 - [ ] Ağaç, BFS/DFS, sıralama (trace altyapısı)
 - [ ] C# çıktı tahmini (dotnet ile üretimde bir kez çalıştır → JSON)
@@ -50,3 +52,4 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 ## Oturum günlüğü
 (her oturumun sonunda kısa not: ne bitti, ne yarım kaldı, ilk yapılacak şey)
 - 2026-10-22 · Adım 0 ve 1 bitti. Sıradaki: 2a (diyot, filtre, süperpozisyon, RLC, Müh. Mat., olasılık türleri).
+- 2026-10-22 · 2a bitti (9 yeni tür, 368+ test). Sıradaki: 2b (ağaç/BFS/DFS/sıralama trace, C# çıktı tahmini).

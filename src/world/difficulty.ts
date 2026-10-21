@@ -25,6 +25,16 @@ import { generateThevenin } from '../solvers/circuit/thevenin.generate';
 import { parseOpampConfig } from '../solvers/circuit/opamp';
 import { generateOpamp } from '../solvers/circuit/opamp.generate';
 import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
+import { parseDampingConfig } from '../solvers/ode/damping';
+import { generateDamping } from '../solvers/ode/damping.generate';
+import { parseStabilityConfig } from '../solvers/math/stability';
+import { generateStability } from '../solvers/math/stability.generate';
+import { parseLaplaceConfig } from '../solvers/math/laplace';
+import { generateLaplace } from '../solvers/math/laplace.generate';
+import { parsePhasorConfig } from '../solvers/math/phasor';
+import { generatePhasor } from '../solvers/math/phasor.generate';
+import { parseProbConfig } from '../solvers/prob/probability';
+import { generateProb } from '../solvers/prob/probability.generate';
 import { parseRcRlConfig } from '../solvers/ode/rc-rl';
 import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
@@ -76,6 +86,11 @@ const CHECKERS: Record<StageDef['type'], (config: unknown) => (seed: number) => 
   superposition: (c) => ((cfg) => (seed: number) => generateSuper(cfg, seed))(parseSuperConfig(c)),
   diode: (c) => ((cfg) => (seed: number) => generateDiode(cfg, seed))(parseDiodeConfig(c)),
   filter: (c) => ((cfg) => (seed: number) => generateFilter(cfg, seed))(parseFilterConfig(c)),
+  damping: (c) => ((cfg) => (seed: number) => generateDamping(cfg, seed))(parseDampingConfig(c)),
+  stability: (c) => ((cfg) => (seed: number) => generateStability(cfg, seed))(parseStabilityConfig(c)),
+  laplace: (c) => ((cfg) => (seed: number) => generateLaplace(cfg, seed))(parseLaplaceConfig(c)),
+  phasor: (c) => ((cfg) => (seed: number) => generatePhasor(cfg, seed))(parsePhasorConfig(c)),
+  probability: (c) => ((cfg) => (seed: number) => generateProb(cfg, seed))(parseProbConfig(c)),
 };
 
 /** Her aşama birçok tohumda doğrulanmış problem üretebilmeli; üretemeyenler açıklamalı döner. */
