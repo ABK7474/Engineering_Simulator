@@ -1,7 +1,8 @@
 // Güç barası panelleri: Thevenin/Norton eşdeğer modülü (birimli sayı girişi) ve sonar vericisi
 // (kara kutu + tek yuva). Three.js'i bilmez; yalnızca cevabı geri bildirir.
 
-import { formatOhm } from '../../core/format';
+import { formatAmp, formatOhm, formatVolt } from '../../core/format';
+import type { DiodeProblem } from '../../solvers/circuit/diode.generate';
 import type { MaxPowerProblem } from '../../solvers/circuit/max-power.generate';
 import type { TheveninProblem } from '../../solvers/circuit/thevenin.generate';
 import type { TheveninAnswer } from '../../solvers/circuit/thevenin.outcomes';
@@ -115,6 +116,48 @@ export function openMaxPowerPanel(root: HTMLElement, opts: Common & { problem: M
     drawing: (filled, armed) => blackBoxSvg(filled.RL, armed),
     submitLabel: 'Tak ve yayına geç',
     onSubmit: (pl) => opts.onSubmit(pl.RL),
+    onCancel: opts.onCancel,
+    source: opts.source,
+    onSound: opts.onSound,
+  });
+}
+
+/** Diyotlu seri devre: kaynak, R yuvası, LED (anot üstte), toprak. */
+export function diodeSvg(vs: number, filled: number | undefined, armed: boolean): string {
+  const slot =
+    filled === undefined
+      ? `<rect x="134" y="41" width="52" height="18" class="slot-empty" rx="3"/><text x="160" y="28" class="lbl slot-lbl" text-anchor="middle">R = ?</text>`
+      : `<g transform="translate(120,39)">${resistorSvg(filled, 80, 22, true)}</g><text x="160" y="28" class="lbl slot-lbl" text-anchor="middle">R = ${esc(formatOhm(filled))}</text>`;
+  return `<svg viewBox="0 0 420 240" class="circuit board" aria-label="Diyotlu seri devre">
+    <polyline points="60,105 60,50 120,50" class="wire"/><polyline points="200,50 300,50 300,92" class="wire"/>
+    <polyline points="60,145 60,200 300,200 300,148" class="wire"/>
+    <circle cx="60" cy="125" r="18" class="sym"/><text x="60" y="120" class="sign" text-anchor="middle">+</text><text x="60" y="137" class="sign" text-anchor="middle">−</text>
+    <text x="86" y="129" class="lbl">Vs = ${esc(String(vs).replace('.', ','))} V</text>
+    <g class="bslot${armed ? ' armed' : ''}${filled === undefined ? '' : ' filled'}" data-slot="R" role="button" tabindex="-1" aria-label="Direnç yuvası">
+      <rect x="120" y="32" width="80" height="36" class="slot-hit"/>${filled === undefined ? '<line x1="120" y1="50" x2="134" y2="50" class="wire"/><line x1="186" y1="50" x2="200" y2="50" class="wire"/>' : ''}${slot}
+    </g>
+    <polygon points="286,92 314,92 300,120" class="sym"/><line x1="284" y1="120" x2="316" y2="120" class="sym"/><polyline points="300,120 300,148" class="wire"/>
+    <path d="M320 98 l14 -9 M322 108 l14 -9" class="sym-arrow"/>
+    <text x="345" y="112" class="lbl">LED</text>
+    <g class="ground"><line x1="180" y1="200" x2="180" y2="210"/><line x1="168" y1="210" x2="192" y2="210"/><line x1="173" y1="215" x2="187" y2="215"/><line x1="177" y1="220" x2="183" y2="220"/></g>
+  </svg>`;
+}
+
+export function openDiodePanel(root: HTMLElement, opts: Common & { problem: DiodeProblem; onSubmit: (cardId: string) => void }): () => void {
+  const p = opts.problem;
+  const [a, b] = p.points;
+  return openSlotBoard(root, {
+    title: opts.title,
+    briefing: opts.briefing,
+    info: [
+      { heading: `Katalog (${p.diode.label})`, text: `${formatAmp(a.i)} akımda ${formatVolt(a.v)}; ${formatAmp(b.i)} akımda ${formatVolt(b.v)}.` },
+      { heading: 'Görev', text: `Devir sensörünün LED'i ${formatAmp(p.target)} (±%${Math.round(p.tolerance * 100)}) ile sürülmeli. Seri direnci seç.` },
+    ],
+    slots: ['R'],
+    bin: p.bin,
+    drawing: (filled, armed) => diodeSvg(p.vs, filled.R, armed),
+    submitLabel: 'Tak ve sür',
+    onSubmit: (pl) => opts.onSubmit(pl.R),
     onCancel: opts.onCancel,
     source: opts.source,
     onSound: opts.onSound,

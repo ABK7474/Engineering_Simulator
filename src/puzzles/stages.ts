@@ -20,6 +20,16 @@ import { parseOpampConfig } from '../solvers/circuit/opamp';
 import { generateOpamp } from '../solvers/circuit/opamp.generate';
 import { resolveOpampOutcome } from '../solvers/circuit/opamp.outcomes';
 import { buildOpampReport } from '../solvers/circuit/opamp.report';
+import { parseDiodeConfig } from '../solvers/circuit/diode';
+import { generateDiode } from '../solvers/circuit/diode.generate';
+import { buildDiodeReport, resolveDiodeOutcome } from '../solvers/circuit/diode.outcomes';
+import { parseFilterConfig } from '../solvers/circuit/filter';
+import { generateFilter } from '../solvers/circuit/filter.generate';
+import { buildFilterReport, resolveFilterOutcome } from '../solvers/circuit/filter.outcomes';
+import { parseSuperConfig } from '../solvers/circuit/superposition';
+import { generateSuper } from '../solvers/circuit/superposition.generate';
+import { buildSuperReport, resolveSuperOutcome } from '../solvers/circuit/superposition.outcomes';
+import { formatUnit } from '../solvers/circuit/design-core';
 import { parseTheveninConfig } from '../solvers/circuit/thevenin';
 import { generateThevenin } from '../solvers/circuit/thevenin.generate';
 import { resolveTheveninOutcome, type TheveninAnswer } from '../solvers/circuit/thevenin.outcomes';
@@ -33,9 +43,12 @@ import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { resolveRcRlOutcome } from '../solvers/ode/rc-rl.outcomes';
 import { buildRcRlReport } from '../solvers/ode/rc-rl.report';
 import { openOpampPanel, openRcRlPanel } from './airlock/panels';
+import { schematicSvg } from './circuit-board/schematic';
+import { openNumericPanel } from './generic/numeric-panel';
 import { openCircuitBoardPanel } from './circuit-board/panel';
 import { openSeriesCircuitPanel } from './series-circuit/panel';
-import { openMaxPowerPanel, openTheveninPanel } from './power/panels';
+import { openDiodePanel, openMaxPowerPanel, openTheveninPanel } from './power/panels';
+import { openFilterPanel } from './sensor/panels';
 import { openTracePanel } from './trace-table/panel';
 
 export interface StagePanelContext {
@@ -188,6 +201,62 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
           const id = answer as string;
           const outcome = resolveRcRlOutcome(problem, id);
           return { outcome, result: buildRcRlReport(def.id, problem, id, outcome) };
+        },
+      };
+    },
+  },
+  superposition: {
+    validate: (def) => void parseSuperConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateSuper(parseSuperConfig(def.config), seed);
+      const n = problem.network;
+      const unit = n.params[n.unknown].unit;
+      return {
+        open: (ctx) =>
+          openNumericPanel(ctx.root, {
+            ...ctx,
+            info: [
+              { heading: 'Bara kaydı', text: `${n.story} Her iki kaynak açıkken ölçülen ${n.probeLabel}: ${formatUnit(problem.measured, n.probeUnit)}.` },
+              { heading: 'Görev', text: `${n.params[n.unknown].label} değerini bul; yedek jeneratör bu değere ayarlanacak.` },
+            ],
+            drawing: schematicSvg(n, { filled: {}, armed: false, visible: Object.fromEntries(Object.entries(problem.params).filter(([k]) => k !== n.unknown)) }),
+            fields: [{ id: 'x', label: `${n.params[n.unknown].label} (${unit})`, unit: unit === 'Ω' || unit === 'W' ? 'Ω' : unit }],
+            note: `Kabul: ±%${Math.round(problem.tolerance * 100)}. Virgül ya da nokta, k/m önekleri olur.`,
+            submitLabel: 'Jeneratörü ayarla',
+            onSubmit: (v) => ctx.onSubmit(v.x),
+          }),
+        evaluate(answer) {
+          const v = answer as number;
+          const outcome = resolveSuperOutcome(problem, v);
+          return { outcome, result: buildSuperReport(def.id, problem, v, outcome) };
+        },
+      };
+    },
+  },
+  diode: {
+    validate: (def) => void parseDiodeConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateDiode(parseDiodeConfig(def.config), seed);
+      return {
+        open: (ctx) => openDiodePanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveDiodeOutcome(problem, id);
+          return { outcome, result: buildDiodeReport(def.id, problem, id, outcome) };
+        },
+      };
+    },
+  },
+  filter: {
+    validate: (def) => void parseFilterConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateFilter(parseFilterConfig(def.config), seed);
+      return {
+        open: (ctx) => openFilterPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveFilterOutcome(problem, id);
+          return { outcome, result: buildFilterReport(def.id, problem, id, outcome) };
         },
       };
     },

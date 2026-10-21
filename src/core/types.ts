@@ -66,7 +66,7 @@ export interface TimePlot {
 
 export interface StageDef {
   id: string;
-  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl';
+  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl' | 'superposition' | 'diode' | 'filter';
   /** Ders kimliği (content/courses.json). Zorunlu; aralıklı tekrar için. */
   course: string;
   /** Konu etiketi (ör. "thevenin-norton"; kullanıcı konuları için "konu:<kimlik>"). Zorunlu. */

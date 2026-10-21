@@ -27,3 +27,26 @@ export function formatWatt(p: number): string {
   if (Math.abs(p) >= 1e-3) return `${num(p * 1e3)} mW`;
   return `${num(p * 1e6)} µW`;
 }
+
+/** Si önekleriyle (m, µ, k, M) 3 anlamlı basamak. */
+function si(x: number, unit: string): string {
+  const a = Math.abs(x);
+  if (a === 0) return `0 ${unit}`;
+  for (const [f, p] of [
+    [1e6, 'M'],
+    [1e3, 'k'],
+    [1, ''],
+    [1e-3, 'm'],
+    [1e-6, 'µ'],
+    [1e-9, 'n'],
+  ] as const)
+    if (a >= f * 0.9995) return `${num(x / f)} ${p}${unit}`;
+  return `${num(x / 1e-12)} p${unit}`;
+}
+
+export const formatHz = (f: number) => si(f, 'Hz');
+export const formatSec = (t: number) => si(t, 's');
+export const formatFarad = (c: number) => si(c, 'F');
+export const formatHenry = (l: number) => si(l, 'H');
+/** Oran (0..1) → "%38,2". */
+export const formatPct = (p: number, digits = 1) => `%${(p * 100).toFixed(digits).replace('.', ',')}`;

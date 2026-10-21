@@ -33,7 +33,7 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 
 ## Adım 2 — Dersler ve oyun (değer sırasıyla)
 ### 2a. Kalan devre/elektronik, DiffEq, Müh. Mat., Olasılık
-- [ ] Diyot (Newton), RC/RL filtre kesimi, süperpozisyon
+- [x] Diyot (Shockley; Newton + ikiye bölme), RC/RL filtre kesimi (kapalı form + karmaşık empedans), süperpozisyon (MNA doğrusallık + kapalı form). Kartlar: generator-sync-01 (süperpozisyon + diyot, güç odası için), sonar-frontend-01 (filtre, sensör odası için) — odalara 2c'de yerleşecek
 - [ ] RLC sönüm tasarımı
 - [ ] Kararlılık (özdeğer), Laplace, karmaşık sayı
 - [ ] Bayes, binom, Poisson

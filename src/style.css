@@ -313,3 +313,8 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .scope-plot .plot-line { fill: none; stroke-width: 2.2; }
 .scope-plot .plot-line.correct { stroke: var(--ok); }
 .scope-plot .plot-line.chosen { stroke: var(--fail); stroke-dasharray: 5 3; }
+
+/* Yazılı kart (direnç dışı seçenekler) ve tek sütunlu panel */
+.resistor .chip { font: bold 18px ui-monospace, monospace; color: var(--text); display: block; padding: 6px 0 2px; }
+.resistor small { color: var(--muted); font-size: 12px; }
+.panel-body.single { grid-template-columns: 1fr; }

@@ -1,0 +1,55 @@
+{
+  "id": "sonar-frontend-01",
+  "title": "Sonar ön katı",
+  "briefing": "Sonar yankıları pompa gürültüsüne karışıyor. Önce dönüştürücü filtresini kur, sonra ölçümleri yorumla.",
+  "stages": [
+    {
+      "id": "sonar-filter",
+      "type": "filter",
+      "course": "elektrik-elektronik-devreler",
+      "topic": "rc-rl-filtre",
+      "title": "Dönüştürücü filtresi",
+      "briefing": "Birinci mertebe alçak geçiren filtrede kazanç |H(f)| = 1/√(1 + (f/f_c)²): kesim frekansında −3 dB, kesimin 10 katında yaklaşık −20 dB. RC'de f_c = 1/(2πRC), RL'de f_c = R/(2πL). Sinyal şartı kesimi aşağıdan, gürültü şartı yukarıdan sınırlar; ikisinin arasında kalan direnci seç.",
+      "config": {
+        "kinds": [
+          "rc",
+          "rl"
+        ],
+        "c_nF": [
+          10,
+          22,
+          47,
+          100
+        ],
+        "l_mH": [
+          10,
+          22,
+          47,
+          100
+        ],
+        "fSignal": [
+          200,
+          500,
+          1000
+        ],
+        "fNoise": [
+          5000,
+          10000,
+          20000
+        ],
+        "answer": {
+          "rc": [
+            100,
+            100000
+          ],
+          "rl": [
+            10,
+            10000
+          ]
+        },
+        "window": 0.07,
+        "binSize": 5
+      }
+    }
+  ]
+}

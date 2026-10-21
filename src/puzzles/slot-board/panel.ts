@@ -7,8 +7,11 @@ import { resistorSvg } from '../resistor';
 
 export interface SlotCard {
   id: string;
-  r: number;
+  /** Direnç kartıysa değeri (renk bantlı çizilir); yoksa yazılı kart. */
+  r?: number;
   label: string;
+  /** Yazılı kartta ikinci satır (ör. birim, açıklama). */
+  sub?: string;
 }
 
 export interface SlotBoardOptions {
@@ -19,7 +22,7 @@ export interface SlotBoardOptions {
   slots: string[];
   bin: SlotCard[];
   /** Yuvalardaki değerlere göre çizim (SVG metni); yuvalar `data-slot` ile işaretli. */
-  drawing: (filled: Partial<Record<string, number>>, armed: boolean) => string;
+  drawing: (filled: Partial<Record<string, number>>, armed: boolean, chosen: Partial<Record<string, string>>) => string;
   submitLabel: string;
   onSubmit: (placement: Record<string, string>) => void;
   onCancel: () => void;
@@ -60,10 +63,10 @@ export function openSlotBoard(root: HTMLElement, opts: SlotBoardOptions): () => 
   const drawing = el.querySelector<HTMLDivElement>('.schematic')!;
   const bin = el.querySelector<HTMLDivElement>('.bin')!;
   const submit = el.querySelector<HTMLButtonElement>('[data-act="submit"]')!;
-  const rOf = (id: string) => opts.bin.find((b) => b.id === id)!.r;
+  const rOf = (id: string) => opts.bin.find((b) => b.id === id)!.r ?? Number.NaN;
 
   const render = () => {
-    drawing.innerHTML = opts.drawing(Object.fromEntries(Object.entries(placement).map(([s, id]) => [s, rOf(id)])), selected !== null);
+    drawing.innerHTML = opts.drawing(Object.fromEntries(Object.entries(placement).map(([s, id]) => [s, rOf(id)])), selected !== null, { ...placement });
     const used = new Set(Object.values(placement));
     bin.innerHTML = '';
     for (const card of opts.bin) {
@@ -71,7 +74,7 @@ export function openSlotBoard(root: HTMLElement, opts: SlotBoardOptions): () => 
       const b = document.createElement('button');
       b.className = `resistor${card.id === selected ? ' selected' : ''}`;
       b.dataset.card = card.id;
-      b.innerHTML = `${resistorSvg(card.r, 120, 34)}<span>${esc(card.label)}</span>`;
+      b.innerHTML = card.r !== undefined ? `${resistorSvg(card.r, 120, 34)}<span>${esc(card.label)}</span>` : `<b class="chip">${esc(card.label)}</b>${card.sub ? `<small>${esc(card.sub)}</small>` : ''}`;
       bin.appendChild(b);
     }
     submit.disabled = !opts.slots.every((s) => placement[s]);

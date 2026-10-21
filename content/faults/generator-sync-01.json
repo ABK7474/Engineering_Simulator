@@ -1,0 +1,571 @@
+{
+  "id": "generator-sync-01",
+  "title": "Yedek jeneratör eşleme",
+  "briefing": "Ana bara yükü yedek jeneratöre devredilecek: önce jeneratörün silinmiş ayarını süperpozisyonla bul, sonra devir sensörünün LED'ini doğru akımla sür.",
+  "stages": [
+    {
+      "id": "generator-setpoint",
+      "type": "superposition",
+      "course": "devre-teorisi-1",
+      "topic": "superpozisyon",
+      "title": "Jeneratör ayarı",
+      "briefing": "Doğrusal devrede birden çok kaynağın yanıtı, kaynakların tek tek (diğerleri sıfırlanmış: gerilim kaynağı KISA, akım kaynağı AÇIK) verdikleri yanıtların toplamıdır. Bilinen kaynağın katkısını hesapla, ölçülen toplamdan çıkar; kalan, bilinmeyen kaynağın katkısıdır.",
+      "config": {
+        "tolerance": 0.02,
+        "networks": [
+          {
+            "id": "two-generators",
+            "story": "Ana akü (V₁) ve etiketi silinmiş yedek jeneratör (V₂) aynı baraya bağlı; pompa R₃ kolunda.",
+            "elements": [
+              {
+                "id": "V1",
+                "kind": "V",
+                "a": "t",
+                "b": "0",
+                "value": "V1",
+                "label": "V₁"
+              },
+              {
+                "id": "R1",
+                "kind": "R",
+                "a": "t",
+                "b": "a",
+                "value": "R1",
+                "label": "R₁"
+              },
+              {
+                "id": "R3",
+                "kind": "R",
+                "a": "a",
+                "b": "0",
+                "value": "R3",
+                "label": "R₃"
+              },
+              {
+                "id": "R2",
+                "kind": "R",
+                "a": "a",
+                "b": "c",
+                "value": "R2",
+                "label": "R₂"
+              },
+              {
+                "id": "V2",
+                "kind": "V",
+                "a": "c",
+                "b": "0",
+                "value": "V2",
+                "label": "V₂"
+              }
+            ],
+            "params": {
+              "V1": {
+                "label": "Ana akü",
+                "unit": "V",
+                "choices": [
+                  12,
+                  24
+                ]
+              },
+              "V2": {
+                "label": "Jeneratör",
+                "unit": "V",
+                "choices": [
+                  6,
+                  9,
+                  15
+                ]
+              },
+              "R1": {
+                "label": "R₁",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R2": {
+                "label": "R₂",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R3": {
+                "label": "R₃",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              }
+            },
+            "unknown": "V2",
+            "probe": {
+              "current": "R3"
+            },
+            "probeLabel": "R₃ (pompa) akımı",
+            "probeUnit": "A",
+            "derived": {
+              "G": "1/R1+1/R2+1/R3",
+              "I3a": "V1/(R1*G*R3)",
+              "b2": "1/(R2*G*R3)",
+              "V2_f": "(M-I3a)/b2"
+            },
+            "formula": "V2_f",
+            "steps": [
+              "Yalnız V₁ (V₂ kısa devre): a düğümünde KCL, I₃′ = V₁ / (R₁·G·R₃), G = 1/R₁ + 1/R₂ + 1/R₃ → I₃′ = {I3a:A}",
+              "Yalnız V₂ (V₁ kısa devre): I₃″ = V₂ / (R₂·G·R₃); volt başına katkı b = 1 / (R₂·G·R₃) = {b2:A} (her 1 V için)",
+              "Süperpozisyon: ölçülen I₃ = I₃′ + b·V₂ → V₂ = (I₃ − I₃′) / b = ({M:A} − {I3a:A}) / {b2:A} = {V2_f:V}"
+            ],
+            "layout": {
+              "viewBox": [
+                0,
+                0,
+                560,
+                270
+              ],
+              "elements": {
+                "V1": {
+                  "x": 60,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "R1": {
+                  "x": 160,
+                  "y": 50,
+                  "dir": "h"
+                },
+                "R3": {
+                  "x": 260,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "R2": {
+                  "x": 370,
+                  "y": 50,
+                  "dir": "h"
+                },
+                "V2": {
+                  "x": 470,
+                  "y": 135,
+                  "dir": "v"
+                }
+              },
+              "wires": [
+                [
+                  [
+                    60,
+                    95
+                  ],
+                  [
+                    60,
+                    50
+                  ],
+                  [
+                    120,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    200,
+                    50
+                  ],
+                  [
+                    330,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    50
+                  ],
+                  [
+                    260,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    410,
+                    50
+                  ],
+                  [
+                    470,
+                    50
+                  ],
+                  [
+                    470,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    60,
+                    175
+                  ],
+                  [
+                    60,
+                    220
+                  ],
+                  [
+                    470,
+                    220
+                  ],
+                  [
+                    470,
+                    175
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    175
+                  ],
+                  [
+                    260,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    50
+                  ],
+                  [
+                    260,
+                    18
+                  ]
+                ],
+                [
+                  [
+                    260,
+                    220
+                  ],
+                  [
+                    260,
+                    252
+                  ]
+                ]
+              ],
+              "dots": [
+                [
+                  260,
+                  50
+                ],
+                [
+                  260,
+                  220
+                ]
+              ],
+              "ground": [
+                150,
+                220
+              ],
+              "labels": [],
+              "probes": [
+                {
+                  "x": 260,
+                  "y": 18,
+                  "text": "a"
+                },
+                {
+                  "x": 260,
+                  "y": 252,
+                  "text": "b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "battery-and-charger",
+            "story": "Akü hattı (V₁) ile sabit akımlı şarj devresi (I₁) aynı düğümü besliyor; şarj devresinin akım ayarı silinmiş.",
+            "elements": [
+              {
+                "id": "V1",
+                "kind": "V",
+                "a": "t",
+                "b": "0",
+                "value": "V1",
+                "label": "V₁"
+              },
+              {
+                "id": "R1",
+                "kind": "R",
+                "a": "t",
+                "b": "a",
+                "value": "R1",
+                "label": "R₁"
+              },
+              {
+                "id": "R2",
+                "kind": "R",
+                "a": "a",
+                "b": "0",
+                "value": "R2",
+                "label": "R₂"
+              },
+              {
+                "id": "I1",
+                "kind": "I",
+                "a": "0",
+                "b": "a",
+                "value": "Is",
+                "label": "I₁"
+              }
+            ],
+            "params": {
+              "V1": {
+                "label": "Akü",
+                "unit": "V",
+                "choices": [
+                  12,
+                  24
+                ]
+              },
+              "R1": {
+                "label": "R₁",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "R2": {
+                "label": "R₂",
+                "unit": "Ω",
+                "e12": [
+                  100,
+                  1000
+                ]
+              },
+              "Is": {
+                "label": "Şarj akımı",
+                "unit": "A",
+                "choices": [
+                  0.01,
+                  0.02,
+                  0.03,
+                  0.05
+                ]
+              }
+            },
+            "unknown": "Is",
+            "probe": {
+              "voltage": "a"
+            },
+            "probeLabel": "a düğümü gerilimi",
+            "probeUnit": "V",
+            "derived": {
+              "Rp": "R1*R2/(R1+R2)",
+              "Va1": "V1*R2/(R1+R2)",
+              "Is_f": "(M-Va1)/Rp"
+            },
+            "formula": "Is_f",
+            "steps": [
+              "Yalnız V₁ (I₁ açık devre): gerilim bölücü V_a′ = V₁·R₂ / (R₁ + R₂) = {Va1:V}",
+              "Yalnız I₁ (V₁ kısa devre): I₁, R₁ ∥ R₂ üzerinden akar; amper başına katkı R₁ ∥ R₂ = {Rp:Ω}",
+              "Süperpozisyon: V_a = V_a′ + I₁·(R₁ ∥ R₂) → I₁ = (V_a − V_a′) / (R₁ ∥ R₂) = ({M:V} − {Va1:V}) / {Rp:Ω} = {Is_f:A}"
+            ],
+            "layout": {
+              "viewBox": [
+                0,
+                0,
+                580,
+                270
+              ],
+              "elements": {
+                "V1": {
+                  "x": 60,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "R1": {
+                  "x": 160,
+                  "y": 50,
+                  "dir": "h"
+                },
+                "R2": {
+                  "x": 250,
+                  "y": 135,
+                  "dir": "v"
+                },
+                "I1": {
+                  "x": 420,
+                  "y": 135,
+                  "dir": "v",
+                  "flip": true
+                }
+              },
+              "wires": [
+                [
+                  [
+                    60,
+                    95
+                  ],
+                  [
+                    60,
+                    50
+                  ],
+                  [
+                    120,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    200,
+                    50
+                  ],
+                  [
+                    420,
+                    50
+                  ]
+                ],
+                [
+                  [
+                    250,
+                    50
+                  ],
+                  [
+                    250,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    420,
+                    50
+                  ],
+                  [
+                    420,
+                    95
+                  ]
+                ],
+                [
+                  [
+                    60,
+                    175
+                  ],
+                  [
+                    60,
+                    220
+                  ],
+                  [
+                    420,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    250,
+                    175
+                  ],
+                  [
+                    250,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    420,
+                    175
+                  ],
+                  [
+                    420,
+                    220
+                  ]
+                ],
+                [
+                  [
+                    420,
+                    50
+                  ],
+                  [
+                    520,
+                    50
+                  ]
+                ]
+              ],
+              "dots": [
+                [
+                  250,
+                  50
+                ],
+                [
+                  420,
+                  50
+                ],
+                [
+                  250,
+                  220
+                ],
+                [
+                  420,
+                  220
+                ]
+              ],
+              "ground": [
+                150,
+                220
+              ],
+              "labels": [],
+              "probes": [
+                {
+                  "x": 520,
+                  "y": 50,
+                  "text": "a"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "rotation-sensor",
+      "type": "diode",
+      "course": "elektrik-elektronik-devreler",
+      "topic": "diyot-shockley",
+      "title": "Devir sensörü LED'i",
+      "briefing": "Gerçek diyodun gerilimi sabit 0,7 V değildir: Shockley modeline göre I = Iₛ·(e^(V/(n·V_T)) − 1), yani V ≈ n·V_T·ln(I/Iₛ). Akım 10 kat artınca gerilim n·V_T·ln 10 kadar artar. İki katalog noktasından eğimi (n·V_T) bul, hedef akımdaki diyot gerilimini hesapla, kalan gerilimi seri direnç düşürmeli.",
+      "config": {
+        "vs": [
+          5,
+          6
+        ],
+        "diodes": [
+          {
+            "label": "Beyaz LED (W-3)",
+            "n": 3.5,
+            "is": 8e-17
+          },
+          {
+            "label": "Mavi LED (B-4)",
+            "n": 4.0,
+            "is": 2e-15
+          },
+          {
+            "label": "Beyaz LED (W-5)",
+            "n": 5.0,
+            "is": 3.5e-13
+          }
+        ],
+        "datasheet": [
+          0.02,
+          0.002
+        ],
+        "answer": [
+          33,
+          680
+        ],
+        "tolerance": 0.06,
+        "absMax": 0.05,
+        "binSize": 5
+      }
+    }
+  ]
+}

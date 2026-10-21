@@ -14,6 +14,12 @@ import { parseSeriesParallelConfig } from '../solvers/circuit/series-parallel';
 import { generateSeriesParallel } from '../solvers/circuit/series-parallel.generate';
 import { parseMaxPowerConfig } from '../solvers/circuit/max-power';
 import { generateMaxPower } from '../solvers/circuit/max-power.generate';
+import { parseDiodeConfig } from '../solvers/circuit/diode';
+import { generateDiode } from '../solvers/circuit/diode.generate';
+import { parseFilterConfig } from '../solvers/circuit/filter';
+import { generateFilter } from '../solvers/circuit/filter.generate';
+import { parseSuperConfig } from '../solvers/circuit/superposition';
+import { generateSuper } from '../solvers/circuit/superposition.generate';
 import { parseTheveninConfig } from '../solvers/circuit/thevenin';
 import { generateThevenin } from '../solvers/circuit/thevenin.generate';
 import { parseOpampConfig } from '../solvers/circuit/opamp';
@@ -67,6 +73,9 @@ const CHECKERS: Record<StageDef['type'], (config: unknown) => (seed: number) => 
   'max-power': (c) => ((cfg) => (seed: number) => generateMaxPower(cfg, seed))(parseMaxPowerConfig(c)),
   opamp: (c) => ((cfg) => (seed: number) => generateOpamp(cfg, seed))(parseOpampConfig(c)),
   'rc-rl': (c) => ((cfg) => (seed: number) => generateRcRl(cfg, seed))(parseRcRlConfig(c)),
+  superposition: (c) => ((cfg) => (seed: number) => generateSuper(cfg, seed))(parseSuperConfig(c)),
+  diode: (c) => ((cfg) => (seed: number) => generateDiode(cfg, seed))(parseDiodeConfig(c)),
+  filter: (c) => ((cfg) => (seed: number) => generateFilter(cfg, seed))(parseFilterConfig(c)),
 };
 
 /** Her aşama birçok tohumda doğrulanmış problem üretebilmeli; üretemeyenler açıklamalı döner. */
