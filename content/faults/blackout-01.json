@@ -66,7 +66,7 @@
       "id": "emergency-light",
       "type": "light-decay",
       "course": "diferansiyel-denklemler",
-      "topic": "birinci-mertebe",
+      "topic": "birinci-mertebe-gecici-hal",
       "title": "Acil aydınlatma sönümü",
       "briefing": "Kondansatör seri dirençler üzerinden boşalırken dV/dt = −V/τ, τ = (R + R_L)·C; çözüm V(t) = V₀·e^(−t/τ). Lamba gerilimi bölücüden: V_L = V·R_L/(R + R_L). R büyüdükçe lamba baştan sönük olur ama daha yavaş söner. İki şartı birlikte sağlayan R'yi bul; tek şarta bakmak yetmez.",
       "config": {

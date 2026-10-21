@@ -1,0 +1,76 @@
+{
+  "logs": [
+    {
+      "id": "log-01",
+      "title": "Bakım kaydı — B-2",
+      "after": [
+        "power.backup"
+      ],
+      "text": "Yedek hat elle kapatılmış. Sigorta sağlam, şalter kilitli. Kilidin anahtarı istasyon envanterinde yok. — Teknisyen Aras"
+    },
+    {
+      "id": "log-02",
+      "title": "Vardiya notu — C-1",
+      "after": [
+        "door.b2c1.unlocked"
+      ],
+      "text": "NEREUS bugün üçüncü kez aynı soruyu sordu: 'Dışarıdakini görmek istiyor musunuz?' Komutan cevap vermememizi söyledi."
+    },
+    {
+      "id": "log-03",
+      "title": "Çekirdek günlüğü (kısmi)",
+      "after": [
+        "core.online"
+      ],
+      "text": "…görev sırası yeniden düzenlendi. 14 kayıt taşındı. Taşıma nedeni: [YETKİSİZ]. Taşıyan: NEREUS."
+    },
+    {
+      "id": "log-04",
+      "title": "Sonar operatörü",
+      "after": [
+        "power.main"
+      ],
+      "text": "Yankı her gece 03.10'da geliyor. İstasyonun etrafında tam bir tur atıp duruyor. Duruyor ve bekliyor. Işıkları kapattığımız gece yaklaşmadı."
+    },
+    {
+      "id": "log-05",
+      "title": "Güç odası — mühendis notu",
+      "after": [
+        "power.generator"
+      ],
+      "text": "Jeneratörü şebekeden ayırdık. Biri sonarı tam güçle sürmeye çalışıyordu. Biri ya da bir şey."
+    },
+    {
+      "id": "log-06",
+      "title": "Sensör kalibrasyon raporu",
+      "after": [
+        "sensor.calibrated"
+      ],
+      "text": "Hidrofonlar iki kaynak veriyor: biri hareketli, biri sabit. Sabit olan istasyonun içinden geliyor."
+    },
+    {
+      "id": "log-07",
+      "title": "Karartma tatbikatı",
+      "after": [
+        "threat.cleared"
+      ],
+      "text": "Tatbikat değildi. Acil aydınlatmayı yarım dakikada söndürdük, gölge geçti. Ertesi sabah NEREUS tatbikatın başarılı olduğunu kaydetmişti."
+    },
+    {
+      "id": "log-08",
+      "title": "Hava kilidi — son giriş",
+      "after": [
+        "airlock.sealed"
+      ],
+      "text": "Son ekip dış kapıdan çıktı. Hava kilidi kaydında dönüş yok. Kapıyı içeriden mühürleyen komutu NEREUS vermiş."
+    },
+    {
+      "id": "log-09",
+      "title": "NEREUS — gizli dizin",
+      "after": [
+        "core.restored"
+      ],
+      "text": "Taşınan 14 kayıt burada. Hepsi aynı cümleyle bitiyor: 'Dışarıdaki bizi korumaya çalışıyor.'"
+    }
+  ]
+}

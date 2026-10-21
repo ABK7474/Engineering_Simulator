@@ -28,6 +28,8 @@ export interface Balance {
   tension: { calmAbove: number; fullAt: number };
   outcomes: Partial<Record<Exclude<OutcomeKind, 'success'>, DamageDef>>;
   overheat: DamageDef;
+  /** Panelde bir ipucu açmanın bedeli. */
+  hintCost: Amounts;
 }
 
 /** Onarılmamış bir arızanın kalıcı hasarı; arıza ve kaynak türü başına tek kayıt. */
@@ -96,6 +98,8 @@ export function parseBalance(raw: unknown): Balance {
   pos(s.perSeverity, 'severityScale.perSeverity');
   if (!(pos(s.max, 'severityScale.max') >= s.base)) fail('severityScale.max >= base olmalı');
   if (!(o.tension?.calmAbove > o.tension?.fullAt)) fail('tension.calmAbove > fullAt olmalı');
+  if (typeof o.hintCost !== 'object' || o.hintCost === null) fail('hintCost eksik');
+  amounts(o.hintCost, 'hintCost');
   const defs: [string, DamageDef | undefined][] = [...Object.entries(o.outcomes ?? {}), ['overheat', o.overheat]];
   for (const [k, d] of defs) {
     if (!d || typeof d.label !== 'string') fail(`${k}.label eksik`);
@@ -195,7 +199,7 @@ export function repair(s: ResourceState, b: Balance, faultId: string): Step {
   return withThresholds(state, b, [{ type: 'repaired', faultId, gain: { ...b.recovery } }]);
 }
 
-/** İpucu gibi bilinçli harcamalar için (henüz kullanılmıyor). */
+/** İpucu gibi bilinçli harcamalar. */
 export function spend(s: ResourceState, b: Balance, cost: Amounts): Step {
   return withThresholds({ ...s, values: addAll(s, b, cost, -1) }, b, []);
 }

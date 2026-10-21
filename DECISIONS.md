@@ -19,3 +19,7 @@ Belirsiz kalan ve beklemeden verilen kararlar; her biri bir cümle. Tarih: ilgil
 - C# çıktıları `npm run gen:cs` ile content/generated/cs-output.json'a yazılır; şablon değişip yeniden üretilmezse kod özeti tutmaz ve test kırılır.
 - Oyun açılışında dünya aşamaları 1 tohumla denetlenir (6 odada 3 tohum ≈ 1 sn sürüyordu); 20 tohumluk tam doğrulama world.test.ts'te.
 - Tehdit sayacı panel açıkken durur (kaynak tüketimi gibi); hesap yaparken süre baskısı öğrenmeyi bozmasın diye. Baskıyı dolaşma ve gürültü taşır.
+- Aralıklı tekrar Leitner kutularıyla (1, 3, 7, 14, 30 gün; yanlışta 10 dk); anahtar aşamanın ders/konu etiketi. Hem arıza denemeleri hem pratik kaydı günceller.
+- Pratik oturumu (Defter → Tekrar) kaynak harcamaz, ipuçları da ücretsizdir; öğrenme tekrarı cezalandırılmasın diye. Arıza panelindeki ipucu güç harcatır (balance.hintCost).
+- İpuçları cevabı vermez: ilk kademe yöntem, ikinci kademe (varsa) hesaplanmış ara değer (ör. ω_n, G(0), kritik kazanç, bozuk adımın hangi yarıda olduğu).
+- Final, bütün arızalar onarılınca bir kez gösterilir; oyun bitmez, serbest dolaşmaya dönülür.

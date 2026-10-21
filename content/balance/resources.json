@@ -263,5 +263,8 @@
     "drainPerMinute": {
       "oxygen": 0.3
     }
+  },
+  "hintCost": {
+    "power": 3
   }
 }

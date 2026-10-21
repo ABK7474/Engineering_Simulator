@@ -54,7 +54,10 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] Yeni sonuçlar: creature_alerted, dark_stumble, creature_strike (denge + hub efekti: kükreme, ışık titremesi, pencere önünden geçen gölge)
 - [x] Tarayıcıda denendi: olay başlar, `threat.active` eklenir, pano açılır, konsol temiz
 ### 2e. Kalıcı sistemler
-- [ ] Aralıklı tekrar, oyun içi kayıtlar/formül defteri, ipucu sistemi, Sezon 1 finali
+- [x] Aralıklı tekrar (core/review.ts, Leitner; testli): her denemede konu kaydı; HUD'da "Tekrar zamanı: n konu"; Defter → Tekrar sekmesinde ücretsiz pratik
+- [x] Defter (N ya da ⋯ menüsü): formül sayfaları (denenen konuların brifingleri), 9 istasyon kaydı (content/story/logs.json, durumlarla açılır), konu adları (content/topics.json; her etiketin adı testle zorunlu)
+- [x] İpucu sistemi: 18 türün hepsinde iki kademe (yöntem + hesaplanmış ara değer), her biri güç −3; içerik testi her aşamada ipucu olduğunu denetler
+- [x] Sezon 1 finali: bütün arızalar onarılınca NEREUS'un açıklaması ve sezon özeti; tarayıcıda denendi
 
 ## Oturum günlüğü
 (her oturumun sonunda kısa not: ne bitti, ne yarım kaldı, ilk yapılacak şey)
@@ -63,3 +66,4 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - 2026-10-22 · 2b bitti (algo-trace, cs-output; 401 test). Sıradaki: 2c (yeni odalar: güç P-1, hava kilidi A-1, sensör S-1, AI çekirdeği K-1; kartları yerleştir, zincirler, pencereler/dış sahne).
 - 2026-10-22 · 2c bitti (6 oda, 402 test). Sıradaki: 2d tehdit olayı.
 - 2026-10-22 · 2d bitti (416 test). Sıradaki: 2e (aralıklı tekrar, kayıtlar/formül defteri, ipucu, Sezon 1 finali).
+- 2026-10-22 · 2e bitti (425 test). Adım 2'nin tamamı bitti. Kalan: kullanıcının isteyeceği tarayıcı e2e turu ve `npm run verify:cs` / `verify:algo` (yavaş testler).

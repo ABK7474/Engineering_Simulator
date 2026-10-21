@@ -5,6 +5,7 @@
 import type { Balance, Damage, ResourceState } from './resources';
 import { openKv, type Kv } from './kv';
 import { createResources } from './resources';
+import { validReviewState, type ReviewState } from './review';
 import { validThreatState, type ThreatState } from './threat';
 
 export const PROGRESS_VERSION = 3;
@@ -42,6 +43,8 @@ export interface ProgressData {
   world: WorldProgress;
   /** Tehdit olaylarının durumu (tehdit kimliği → durum); eski kayıtlarda yok, boş sayılır. */
   threats: Record<string, ThreatState>;
+  /** Aralıklı tekrar: ders/konu → Leitner kutusu (core/review.ts); eski kayıtlarda yok, boş sayılır. */
+  review: ReviewState;
   savedAt: string;
 }
 
@@ -55,6 +58,7 @@ export function defaultProgress(b: Balance, startRoom = ''): ProgressData {
     faults: {},
     world: { room: startRoom, discovered: startRoom ? [startRoom] : [], states: [], seenLines: [], scorched: [] },
     threats: {},
+    review: {},
     savedAt: new Date(0).toISOString(),
   };
 }
@@ -162,6 +166,7 @@ export function validateProgress(raw: unknown, b: Balance, ctx?: MigrationContex
     faults: structuredClone(raw.faults) as ProgressData['faults'],
     world: { room: wp.room, discovered: [...wp.discovered], states: [...wp.states], seenLines: [...wp.seenLines], scorched: [...wp.scorched] },
     threats: isObj(raw.threats) ? Object.fromEntries(Object.entries(raw.threats).filter(([, t]) => validThreatState(t)).map(([k, t]) => [k, { ...(t as ThreatState) }])) : {},
+    review: validReviewState(raw.review) ? structuredClone(raw.review) : {},
     savedAt: raw.savedAt,
   };
 }

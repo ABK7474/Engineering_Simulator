@@ -1,0 +1,23 @@
+{
+  "seri-devre-ohm": "Seri devre ve Ohm yasası",
+  "seri-paralel-kvl-kcl": "Seri-paralel devreler, KVL/KCL",
+  "thevenin-norton": "Thevenin ve Norton eşdeğeri",
+  "maksimum-guc": "Maksimum güç aktarımı",
+  "superpozisyon": "Süperpozisyon",
+  "op-amp": "İşlemsel yükselteç (op-amp)",
+  "diyot-shockley": "Diyot (Shockley denklemi)",
+  "rc-rl-filtre": "RC/RL filtreler",
+  "birinci-mertebe-gecici-hal": "Birinci mertebe geçici hâl",
+  "ikinci-mertebe-sonum": "İkinci mertebe sönüm (RLC, kütle-yay)",
+  "ozdeger-kararlilik": "Özdeğer ve kararlılık",
+  "laplace-son-deger": "Laplace: son ve başlangıç değeri",
+  "karmasik-sayilar-fazor": "Karmaşık sayılar ve fazörler",
+  "bayes-teoremi": "Bayes teoremi",
+  "binom-poisson": "Binom ve Poisson dağılımları",
+  "yigin-kuyruk-bagli-liste": "Yığın, kuyruk, bağlı liste",
+  "ikili-arama-agaci": "İkili arama ağacı",
+  "graf-gezinme": "Graf gezinme (BFS/DFS)",
+  "siralama": "Sıralama algoritmaları",
+  "deger-referans-tipleri": "C#: değer ve referans tipleri",
+  "calisma-sirasi": "C#: çalışma sırası (kapanış, LINQ, yield, finally)"
+}

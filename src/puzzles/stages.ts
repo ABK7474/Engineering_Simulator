@@ -2,6 +2,7 @@
 // main.ts türden bağımsızdır; yeni problem türü = buraya bir adaptör kaydı.
 
 import { checkStageTags } from '../core/courses';
+import { hintsFor } from './hints';
 import type { Rng } from '../core/rng';
 import type { Outcome, StageDef, StageResult } from '../core/types';
 import { parseSeriesLedConfig, solveSeriesLed } from '../solvers/circuit/series-led';
@@ -82,6 +83,8 @@ export interface StagePanelContext {
 
 /** Üretilmiş, doğrulanmış tek bir aşama problemi. */
 export interface StageRun {
+  /** Kademeli ipuçları (yöntem, sonra hesaplanmış ara değer); her biri kaynak harcatır. */
+  hints: string[];
   open: (ctx: StagePanelContext) => void;
   evaluate: (answer: unknown, rng: Rng) => { outcome: Outcome; result: StageResult };
 }
@@ -98,6 +101,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateSeriesLed(parseSeriesLedConfig(def.config), seed);
       return {
+        hints: hintsFor('series-led', problem),
         open: (ctx) =>
           openSeriesCircuitPanel(ctx.root, {
             title: ctx.title,
@@ -125,6 +129,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const config = parseSeriesParallelConfig(def.config);
       const problem = generateSeriesParallel(config, seed);
       return {
+        hints: hintsFor('series-parallel', problem),
         open: (ctx) =>
           openCircuitBoardPanel(ctx.root, {
             title: ctx.title,
@@ -149,6 +154,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateDsTrace(parseDsTraceConfig(structuredClone(def.config)), seed);
       return {
+        hints: hintsFor('ds-trace', problem),
         open: (ctx) =>
           openTracePanel(ctx.root, {
             title: ctx.title,
@@ -172,6 +178,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateThevenin(parseTheveninConfig(def.config), seed);
       return {
+        hints: hintsFor('thevenin', problem),
         open: (ctx) => openTheveninPanel(ctx.root, { ...ctx, problem, onSubmit: (a) => ctx.onSubmit(a) }),
         evaluate(answer) {
           const a = answer as TheveninAnswer;
@@ -187,6 +194,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const config = parseMaxPowerConfig(def.config);
       const problem = generateMaxPower(config, seed);
       return {
+        hints: hintsFor('max-power', problem),
         open: (ctx) => openMaxPowerPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -201,6 +209,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateOpamp(parseOpampConfig(def.config), seed);
       return {
+        hints: hintsFor('opamp', problem),
         open: (ctx) => openOpampPanel(ctx.root, { ...ctx, problem, onSubmit: (pl) => ctx.onSubmit(pl) }),
         evaluate(answer) {
           const pl = answer as Record<string, string>;
@@ -215,6 +224,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateRcRl(parseRcRlConfig(def.config), seed);
       return {
+        hints: hintsFor('rc-rl', problem),
         open: (ctx) => openRcRlPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -231,6 +241,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const n = problem.network;
       const unit = n.params[n.unknown].unit;
       return {
+        hints: hintsFor('superposition', problem),
         open: (ctx) =>
           openNumericPanel(ctx.root, {
             ...ctx,
@@ -257,6 +268,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateDiode(parseDiodeConfig(def.config), seed);
       return {
+        hints: hintsFor('diode', problem),
         open: (ctx) => openDiodePanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -271,6 +283,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateFilter(parseFilterConfig(def.config), seed);
       return {
+        hints: hintsFor('filter', problem),
         open: (ctx) => openFilterPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -285,6 +298,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateDamping(parseDampingConfig(def.config), seed);
       return {
+        hints: hintsFor('damping', problem),
         open: (ctx) => openDampingPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -299,6 +313,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateStability(parseStabilityConfig(def.config), seed);
       return {
+        hints: hintsFor('stability', problem),
         open: (ctx) => openStabilityPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -313,6 +328,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateLaplace(parseLaplaceConfig(def.config), seed);
       return {
+        hints: hintsFor('laplace', problem),
         open: (ctx) =>
           openNumericPanel(ctx.root, {
             ...ctx,
@@ -342,6 +358,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generatePhasor(parsePhasorConfig(def.config), seed);
       return {
+        hints: hintsFor('phasor', problem),
         open: (ctx) =>
           openNumericPanel(ctx.root, {
             ...ctx,
@@ -371,6 +388,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateProb(parseProbConfig(def.config), seed);
       return {
+        hints: hintsFor('probability', problem),
         open: (ctx) =>
           problem.variant === 'bayes'
             ? openNumericPanel(ctx.root, {
@@ -402,6 +420,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateAlgoTrace(parseAlgoTraceConfig(def.config), seed);
       return {
+        hints: hintsFor('algo-trace', problem),
         open: (ctx) => openAlgoTracePanel(ctx.root, { ...ctx, problem, onSubmit: (a) => ctx.onSubmit(a) }),
         evaluate(answer, rng) {
           const a = answer as AlgoTraceAnswer;
@@ -416,6 +435,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateCsOutput(parseCsOutputConfig(def.config, CS_TEMPLATES, CS_GENERATED), seed, CS_TEMPLATES, CS_GENERATED);
       return {
+        hints: hintsFor('cs-output', problem),
         open: (ctx) => openCsOutputPanel(ctx.root, { ...ctx, problem, onSubmit: (lines) => ctx.onSubmit(lines) }),
         evaluate(answer) {
           const lines = answer as string[];
@@ -430,6 +450,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
     prepare(def, seed) {
       const problem = generateLightDecay(parseLightDecayConfig(def.config), seed);
       return {
+        hints: hintsFor('light-decay', problem),
         open: (ctx) => openLightDecayPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;

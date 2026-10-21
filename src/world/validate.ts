@@ -135,7 +135,7 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
     for (const key of Object.keys(ctx.story.lines)) {
       const [kind, id] = key.split(':');
       const ok =
-        (kind === 'start' || kind === 'respawn') && id === undefined
+        (kind === 'start' || kind === 'respawn' || kind === 'finale') && id === undefined
           ? true
           : kind === 'enter'
             ? roomIds.has(id)

@@ -19,6 +19,8 @@ export interface HudView {
   episode: number;
   /** Süren tehdit olayı: saldırıya kalan süre (s) ve oyuncunun gürültüsü. */
   threat?: { remaining: number; noise: 0 | 1 | 2 } | null;
+  /** Tekrar zamanı gelmiş konu sayısı. */
+  reviewDue?: number;
 }
 
 const fmt = (x: number, digits = 0) => x.toFixed(digits).replace('.', ',');
@@ -50,6 +52,7 @@ export function mountHud(root: HTMLElement): { render: (v: HudView) => void } {
             ? `<div class="hud-threat" title="Koşmak temasın yaklaşmasını hızlandırır"><span>TEMAS ${Math.floor(v.threat.remaining / 60)}:${String(Math.floor(v.threat.remaining % 60)).padStart(2, '0')}</span><span class="hud-noise" aria-label="Gürültü ${v.threat.noise}/2">gürültü ${'●'.repeat(v.threat.noise)}${'○'.repeat(2 - v.threat.noise)}</span></div>`
             : ''
         }
+        ${v.reviewDue ? `<div class="hud-review">Tekrar zamanı: ${v.reviewDue} konu (N)</div>` : ''}
         <div class="hud-episode">Bölüm ${v.episode}</div>`;
     },
   };

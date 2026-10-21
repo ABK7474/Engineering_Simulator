@@ -35,6 +35,7 @@ import {
   isCritical,
   level,
   parseBalance,
+  spend,
   tensionFor,
   tick,
   type Amounts,
@@ -42,6 +43,12 @@ import {
 } from './core/resources';
 import { createRng } from './core/rng';
 import { initialThreat, tickThreat, type ThreatDef, type ThreatEvent } from './core/threat';
+import { dueLabel, dueTopics, recordReview, topicKey } from './core/review';
+import { formulaPages, parseLogs, unlockedLogs } from './core/notebook';
+import logsJson from '../content/story/logs.json';
+import topicsJson from '../content/topics.json';
+import { openNotebook } from './ui/notebook';
+import { showFinale } from './ui/finale';
 import { clearApiKey, getApiKey, getModel, maskKey, setApiKey, setModel } from './core/secrets';
 import type { StageDef } from './core/types';
 import { createHub } from './hub/hub';
@@ -127,8 +134,10 @@ const renderHud = () => {
     damages: [...new Set(progress.resources.damages.map((d) => d.label))],
     episode: progress.episode,
     threat: activeThreatView(),
+    reviewDue: dueTopics(progress.review, Date.now()).length,
   });
 };
+setInterval(() => renderHud(), 30_000);
 /** HUD için süren tehdit (varsa): saldırıya kalan süre, oyuncunun gürültüsü. */
 let threatNoise: 0 | 1 | 2 = 0;
 function activeThreatView(): { remaining: number; noise: 0 | 1 | 2 } | null {
@@ -227,6 +236,10 @@ mountBackupMenu(ui, {
             onClose,
           }),
         ),
+    },
+    {
+      label: 'Defter (N)…',
+      onClick: () => toggleNotebook(),
     },
     {
       label: 'Ayarlar…',
@@ -575,6 +588,13 @@ if (import.meta.env.DEV) {
         progress.world.states = [...new Set([...states(), ...granted])];
         refreshAll();
       },
+      /** Test kısayolu: bütün arızaları onarılmış say ve finali göster. */
+      solveAll: () => {
+        for (const f of W.faults) progress.faults[f.id] = { stagesDone: stagesOf(f.id).length };
+        progress.world.states = [...new Set([...states(), ...W.faults.flatMap((f) => f.provides)])];
+        refreshAll();
+        return maybeFinale();
+      },
       /** Test kısayolu: tehdit olayını hemen başlat ya da süresini ayarla. */
       threat: (id: string, timer?: number) => {
         const st = progress.threats[id] ?? initialThreat();
@@ -613,6 +633,146 @@ function interact(fid: string): void {
   openPuzzle(fid);
 }
 
+// --- İpuçları: panelin başlığına düğme; her ipucu kaynak harcatır (pratikte ücretsiz) ---
+const STATION_LOGS = parseLogs(logsJson);
+const TOPIC_NAMES = topicsJson as Record<string, string>;
+const COURSE_NAMES = Object.fromEntries(COURSES.map((c) => [c.id, c.name]));
+function attachHints(hints: string[], paid: boolean): void {
+  const overlays = ui.querySelectorAll<HTMLElement>('.overlay');
+  const panel = overlays[overlays.length - 1]?.querySelector<HTMLElement>('.panel');
+  const head = panel?.querySelector('.panel-head');
+  if (!panel || !head || !hints.length) return;
+  const cost = fmtAmounts(balance.hintCost, '−');
+  const btn = document.createElement('button');
+  btn.className = 'ghost small hint-btn';
+  const box = document.createElement('div');
+  box.className = 'hint-box';
+  box.hidden = true;
+  let shown = 0;
+  const label = () => (btn.textContent = shown < hints.length ? `İpucu ${shown + 1}/${hints.length}${paid ? ` (${cost})` : ''}` : 'İpucu kalmadı');
+  label();
+  btn.addEventListener('click', () => {
+    if (shown >= hints.length) return;
+    if (paid) {
+      const step = spend(progress.resources, balance, balance.hintCost);
+      progress.resources = step.state;
+      renderHud();
+      updateMood();
+      void persist();
+      onDrainEvents(step.events);
+    }
+    const p = document.createElement('p');
+    p.textContent = hints[shown++];
+    box.append(p);
+    box.hidden = false;
+    btn.disabled = shown >= hints.length;
+    label();
+    uiSound('click');
+  });
+  head.insertBefore(btn, head.querySelector('[data-act="cancel"]'));
+  (panel.querySelector('.briefing') ?? head).after(box);
+}
+
+// --- Defter (N): tekrar, formüller, istasyon kayıtları ---
+const allStages = () => Object.values(content.stages).flat();
+function notebookView() {
+  const now = Date.now();
+  const due = new Set(dueTopics(progress.review, now));
+  return {
+    review: Object.entries(progress.review)
+      .sort((a, b) => a[1].due - b[1].due)
+      .map(([key, it]) => {
+        const [course, topic] = [key.slice(0, key.indexOf('/')), key.slice(key.indexOf('/') + 1)];
+        return {
+          key,
+          courseName: COURSE_NAMES[course] ?? course,
+          topicName: TOPIC_NAMES[topic] ?? allStages().find((s) => s.topic === topic)?.title ?? topic,
+          box: it.box,
+          dueLabel: dueLabel(it.due, now),
+          due: due.has(key),
+          practicable: allStages().some((s) => topicKey(s.course, s.topic) === key),
+        };
+      }),
+    formulas: formulaPages(Object.values(content.cards), progress.review, COURSE_NAMES, TOPIC_NAMES),
+    logs: unlockedLogs(STATION_LOGS, states()),
+    totalLogs: STATION_LOGS.length,
+  };
+}
+let notebookOpen = false;
+function toggleNotebook(): void {
+  if (notebookOpen || closing || !started) return;
+  notebookOpen = true;
+  withHubPaused((onClose) =>
+    openNotebook(ui, notebookView(), {
+      onPractice: (key) => {
+        notebookOpen = false;
+        onClose();
+        openPractice(key);
+      },
+      onClose: () => {
+        notebookOpen = false;
+        onClose();
+      },
+    }),
+  );
+}
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyN' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  if (!hub.isRoaming() && !notebookOpen) return; // panel açıkken N defteri açmaz
+  toggleNotebook();
+});
+
+/** Pratik: konunun bir aşaması yeni sayılarla; kaynak harcamaz, yalnız tekrar kaydını günceller. */
+function openPractice(key: string): void {
+  const def = allStages().find((s) => topicKey(s.course, s.topic) === key);
+  if (!def) return;
+  hub.suspend();
+  const run = prepareStage(def, 1 + Math.floor(Math.random() * 2 ** 30));
+  run.open({
+    root: ui,
+    title: `Pratik — ${def.title}`,
+    briefing: def.briefing,
+    onSound: uiSound,
+    onCancel: () => hub.resume(),
+    onSubmit: (answer) => {
+      const { result } = run.evaluate(answer, createRng(Date.now() % 2 ** 31));
+      progress.review = recordReview(progress.review, key, result.success, Date.now());
+      void persist();
+      renderHud();
+      result.facts.push({ label: 'Pratik', value: 'Kaynak etkisi yok; tekrar kaydı güncellendi' });
+      showIncidentReport(ui, result, {
+        onSound: uiSound,
+        onRetry: () => openPractice(key),
+        onClose: () => hub.resume(),
+      });
+    },
+  });
+  attachHints(run.hints, false);
+}
+
+// --- Sezon finali: bütün arızalar onarılınca bir kez ---
+function maybeFinale(): boolean {
+  if (progress.world.seenLines.includes('finale') || !W.faults.every((f) => isSolved(f.id))) return false;
+  progress.world.seenLines.push('finale');
+  void persist();
+  hub.suspend();
+  const reviewed = Object.values(progress.review);
+  showFinale(ui, {
+    speaker: content.story.speaker,
+    lines: content.story.lines.finale ?? [],
+    stats: [
+      { label: 'Onarılan arıza', value: `${W.faults.length}/${W.faults.length}` },
+      { label: 'Bölüm', value: String(progress.episode) },
+      { label: 'Denenen konu', value: String(reviewed.length) },
+      { label: 'Oturmuş konu (kutu ≥ 3)', value: String(reviewed.filter((r) => r.box >= 3).length) },
+      { label: 'Açılan kayıt', value: `${unlockedLogs(STATION_LOGS, states()).length}/${STATION_LOGS.length}` },
+      { label: 'Yaratık saldırısı', value: String(Object.values(progress.threats).reduce((a, t) => a + t.strikes, 0)) },
+    ],
+    onContinue: () => hub.resume(),
+  });
+  return true;
+}
+
 function openPuzzle(fid: string): void {
   uiSound('click');
   hub.suspend();
@@ -639,6 +799,7 @@ function openPuzzle(fid: string): void {
     onCancel: () => hub.resume(),
     onSubmit: (answer) => void runAttempt(fid, answer),
   });
+  attachHints(run.hints, true);
 }
 
 async function runAttempt(fid: string, answer: unknown): Promise<void> {
@@ -648,6 +809,8 @@ async function runAttempt(fid: string, answer: unknown): Promise<void> {
   const { outcome, result } = getRun(fid).run.evaluate(answer, createRng(baseSeed * 31 + attempt + 7 * i + fidSalt(fid)));
   const success = outcome.kind === 'success';
   const final = success && i + 1 === total;
+  const stageDef = getRun(fid).def;
+  progress.review = recordReview(progress.review, topicKey(stageDef.course, stageDef.topic), success, Date.now());
 
   // Bedel ya da geri kazanım: çözücünün fiziksel sonucundan; hasar bu aşamaya bağlanır.
   progress.attemptsThisEpisode++;
@@ -711,6 +874,7 @@ async function runAttempt(fid: string, answer: unknown): Promise<void> {
     onClose: () => {
       if (critical) return closeEpisode();
       if (!result.success) repair();
+      if (final && maybeFinale()) return;
       hub.resume();
     },
   });

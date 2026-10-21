@@ -9,7 +9,12 @@ describe('içerik: bütün arıza kartları', () => {
     expect(card.stages.length).toBeGreaterThan(0);
     for (const s of card.stages) {
       validateStage(s);
-      for (let seed = 1; seed <= 5; seed++) expect(() => prepareStage(s, seed)).not.toThrow();
+      for (let seed = 1; seed <= 5; seed++) {
+        const run = prepareStage(s, seed);
+        // İpucu: yöntem + (çoğu türde) ara değer; boş ipucu yok
+        expect(run.hints.length, `${s.id} ipucu`).toBeGreaterThanOrEqual(1);
+        for (const h of run.hints) expect(h.trim().length).toBeGreaterThan(10);
+      }
     }
   });
 });
