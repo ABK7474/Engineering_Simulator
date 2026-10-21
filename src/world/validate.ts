@@ -83,6 +83,15 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
     if (r.walls[f.anchor.wall]?.windows?.includes(f.anchor.index)) p.push(`arıza '${f.id}' bir pencere hücresine yerleştirilmiş`);
   }
 
+  // 4b. Tehditler: başlama koşulları sağlanabilir; bitiren durumu olayın kendi panosu sağlar; olay durumu yalnız olaydan
+  const threatIds = new Set(w.threats.map((t) => t.id));
+  for (const f of w.faults) if (f.event !== undefined && !threatIds.has(f.event)) p.push(`arıza '${f.id}': bilinmeyen tehdit '${f.event}'`);
+  for (const t of w.threats) {
+    for (const s of t.after) if (!w.initialStates.includes(s) && providersOf(w, s).length === 0) p.push(`tehdit '${t.id}' '${s}' durumunu bekliyor ama hiçbir arıza bunu sağlamıyor`);
+    if (!w.faults.some((f) => f.event === t.id && f.provides.includes(t.clearedBy))) p.push(`tehdit '${t.id}': '${t.clearedBy}' durumunu sağlayan bir olay panosu (event: '${t.id}') yok`);
+    if (providersOf(w, t.activeState).length) p.push(`tehdit '${t.id}': '${t.activeState}' durumunu bir arıza sağlıyor; bu durum yalnız olaydan gelir`);
+  }
+
   // 5. Durumlar: her istenen durumu bir arıza sağlamalı (ya da başlangıçta olmalı)
   const needed = [...w.faults.flatMap((f) => f.requires.map((s) => [s, `arıza '${f.id}'`])), ...w.doors.flatMap((d) => d.opensWhen.map((s) => [s, `kapı '${d.id}'`]))];
   for (const [s, who] of needed) {
@@ -134,7 +143,9 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
               ? w.faults.some((f) => f.id === id)
               : kind === 'blocked'
                 ? states.has(id)
-                : false;
+                : kind === 'threat'
+                  ? threatIds.has(id) && ['start', 'warning', 'strike', 'cleared'].includes(key.split(':')[2])
+                  : false;
       if (!ok) p.push(`replik anahtarı '${key}' hiçbir oda/arıza/duruma karşılık gelmiyor`);
       if (!ctx.story.lines[key].every((l) => typeof l === 'string' && l.trim())) p.push(`replik '${key}' boş satır içeriyor`);
     }

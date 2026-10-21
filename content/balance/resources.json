@@ -198,13 +198,13 @@
       }
     },
     "false_alarm": {
-      "label": "Boşa tahliye, pompalar boşuna çalıştı",
+      "label": "Yanlış alarm, boşa harcanan güç",
       "loss": {
         "power": 5
       }
     },
     "leak_ignored": {
-      "label": "Fark edilmeyen kaçak",
+      "label": "Gözden kaçan tehlike",
       "loss": {
         "oxygen": 4
       },
@@ -226,6 +226,32 @@
       "label": "Gereksiz yük, güç israfı",
       "loss": {
         "power": 4
+      }
+    },
+    "creature_alerted": {
+      "label": "Yaratık ışığı fark etti, gövde hasarlı",
+      "loss": {
+        "oxygen": 6,
+        "power": 6
+      },
+      "drainPerMinute": {
+        "oxygen": 0.3
+      }
+    },
+    "dark_stumble": {
+      "label": "Karanlıkta çarpma, maske kaydı",
+      "loss": {
+        "oxygen": 5
+      }
+    },
+    "creature_strike": {
+      "label": "Yaratık istasyona saldırdı",
+      "loss": {
+        "oxygen": 8,
+        "power": 8
+      },
+      "drainPerMinute": {
+        "oxygen": 0.2
       }
     }
   },

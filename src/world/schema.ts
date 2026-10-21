@@ -1,6 +1,7 @@
 // Dünya içeriğinin tipleri ve yapısal ayrıştırması (content/world/*.json).
 // Anlamsal kurallar (komşuluk, erişilebilirlik, döngüler…) validate.ts'te.
 
+import { parseThreats, type ThreatDef } from '../core/threat';
 import { CORRUPTION_KINDS, type CorruptionKind, type Kind } from '../solvers/ds/ir';
 
 export type Side = 'north' | 'south' | 'east' | 'west';
@@ -83,6 +84,8 @@ export interface FaultDef {
   screen?: { fault?: string; blocked?: string; solved?: string };
   /** Koşul eksikken terminal yanındaki ipucu (ör. "Güç yok — haritaya bak"). */
   blockedHint?: string;
+  /** Tehdit olayının panosu: terminal yalnız o tehdit sürerken çalışır (threats[].id). */
+  event?: string;
 }
 
 export interface WorldDef {
@@ -92,6 +95,8 @@ export interface WorldDef {
   rooms: RoomDef[];
   doors: DoorDef[];
   faults: FaultDef[];
+  /** Zamanlı tehdit olayları (core/threat.ts). */
+  threats: ThreatDef[];
 }
 
 export class WorldError extends Error {
@@ -222,9 +227,16 @@ export function parseWorld(raw: unknown): WorldDef {
     const sc = o?.screen as Record<string, unknown> | undefined;
     need(sc === undefined || (isObj(sc) && Object.entries(sc).every(([k, v]) => ['fault', 'blocked', 'solved'].includes(k) && isStr(v))), `arıza '${id}': screen {fault, blocked, solved} metinleri olmalı`);
     need(o?.blockedHint === undefined || isStr(o.blockedHint), `arıza '${id}': blockedHint metin olmalı`);
+    need(o?.event === undefined || isStr(o.event), `arıza '${id}': event metin olmalı`);
   });
+  let threats: ThreatDef[] = [];
+  try {
+    threats = parseThreats(raw.threats);
+  } catch (e) {
+    p.push((e as Error).message);
+  }
 
   if (p.length) throw new WorldError(p);
   const w = raw as unknown as WorldDef;
-  return { ...w, initialStates: w.initialStates ?? [] };
+  return { ...w, initialStates: w.initialStates ?? [], threats };
 }

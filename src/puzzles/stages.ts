@@ -49,17 +49,19 @@ import { buildLaplaceReport, generateLaplace, resolveLaplaceOutcome, type Laplac
 import { parsePhasorConfig } from '../solvers/math/phasor';
 import { buildPhasorReport, generatePhasor, resolvePhasorOutcome, type PhasorAnswer } from '../solvers/math/phasor.generate';
 import { parseProbConfig } from '../solvers/prob/probability';
-import { buildProbReport, generateProb, resolveProbOutcome } from '../solvers/prob/probability.generate';
+import { BAYES_TEXT, buildProbReport, generateProb, resolveProbOutcome } from '../solvers/prob/probability.generate';
 import { buildAlgoReport, generateAlgoTrace, parseAlgoTraceConfig, resolveAlgoOutcome, type AlgoTraceAnswer } from '../solvers/algo/algo-trace';
 import { openAlgoTracePanel } from './algo-trace/panel';
 import { buildCsReport, generateCsOutput, parseCsOutputConfig, resolveCsOutcome } from '../solvers/cs/cs-output';
 import { CS_GENERATED, CS_TEMPLATES } from '../solvers/cs/content';
 import { openCsOutputPanel } from './cs-output/panel';
+import { parseLightDecayConfig } from '../solvers/ode/light-decay';
+import { buildLightDecayReport, generateLightDecay, resolveLightDecayOutcome } from '../solvers/ode/light-decay.generate';
 import { parseRcRlConfig } from '../solvers/ode/rc-rl';
 import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { resolveRcRlOutcome } from '../solvers/ode/rc-rl.outcomes';
 import { buildRcRlReport } from '../solvers/ode/rc-rl.report';
-import { laplaceSvg, openDampingPanel, openOpampPanel, openRcRlPanel, openStabilityPanel } from './airlock/panels';
+import { laplaceSvg, openDampingPanel, openLightDecayPanel, openOpampPanel, openRcRlPanel, openStabilityPanel } from './airlock/panels';
 import { schematicSvg } from './circuit-board/schematic';
 import { openNumericPanel } from './generic/numeric-panel';
 import { openCircuitBoardPanel } from './circuit-board/panel';
@@ -376,12 +378,12 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
                 info: [
                   {
                     heading: 'Sensör kaydı',
-                    text: `Bölmede kaçak olma olasılığı (bakım kayıtlarından) %${String(problem.input.prior).replace('.', ',')}. İki sensör birbirinden bağımsız çalışır. ${problem.input.obs === 'both' ? 'Şu an ikisi de alarm veriyor.' : 'Şu an S1 alarm veriyor, S2 sessiz.'}`,
+                    text: `${BAYES_TEXT[problem.theme].prior} %${String(problem.input.prior).replace('.', ',')}. İki algılayıcı birbirinden bağımsız çalışır. ${problem.input.obs === 'both' ? BAYES_TEXT[problem.theme].both : BAYES_TEXT[problem.theme].firstOnly}`,
                   },
-                  { heading: 'Görev', text: 'Bu gözlem altında bölmede gerçekten kaçak olma olasılığını hesapla; tahliye kararı buna göre verilecek.' },
+                  { heading: 'Görev', text: BAYES_TEXT[problem.theme].task },
                 ],
                 drawing: bayesSvg(problem),
-                fields: [{ id: 'p', label: 'P(kaçak | gözlem) (%)', unit: '%' }],
+                fields: [{ id: 'p', label: BAYES_TEXT[problem.theme].field, unit: '%' }],
                 note: `Kabul: ±${(problem.tolerance * 100).toFixed(1).replace('.', ',')} puan. "12,5" ya da "12,5%" yazabilirsin.`,
                 submitLabel: 'Kararı gönder',
                 onSubmit: (v) => ctx.onSubmit(v.p),
@@ -419,6 +421,20 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
           const lines = answer as string[];
           const outcome = resolveCsOutcome(problem, lines);
           return { outcome, result: buildCsReport(def.id, problem, lines, outcome) };
+        },
+      };
+    },
+  },
+  'light-decay': {
+    validate: (def) => void parseLightDecayConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateLightDecay(parseLightDecayConfig(def.config), seed);
+      return {
+        open: (ctx) => openLightDecayPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveLightDecayOutcome(problem, id);
+          return { outcome, result: buildLightDecayReport(def.id, problem, id, outcome) };
         },
       };
     },

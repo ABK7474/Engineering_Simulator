@@ -1,0 +1,107 @@
+{
+  "id": "blackout-01",
+  "title": "Karartma panosu",
+  "briefing": "Sonar istasyona yaklaşan büyük bir temas bildiriyor. Önce temasın gerçekten canlı olup olmadığını hesapla, sonra ana aydınlatmayı kesip acil aydınlatmanın sönümünü ayarla: sığınağa varana kadar yolu görmeli, temas geldiğinde karanlıkta kalmalısın.",
+  "stages": [
+    {
+      "id": "contact-bayes",
+      "type": "probability",
+      "course": "olasilik-istatistik",
+      "topic": "bayes-teoremi",
+      "title": "Sonar teması",
+      "briefing": "Bayes: P(canlı | gözlem) = P(gözlem | canlı)·P(canlı) / P(gözlem). Aktif sonar ve pasif hidrofon koşullu bağımsız: olabilirlikler çarpılır; sessiz algılayıcı için 1 − P(alarm) kullanılır. Bu derinlikte büyük canlı nadirdir; balık sürüleri ve akıntı yankıları yanlış alarmları baskın kılabilir.",
+      "config": {
+        "variants": [
+          "bayes"
+        ],
+        "bayes": {
+          "theme": "contact",
+          "prior": [
+            2,
+            3,
+            4,
+            5,
+            8
+          ],
+          "sens": [
+            80,
+            85,
+            90,
+            95
+          ],
+          "falseAlarm": [
+            3,
+            5,
+            8,
+            10,
+            15
+          ],
+          "observations": [
+            "both",
+            "firstOnly"
+          ]
+        },
+        "binomial": {
+          "q": [
+            80
+          ],
+          "need": [
+            2
+          ],
+          "reliability": [
+            99
+          ]
+        },
+        "poisson": {
+          "lambda": [
+            1.5
+          ],
+          "reliability": [
+            99
+          ]
+        }
+      }
+    },
+    {
+      "id": "emergency-light",
+      "type": "light-decay",
+      "course": "diferansiyel-denklemler",
+      "topic": "birinci-mertebe",
+      "title": "Acil aydınlatma sönümü",
+      "briefing": "Kondansatör seri dirençler üzerinden boşalırken dV/dt = −V/τ, τ = (R + R_L)·C; çözüm V(t) = V₀·e^(−t/τ). Lamba gerilimi bölücüden: V_L = V·R_L/(R + R_L). R büyüdükçe lamba baştan sönük olur ama daha yavaş söner. İki şartı birlikte sağlayan R'yi bul; tek şarta bakmak yetmez.",
+      "config": {
+        "V0": [
+          12,
+          24
+        ],
+        "C_F": [
+          0.1,
+          0.22,
+          0.47
+        ],
+        "RL": [
+          10,
+          15,
+          22,
+          33
+        ],
+        "tWalk": [
+          10,
+          12,
+          15
+        ],
+        "tArr": [
+          30,
+          36,
+          45
+        ],
+        "answer": [
+          4.7,
+          100
+        ],
+        "margin": 0.05,
+        "binSize": 6
+      }
+    }
+  ]
+}

@@ -645,6 +645,48 @@
         "solved": "DIŞ KAPI\nSIZDIRMAZ"
       },
       "blockedHint": "E: Önce sintineyi boşalt — yandaki pano"
+    },
+    {
+      "id": "blackout",
+      "card": "blackout-01",
+      "room": "sensor-s1",
+      "model": "Prop_AccessPoint",
+      "anchor": {
+        "wall": "west",
+        "index": 1,
+        "along": 0.5
+      },
+      "requires": [
+        "sensor.calibrated"
+      ],
+      "provides": [
+        "threat.cleared"
+      ],
+      "event": "creature-1",
+      "screen": {
+        "fault": "KARARTMA\nHAZIR",
+        "blocked": "BEKLEMEDE",
+        "solved": "KARARTMA\nTAMAM"
+      },
+      "blockedHint": "E: Pano beklemede — sonar izleniyor"
+    }
+  ],
+  "threats": [
+    {
+      "id": "creature-1",
+      "after": [
+        "sensor.calibrated"
+      ],
+      "delaySec": 25,
+      "timeLimitSec": 240,
+      "retrySec": 120,
+      "activeState": "threat.active",
+      "clearedBy": "threat.cleared",
+      "noise": [
+        1,
+        1,
+        2.5
+      ]
     }
   ]
 }

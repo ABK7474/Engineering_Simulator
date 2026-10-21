@@ -41,6 +41,7 @@ import {
   type ResourceEvent,
 } from './core/resources';
 import { createRng } from './core/rng';
+import { initialThreat, tickThreat, type ThreatDef, type ThreatEvent } from './core/threat';
 import { clearApiKey, getApiKey, getModel, maskKey, setApiKey, setModel } from './core/secrets';
 import type { StageDef } from './core/types';
 import { createHub } from './hub/hub';
@@ -125,8 +126,18 @@ const renderHud = () => {
     })),
     damages: [...new Set(progress.resources.damages.map((d) => d.label))],
     episode: progress.episode,
+    threat: activeThreatView(),
   });
 };
+/** HUD için süren tehdit (varsa): saldırıya kalan süre, oyuncunun gürültüsü. */
+let threatNoise: 0 | 1 | 2 = 0;
+function activeThreatView(): { remaining: number; noise: 0 | 1 | 2 } | null {
+  for (const t of W.threats) {
+    const st = progress.threats[t.id];
+    if (st?.phase === 'active') return { remaining: Math.max(0, st.timer), noise: threatNoise };
+  }
+  return null;
+}
 renderHud();
 // --- Konu kütüphanesi ve içerik hattı (LLM yalnız burada; oyun sırasında çağrılmaz) ---
 const COURSES = coursesJson as Course[];
@@ -344,11 +355,18 @@ function getRun(fid: string) {
   return r;
 }
 
+/** Olay panosu yalnız kendi tehdidi sürerken çalışır. */
+const eventBlocked = (fid: string) => {
+  const ev = FAULTS.get(fid)!.event;
+  return ev !== undefined && progress.threats[ev]?.phase !== 'active';
+};
+const blockedNow = (fid: string) => missingFor(FAULTS.get(fid)!, states()).length > 0 || eventBlocked(fid);
+
 /** Terminal ekranı arızanın durumuna göre. */
 function refreshTerminal(fid: string): void {
   const f = FAULTS.get(fid)!;
   if (isSolved(fid)) hub.showSolved(fid, f.screen?.solved ?? 'ONARILDI');
-  else if (missingFor(f, states()).length) hub.setScreen(fid, f.screen?.blocked ?? 'KOŞUL\nEKSİK', '#8aa0a4');
+  else if (blockedNow(fid)) hub.setScreen(fid, f.screen?.blocked ?? 'KOŞUL\nEKSİK', '#8aa0a4');
   else if (stagesDone(fid) > 0) hub.showProgress(fid, progressText(fid, stagesDone(fid)));
   else hub.setScreen(fid, f.screen?.fault ?? 'ARIZA', '#ff5040', true);
 }
@@ -357,7 +375,7 @@ const refreshAll = () => W.faults.forEach((f) => refreshTerminal(f.id));
 function hintFor(fid: string): string | null {
   const f = FAULTS.get(fid);
   if (!f || isSolved(fid)) return null;
-  return missingFor(f, states()).length ? (f.blockedHint ?? 'E: Koşul eksik — haritaya bak') : 'E: Paneli aç';
+  return blockedNow(fid) ? (f.blockedHint ?? 'E: Koşul eksik — haritaya bak') : 'E: Paneli aç';
 }
 
 function onRoomChange(roomId: string): void {
@@ -378,7 +396,7 @@ function buildMapView(): MapView {
       id: f.id,
       label: content.cards[f.card].title,
       ...hub.terminalPosition(f.id),
-      status: isSolved(f.id) ? 'solved' : missingFor(f, states()).length ? 'blocked' : 'open',
+      status: isSolved(f.id) ? 'solved' : blockedNow(f.id) ? 'blocked' : 'open',
       visible: disc.includes(f.room) || f.id === mapTarget,
     })),
     player: hub.pose(),
@@ -461,6 +479,72 @@ hub.restoreScars(progress.world.scorched);
 updateMood(0.1);
 if (isCritical(progress.resources, balance)) closeEpisode();
 
+// --- Tehdit olayı: koşullar sağlanınca başlar; sayaç yalnız dolaşırken, gürültüyle hızlanır ---
+function onThreatEvent(def: ThreatDef, e: ThreatEvent): void {
+  const board = W.faults.find((f) => f.event === def.id);
+  if (e.kind === 'started') {
+    if (!states().includes(def.activeState)) progress.world.states = [...states(), def.activeState];
+    hub.setThreat(true);
+    audio.alarm(ALARM_SECONDS);
+    if (board) mapTarget = board.id;
+    refreshAll();
+    say(`threat:${def.id}:start`, false);
+    void persist();
+  } else if (e.kind === 'warning') {
+    audio.play('sonar', { volume: 0.6 });
+    say(`threat:${def.id}:warning`, false);
+  } else if (e.kind === 'strike') {
+    const outcome = {
+      kind: 'creature_strike' as const,
+      severity: 1,
+      resistorOverheat: false,
+      headline: 'Yaratık istasyona saldırdı',
+      explanation: 'Karartma yapılmadan temas istasyona ulaştı.',
+    };
+    const step = applyOutcome(progress.resources, balance, `${def.id}#${e.strikes}`, outcome);
+    progress.resources = step.state;
+    const damage = step.events.find((x) => x.type === 'damage');
+    if (damage && damage.type === 'damage') {
+      const sum = Object.values(damage.loss).reduce((a, b) => a + b, 0);
+      if (!progress.worstEvent || sum > progress.worstEvent.total) progress.worstEvent = { label: damage.label, total: sum };
+    }
+    hub.threatStrike();
+    audio.alarm(ALARM_SECONDS);
+    say(`threat:${def.id}:strike`, false);
+    renderHud();
+    updateMood(2);
+    void persist();
+    if (isCritical(progress.resources, balance)) closeEpisode();
+  } else if (e.kind === 'cleared') {
+    progress.world.states = states().filter((x) => x !== def.activeState);
+    hub.setThreat(false);
+    hub.creaturePass();
+    if (board && mapTarget === board.id) mapTarget = null;
+    say(`threat:${def.id}:cleared`, false);
+    refreshAll();
+    void persist();
+  }
+}
+for (const t of W.threats) if (progress.threats[t.id]?.phase === 'active') hub.setThreat(true);
+let lastThreatTick = performance.now();
+setInterval(() => {
+  const now = performance.now();
+  const dt = Math.min(1, (now - lastThreatTick) / 1000);
+  lastThreatTick = now;
+  if (closing || !started) return;
+  threatNoise = hub.noiseLevel();
+  for (const def of W.threats) {
+    const r = tickThreat(def, progress.threats[def.id] ?? initialThreat(), { states: states(), dt, roaming: hub.isRoaming(), noise: threatNoise });
+    progress.threats[def.id] = r.state;
+    for (const e of r.events) onThreatEvent(def, e);
+    if (r.state.phase === 'active') renderHud();
+  }
+}, 250);
+// Tehdit sürerken sonar sık ve yüksek pinger
+setInterval(() => {
+  if (started && activeThreatView()) audio.play('sonar', { volume: 0.5, pitchJitter: 0.02 });
+}, 6_000);
+
 // --- Kalıcı hasar tüketimi: oyun saatiyle, yalnız dolaşırken ---
 let lastTick = performance.now();
 setInterval(() => {
@@ -491,6 +575,12 @@ if (import.meta.env.DEV) {
         progress.world.states = [...new Set([...states(), ...granted])];
         refreshAll();
       },
+      /** Test kısayolu: tehdit olayını hemen başlat ya da süresini ayarla. */
+      threat: (id: string, timer?: number) => {
+        const st = progress.threats[id] ?? initialThreat();
+        if (timer !== undefined) progress.threats[id] = { ...st, phase: st.phase === 'cleared' ? 'cleared' : 'pending', timer };
+        return structuredClone(progress.threats[id] ?? st);
+      },
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
         renderHud();
@@ -504,6 +594,12 @@ if (import.meta.env.DEV) {
 function interact(fid: string): void {
   const f = FAULTS.get(fid)!;
   if (isSolved(fid)) return;
+  if (eventBlocked(fid) && !missingFor(f, states()).length) {
+    // Olay panosu: tehdit başlamadan açılmaz
+    uiSound('switch');
+    refreshTerminal(fid);
+    return;
+  }
   const missing = missingFor(f, states());
   if (missing.length) {
     mapTarget = nextGoal(W, states(), solvedSet(), f)?.id ?? null;

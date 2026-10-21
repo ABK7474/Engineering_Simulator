@@ -24,7 +24,10 @@ export type OutcomeKind =
   | 'false_alarm' // olasılık: kaçak olasılığı abartıldı, boşa tahliye
   | 'leak_ignored' // olasılık: kaçak olasılığı küçümsendi
   | 'redundancy_lost' // olasılık: yedek/pompa yetmedi
-  | 'power_waste'; // olasılık: gereğinden fazla pompa/yedek
+  | 'power_waste' // olasılık: gereğinden fazla pompa/yedek
+  | 'creature_alerted' // tehdit: acil ışık varışta hâlâ parlak, yaratık çarptı
+  | 'dark_stumble' // tehdit: ışık erken söndü, karanlıkta çarpma
+  | 'creature_strike'; // tehdit: süre doldu, yaratık istasyona saldırdı
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -74,7 +77,7 @@ export interface TimePlot {
 
 export interface StageDef {
   id: string;
-  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl' | 'superposition' | 'diode' | 'filter' | 'damping' | 'stability' | 'laplace' | 'phasor' | 'probability' | 'algo-trace' | 'cs-output';
+  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl' | 'superposition' | 'diode' | 'filter' | 'damping' | 'stability' | 'laplace' | 'phasor' | 'probability' | 'algo-trace' | 'cs-output' | 'light-decay';
   /** Ders kimliği (content/courses.json). Zorunlu; aralıklı tekrar için. */
   course: string;
   /** Konu etiketi (ör. "thevenin-norton"; kullanıcı konuları için "konu:<kimlik>"). Zorunlu. */

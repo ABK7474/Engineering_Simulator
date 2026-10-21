@@ -81,6 +81,21 @@
     ],
     "blocked:airlock.ready": [
       "Hava kilidi kapısı valf kalibre edilmeden açılmaz. Kontrol odasındaki valf panosu."
+    ],
+    "threat:creature-1:start": [
+      "Sonar teması. Büyük. İstasyona doğru geliyor. Sensör odasındaki karartma panosu açıldı; ışıkları kesmen gerekebilir. Koşma: titreşimi duyuyor olabilir."
+    ],
+    "threat:creature-1:warning": [
+      "Temas yaklaşıyor. Sessiz ol, karartma panosuna git."
+    ],
+    "threat:creature-1:strike": [
+      "Gövdeye çarptı! Dış kaplamada hasar var. Uzaklaştı ama geri dönecek; karartma panosu hâlâ açık."
+    ],
+    "threat:creature-1:cleared": [
+      "Karanlıkta bekledik. Gölge pencerelerin önünden geçti ve uzaklaştı. Bunu daha önce de yapmıştık, değil mi? Kayıtlarda yok. Olmalıydı."
+    ],
+    "solved:blackout": [
+      "Acil aydınlatma söndü. Nefesini tut. …Geçti."
     ]
   }
 }

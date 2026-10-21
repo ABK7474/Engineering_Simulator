@@ -6,7 +6,7 @@
 //   trace.hideCounters = döngü sayaçlarını tabloda gizle.
 // - thevenin: thevenin.form (thevenin/norton), thevenin.tolerance. max-power: maxPower.binSize.
 // - opamp: opamp.variants (gain/offset), opamp.tolerance. rc-rl: rcRl.kinds (rc/rl), rcRl.window.
-// - diode, filter, damping: binSize = kutudaki aday sayısı. superposition, laplace: tolerance = kabul toleransı.
+// - diode, filter, damping, light-decay: binSize = kutudaki aday sayısı. superposition, laplace: tolerance = kabul toleransı.
 // - phasor: phasor.ampTol, phasor.phaseTol. algo-trace: algo.nodes / algo.length / algo.keys aralıkları.
 
 import type { FaultCard, StageDef } from '../core/types';
@@ -39,6 +39,8 @@ import { parseProbConfig } from '../solvers/prob/probability';
 import { generateProb } from '../solvers/prob/probability.generate';
 import { generateAlgoTrace, parseAlgoTraceConfig } from '../solvers/algo/algo-trace';
 import { generateCsOutput, parseCsOutputConfig } from '../solvers/cs/cs-output';
+import { parseLightDecayConfig } from '../solvers/ode/light-decay';
+import { generateLightDecay } from '../solvers/ode/light-decay.generate';
 import { CS_GENERATED, CS_TEMPLATES } from '../solvers/cs/content';
 import { parseRcRlConfig } from '../solvers/ode/rc-rl';
 import { generateRcRl } from '../solvers/ode/rc-rl.generate';
@@ -70,7 +72,7 @@ export function applyDifficulty(stage: StageDef, d: Difficulty): StageDef {
   } else if (stage.type === 'rc-rl' && d.rcRl) {
     if (d.rcRl.kinds) config.kinds = d.rcRl.kinds;
     if (d.rcRl.window !== undefined) config.window = d.rcRl.window;
-  } else if (stage.type === 'diode' || stage.type === 'filter' || stage.type === 'damping') {
+  } else if (stage.type === 'diode' || stage.type === 'filter' || stage.type === 'damping' || stage.type === 'light-decay') {
     if (d.binSize !== undefined) config.binSize = d.binSize;
   } else if (stage.type === 'superposition' || stage.type === 'laplace') {
     if (d.tolerance !== undefined) config.tolerance = d.tolerance;
@@ -108,6 +110,7 @@ const CHECKERS: Record<StageDef['type'], (config: unknown) => (seed: number) => 
   phasor: (c) => ((cfg) => (seed: number) => generatePhasor(cfg, seed))(parsePhasorConfig(c)),
   'algo-trace': (c) => ((cfg) => (seed: number) => generateAlgoTrace(cfg, seed))(parseAlgoTraceConfig(c)),
   'cs-output': (c) => ((cfg) => (seed: number) => generateCsOutput(cfg, seed, CS_TEMPLATES, CS_GENERATED))(parseCsOutputConfig(c, CS_TEMPLATES, CS_GENERATED)),
+  'light-decay': (c) => ((cfg) => (seed: number) => generateLightDecay(cfg, seed))(parseLightDecayConfig(c)),
   probability: (c) => ((cfg) => (seed: number) => generateProb(cfg, seed))(parseProbConfig(c)),
 };
 

@@ -16,8 +16,37 @@ export interface CountCard {
   sub: string;
 }
 
+export type BayesTheme = 'leak' | 'contact';
+
+/** Bayes aşamasının hikâye metinleri; matematik iki temada aynı. */
+export const BAYES_TEXT: Record<BayesTheme, {
+  ev: string; s1: string; s2: string; both: string; firstOnly: string; prior: string; task: string; field: string; svg: string;
+  falseHead: string; falseText: string; ignoredHead: string; ignoredText: string; okText: string;
+}> = {
+  leak: {
+    ev: 'kaçak', s1: 'S1', s2: 'S2',
+    both: 'Şu an ikisi de alarm veriyor.', firstOnly: 'Şu an S1 alarm veriyor, S2 sessiz.',
+    prior: 'Bölmede kaçak olma olasılığı (bakım kayıtlarından)',
+    task: 'Bu gözlem altında bölmede gerçekten kaçak olma olasılığını hesapla; tahliye kararı buna göre verilecek.',
+    field: 'P(kaçak | gözlem) (%)', svg: 'bölmede kaçak önsel olasılığı',
+    falseHead: 'Boşa tahliye', falseText: 'Kaçak olasılığı abartıldı: bölme boşuna kapatıldı, pompalar boşuna çalıştı.',
+    ignoredHead: 'Kaçak göz ardı edildi', ignoredText: 'Kaçak olasılığı küçümsendi: su sızmaya devam etti.',
+    okText: 'Bakım ekibi doğru önceliklendirildi.',
+  },
+  contact: {
+    ev: 'canlı', s1: 'sonar', s2: 'hidrofon',
+    both: 'Şu an aktif sonar da pasif hidrofon da temas bildiriyor.', firstOnly: 'Şu an aktif sonar temas bildiriyor, pasif hidrofon sessiz.',
+    prior: 'Bu derinlikte bir sonar temasının büyük bir canlı olma olasılığı (istasyon kayıtlarından)',
+    task: 'Bu gözlem altında temasın gerçekten büyük bir canlı olma olasılığını hesapla; karartma kararı buna göre verilecek.',
+    field: 'P(canlı | gözlem) (%)', svg: 'temasın canlı olma önsel olasılığı',
+    falseHead: 'Boşa karartma', falseText: 'Olasılık abartıldı: istasyon boşuna karartıldı, ısıtıcılar ve pompalar durdu.',
+    ignoredHead: 'Temas küçümsendi', ignoredText: 'Olasılık küçümsendi: hazırlık geç başladı, yaratık istasyona yaklaştı.',
+    okText: 'Karartma kararı doğru verildi.',
+  },
+};
+
 export type ProbProblem =
-  | { seed: number; variant: 'bayes'; input: BayesInput; answer: number; tolerance: number; mistakes: { value: number; text: string }[] }
+  | { seed: number; variant: 'bayes'; theme: BayesTheme; input: BayesInput; answer: number; tolerance: number; mistakes: { value: number; text: string }[] }
   | { seed: number; variant: 'binomial'; q: number; need: number; reliability: number; answer: number; bin: CountCard[]; table: { n: number; p: number }[] }
   | { seed: number; variant: 'poisson'; lambda: number; reliability: number; answer: number; bin: CountCard[]; table: { n: number; p: number }[] };
 
@@ -43,15 +72,15 @@ function genBayes(c: ProbConfig, rng: () => number, seed: number): ProbProblem |
   const f1 = input.fa1 / 100;
   const pi = input.prior / 100;
   const mistakes = [
-    { value: s1 * l2, text: 'Taban oranı yok sayılmış: P(alarm | kaçak) ile P(kaçak | alarm) karıştırılmış.' },
+    { value: s1 * l2, text: `Taban oranı yok sayılmış: P(alarm | ${BAYES_TEXT[c.bayes.theme ?? 'leak'].ev}) ile P(${BAYES_TEXT[c.bayes.theme ?? 'leak'].ev} | alarm) karıştırılmış.` },
     { value: (pi * s1) / (pi * s1 + (1 - pi) * f1), text: 'Yalnız birinci sensör hesaba katılmış; ikinci sensörün gözlemi de olabilirliğe çarpılmalı.' },
-    { value: (s1 * l2) / (s1 * l2 + f1 * g2), text: 'Önsel olasılık %50 sanılmış; kaçağın önsel olasılığı gerçekte çok daha küçük.' },
+    { value: (s1 * l2) / (s1 * l2 + f1 * g2), text: 'Önsel olasılık %50 sanılmış; gerçek önsel olasılık çok daha küçük.' },
   ];
   for (const m of mistakes) if (Math.abs(m.value - answer) < 3 * tol) return 'klasik hata doğru cevaba çok yakın';
   const mc = bayesMonteCarlo(input, 400_000, mcRng(seed));
   if (mc.events < 1500) return 'gözlem çok seyrek (Monte Carlo teyidi zayıf)';
   if (Math.abs(mc.estimate - answer) > 4 * Math.sqrt((answer * (1 - answer)) / mc.events) + 0.002) return 'Monte Carlo kesin sonuçla uyuşmuyor';
-  return { seed, variant: 'bayes', input, answer, tolerance: tol, mistakes };
+  return { seed, variant: 'bayes', theme: c.bayes.theme ?? 'leak', input, answer, tolerance: tol, mistakes };
 }
 
 const relGap = (p: number, r: number) => (1 - p) / (1 - r);
@@ -137,9 +166,10 @@ export function resolveProbOutcome(p: ProbProblem, x: number): Outcome {
   const base = { kind, resistorOverheat: false, severity: kind === 'success' ? 0 : kind === 'power_waste' ? 1 : 2 };
   if (p.variant === 'bayes') {
     const read = `Senin tahminin ${pctStr(x)}, gerçek olasılık ${pctStr(p.answer)}.`;
-    if (kind === 'success') return { ...base, headline: 'Alarm doğru yorumlandı', explanation: `${read} Bakım ekibi doğru önceliklendirildi.` };
-    if (kind === 'false_alarm') return { ...base, headline: 'Boşa tahliye', explanation: `${read} Kaçak olasılığı abartıldı: bölme boşuna kapatıldı, pompalar boşuna çalıştı.` };
-    return { ...base, headline: 'Kaçak göz ardı edildi', explanation: `${read} Kaçak olasılığı küçümsendi: su sızmaya devam etti.` };
+    const T = BAYES_TEXT[p.theme];
+    if (kind === 'success') return { ...base, headline: 'Alarm doğru yorumlandı', explanation: `${read} ${T.okText}` };
+    if (kind === 'false_alarm') return { ...base, headline: T.falseHead, explanation: `${read} ${T.falseText}` };
+    return { ...base, headline: T.ignoredHead, explanation: `${read} ${T.ignoredText}` };
   }
   const unit = p.variant === 'binomial' ? 'pompa' : 'yedek';
   const pX = p.table.find((t) => t.n === x)?.p ?? NaN;
@@ -154,6 +184,7 @@ export function buildProbReport(stageId: string, p: ProbProblem, x: number, outc
     const b = p.input;
     const second = b.obs === 'both' ? `P(A₂|K) = %${num(b.sens2)}, P(A₂|¬K) = %${num(b.fa2)}` : `P(¬A₂|K) = 1 − %${num(b.sens2)}, P(¬A₂|¬K) = 1 − %${num(b.fa2)}`;
     const steps = [
+      `K: ${p.theme === 'leak' ? 'bölmede kaçak var' : 'temas büyük bir canlı'}; A₁, A₂: ${BAYES_TEXT[p.theme].s1} ve ${BAYES_TEXT[p.theme].s2} alarmı.`,
       `Bayes: P(K | gözlem) = P(gözlem | K)·P(K) / [P(gözlem | K)·P(K) + P(gözlem | ¬K)·P(¬K)]; sensörler koşullu bağımsız: olabilirlikler çarpılır.`,
       `P(K) = %${num(b.prior)}; P(A₁|K) = %${num(b.sens1)}, P(A₁|¬K) = %${num(b.fa1)}; ${second}`,
       `Sonuç: P(K | gözlem) = ${pctStr(p.answer)} (kesin kesirli hesap; Monte Carlo benzetimiyle de teyit edildi)`,
@@ -167,7 +198,7 @@ export function buildProbReport(stageId: string, p: ProbProblem, x: number, outc
       outcome,
       facts: [
         { label: 'Önsel', value: `%${num(b.prior)}` },
-        { label: 'Gözlem', value: b.obs === 'both' ? 'iki sensör de alarm' : 'birinci alarm, ikinci sessiz' },
+        { label: 'Gözlem', value: b.obs === 'both' ? `${BAYES_TEXT[p.theme].s1} ve ${BAYES_TEXT[p.theme].s2} alarm` : `${BAYES_TEXT[p.theme].s1} alarm, ${BAYES_TEXT[p.theme].s2} sessiz` },
         { label: 'Kabul', value: `±${(p.tolerance * 100).toFixed(1).replace('.', ',')} puan` },
       ],
       steps,

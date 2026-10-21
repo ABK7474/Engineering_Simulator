@@ -1,12 +1,13 @@
 // Hava kilidi panelleri: basınç sensörü şartlandırma (op-amp, 2–3 yuva) ve valf zamanlayıcı (RC/RL, tek yuva).
 // Çizimler programla üretilir (sabit topoloji); yuvalar `data-slot` taşır, etkileşim slot-board'da.
 
-import { formatAmp, formatOhm, formatSec, formatVolt } from '../../core/format';
+import { formatAmp, formatFarad, formatOhm, formatSec, formatVolt } from '../../core/format';
 import { SLOTS, type OpampVariant } from '../../solvers/circuit/opamp';
 import type { OpampProblem } from '../../solvers/circuit/opamp.generate';
 import type { LaplaceProblem } from '../../solvers/math/laplace.generate';
 import type { StabilityProblem } from '../../solvers/math/stability.generate';
 import type { DampingProblem } from '../../solvers/ode/damping.generate';
+import type { LightDecayProblem } from '../../solvers/ode/light-decay.generate';
 import type { RcRlProblem } from '../../solvers/ode/rc-rl.generate';
 import { fmtTime } from '../../solvers/ode/rc-rl.outcomes';
 import { esc } from '../dom';
@@ -243,4 +244,42 @@ export function laplaceSvg(p: LaplaceProblem): string {
     <text x="240" y="48" class="lbl dim" text-anchor="middle">dolum pompası + kilit hacmi, G(s)</text>
     <text x="370" y="170" class="lbl dim" text-anchor="middle">y: kilit basıncı (bar)</text>
   </svg>`;
+}
+
+/** Acil aydınlatma: süperkapasitör → R yuvası → lamba → dönüş. Sigorta açık (ana hat kesik). */
+export function lightDecaySvg(p: LightDecayProblem, r: number | undefined, armed: boolean): string {
+  return `<svg viewBox="0 0 480 260" class="circuit board" aria-label="Acil aydınlatma devresi">
+    <polyline points="70,70 70,40 200,40" class="wire"/><polyline points="280,40 400,40 400,100" class="wire"/>
+    <polyline points="400,160 400,220 70,220 70,150" class="wire"/>
+    <line x1="45" y1="100" x2="95" y2="100" class="sym"/><line x1="45" y1="116" x2="95" y2="116" class="sym"/>
+    <polyline points="70,70 70,100" class="wire"/><polyline points="70,116 70,150" class="wire"/>
+    <text x="102" y="104" class="lbl">C = ${esc(formatFarad(p.params.c))}</text>
+    <text x="102" y="122" class="lbl dim">t = 0'da ${esc(formatVolt(p.params.v0))}</text>
+    ${slotSvg('R', 'R', 240, 40, 'h', r, armed)}
+    <circle cx="400" cy="130" r="26" class="sym"/><line x1="382" y1="112" x2="418" y2="148" class="sym"/><line x1="418" y1="112" x2="382" y2="148" class="sym"/>
+    <text x="434" y="126" class="lbl">lamba</text><text x="434" y="144" class="lbl">R_L = ${esc(formatOhm(p.params.rl))}</text>
+    <g class="probe"><circle cx="400" cy="100" r="7"/><text x="330" y="94">V_L</text></g>
+    <polyline points="200,220 200,236" class="wire"/><line x1="185" y1="236" x2="215" y2="236" class="sym"/>
+    <text x="230" y="250" class="lbl dim">ana aydınlatma sigortası çekildi (t = 0)</text>
+  </svg>`;
+}
+
+export function openLightDecayPanel(root: HTMLElement, opts: Common & { problem: LightDecayProblem; onSubmit: (cardId: string) => void }): () => void {
+  const p = opts.problem;
+  return openSlotBoard(root, {
+    title: opts.title,
+    briefing: opts.briefing,
+    info: [
+      { heading: 'Sonar tahmini', text: `Temas ${formatSec(p.tArr)} sonra pencerelerin önünde olacak. Sığınağa varman ${formatSec(p.tWalk)} sürer.` },
+      { heading: 'Şartlar', text: `Sığınağa varana kadar lamba görünür kalmalı: V_L(${formatSec(p.tWalk)}) ≥ ${formatVolt(p.vSee)}. Temas geldiğinde lamba görünmemeli: V_L(${formatSec(p.tArr)}) ≤ ${formatVolt(p.vDet)}.` },
+    ],
+    slots: ['R'],
+    bin: p.bin,
+    drawing: (filled, armed) => lightDecaySvg(p, filled.R, armed),
+    submitLabel: 'Sigortayı çek',
+    onSubmit: (pl) => opts.onSubmit(pl.R),
+    onCancel: opts.onCancel,
+    source: opts.source,
+    onSound: opts.onSound,
+  });
 }

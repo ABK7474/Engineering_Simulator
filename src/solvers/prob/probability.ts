@@ -11,7 +11,8 @@ export type ProbVariant = 'bayes' | 'binomial' | 'poisson';
 
 export interface ProbConfig {
   variants: ProbVariant[];
-  bayes: { prior: number[]; sens: number[]; falseAlarm: number[]; observations: ('both' | 'firstOnly')[] };
+  /** theme: hikâye metni (leak: su kaçağı sensörleri; contact: sonar teması). Matematik aynı. */
+  bayes: { prior: number[]; sens: number[]; falseAlarm: number[]; observations: ('both' | 'firstOnly')[]; theme?: 'leak' | 'contact' };
   binomial: { q: number[]; need: number[]; reliability: number[] };
   poisson: { lambda: number[]; reliability: number[] };
 }
@@ -25,6 +26,7 @@ export function parseProbConfig(raw: unknown): ProbConfig {
   const pct = (a: unknown) => Array.isArray(a) && a.length > 0 && a.every((x) => typeof x === 'number' && x > 0 && x < 100);
   need(pct(c.bayes?.prior) && pct(c.bayes?.sens) && pct(c.bayes?.falseAlarm), 'bayes: prior/sens/falseAlarm yüzde listeleri olmalı');
   need(Array.isArray(c.bayes?.observations) && c.bayes.observations.length > 0, 'bayes.observations boş olamaz');
+  need(c.bayes?.theme === undefined || c.bayes.theme === 'leak' || c.bayes.theme === 'contact', 'bayes.theme leak/contact olmalı');
   need(pct(c.binomial?.q) && pct(c.binomial?.reliability) && Array.isArray(c.binomial?.need) && c.binomial.need.every((x) => Number.isInteger(x) && x >= 1), 'binomial: q, need, reliability olmalı');
   need(Array.isArray(c.poisson?.lambda) && c.poisson.lambda.every((x) => x > 0) && pct(c.poisson?.reliability), 'poisson: lambda, reliability olmalı');
   if (errors.length) throw new Error(`probability yapılandırması geçersiz:\n- ${errors.join('\n- ')}`);

@@ -49,7 +49,10 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] Zorluk odadan odaya: oda binSize/tolerance yeni türlere de uygulanır; fazör ve algo için oda ayarları (S-1 sıkı fazör toleransı, K-1 büyük graf/ağaç). 20 tohumda doğrulanır
 - [x] NEREUS replikleri: yeni odalara giriş, çözüm ve engel satırları
 ### 2d. Tehdit olayı
-- [ ] Yaratık yaklaşırken ışığı kesme bulmacası (sigorta + acil aydınlatma RC sönümü), sonar Bayes, gürültü seviyesi
+- [x] Tehdit durum makinesi (core/threat.ts, saf + testli): sonar kalibre edildikten 25 sn sonra başlar; sayaç yalnız dolaşırken işler; koşmak 2,5 kat hızlandırır; süre dolunca saldırı (kaynak kaybı), 120 sn sonra yeniden gelir; HUD'da TEMAS sayacı ve gürültü göstergesi
+- [x] Karartma panosu (blackout-01, S-1; yalnız tehdit sürerken açılır): sonar teması Bayes (olasılık türüne "contact" teması) → yeni `light-decay` türü (süperkapasitör deşarjı, iki şart, RK4 teyidi, 1000 tohum)
+- [x] Yeni sonuçlar: creature_alerted, dark_stumble, creature_strike (denge + hub efekti: kükreme, ışık titremesi, pencere önünden geçen gölge)
+- [x] Tarayıcıda denendi: olay başlar, `threat.active` eklenir, pano açılır, konsol temiz
 ### 2e. Kalıcı sistemler
 - [ ] Aralıklı tekrar, oyun içi kayıtlar/formül defteri, ipucu sistemi, Sezon 1 finali
 
@@ -59,3 +62,4 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - 2026-10-22 · 2a bitti (9 yeni tür, 368+ test). Sıradaki: 2b (ağaç/BFS/DFS/sıralama trace, C# çıktı tahmini).
 - 2026-10-22 · 2b bitti (algo-trace, cs-output; 401 test). Sıradaki: 2c (yeni odalar: güç P-1, hava kilidi A-1, sensör S-1, AI çekirdeği K-1; kartları yerleştir, zincirler, pencereler/dış sahne).
 - 2026-10-22 · 2c bitti (6 oda, 402 test). Sıradaki: 2d tehdit olayı.
+- 2026-10-22 · 2d bitti (416 test). Sıradaki: 2e (aralıklı tekrar, kayıtlar/formül defteri, ipucu, Sezon 1 finali).

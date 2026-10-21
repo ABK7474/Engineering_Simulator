@@ -81,8 +81,14 @@ export interface Hub {
   /** Harita için: oyuncunun konumu ve bakış yönü. */
   pose: () => { x: number; z: number; yaw: number };
   terminalPosition: (terminalId: string) => { x: number; z: number };
-  /** Oyuncunun gürültü seviyesi: hareketsiz/eğilme 0, yürüme 1, koşma 2 (henüz kullanılmıyor). */
+  /** Oyuncunun gürültü seviyesi: hareketsiz/eğilme 0, yürüme 1, koşma 2 (tehdit olayında yaklaşmayı hızlandırır). */
   noiseLevel: () => 0 | 1 | 2;
+  /** Tehdit olayı sürerken gövdeden gelen sesler sıklaşır. */
+  setThreat: (on: boolean) => void;
+  /** Yaratık istasyona çarpar: kükreme, ışıklar söner gibi titrer, pencerelerin önünden gölge geçer. */
+  threatStrike: () => void;
+  /** Tehdit sona erdi: gölge uzaklaşarak geçer. */
+  creaturePass: () => void;
   /** Geliştirme/test kancaları (oyunda kullanılmaz). */
   debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void; teleport: (x: number, z: number, yaw?: number) => void };
   stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean; room: string | null };
@@ -147,6 +153,12 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   let visKey = '';
   // Uzak yaratık: ara sıra gövdeden gelen derin gümbürtü (nadiren kükreme); ışıklar bir an titrer
   let rumbleIn = 50 + Math.random() * 60;
+  let threatOn = false;
+  const quake = (seconds: number, depth: number) =>
+    anim(0.2, seconds, (k) => {
+      powerDip = k < 1 ? 1 - depth * Math.sin(k * Math.PI) * (0.5 + 0.5 * Math.random()) : 1;
+      applyPower();
+    });
   const refreshVisibility = () => {
     if (!room || frames < 3) return;
     const v = visibleFrom(room);
@@ -250,8 +262,8 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     refreshVisibility();
     if (locked) rumbleIn -= dt;
     if (rumbleIn <= 0) {
-      rumbleIn = 75 + Math.random() * 90;
-      const roar = Math.random() < 0.25;
+      rumbleIn = threatOn ? 14 + Math.random() * 14 : 75 + Math.random() * 90;
+      const roar = Math.random() < (threatOn ? 0.6 : 0.25);
       sounds.play(roar ? 'roar' : 'rumble', { volume: roar ? 0.35 : 0.5, pitchJitter: 0.06 });
       anim(0.4, 1.6, (k) => {
         powerDip = k < 1 ? 1 - 0.35 * Math.sin(k * Math.PI) * (0.6 + 0.4 * Math.random()) : 1;
@@ -496,6 +508,24 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
         });
         at(T0 + 0.9, () => sounds.play('splash', { volume: 0.6 }));
         return T0 + 2.2;
+      case 'creature_alerted':
+      case 'creature_strike':
+        at(T0, () => {
+          t.setScreen('TEMAS\nGÖVDEYE ÇARPTI', '#ff5040', true);
+          sounds.play('roar', { volume: 0.9 });
+          sounds.play('rumble', { volume: 1 });
+          quake(2.6, 0.8);
+          exterior.forcePass(0.42);
+        });
+        at(T0 + 0.6, () => effects.sparkBurst(t.ledPosition, 30));
+        return T0 + 3;
+      case 'dark_stumble':
+        at(T0, () => {
+          t.setScreen('ACİL IŞIK\nERKEN SÖNDÜ', '#ffb030', true);
+          quake(1.8, 0.95);
+          sounds.play('jam', { volume: 0.7 });
+        });
+        return T0 + 2.4;
       case 'power_waste':
         at(T0, () => {
           ledFlicker = { t, color: 0xffb030, lo: 0.3, hi: 0.9 };
@@ -592,6 +622,20 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     teleport,
     setWarningLight(on) {
       effects.setAlarm(on);
+    },
+    setThreat(on) {
+      threatOn = on;
+      if (on) rumbleIn = Math.min(rumbleIn, 6);
+    },
+    threatStrike() {
+      sounds.play('roar', { volume: 0.9 });
+      sounds.play('rumble', { volume: 1 });
+      quake(3, 0.8);
+      exterior.forcePass(0.42);
+    },
+    creaturePass() {
+      sounds.play('rumble', { volume: 0.4 });
+      exterior.forcePass(0.12);
     },
     isRoaming: () => active && locked && document.visibilityState === 'visible',
     restoreScars(ids) {

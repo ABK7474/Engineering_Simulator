@@ -138,6 +138,9 @@ button { font: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .hud-row.critical .hud-value { animation: none; } }
 .hud-damages { margin: 6px 0 0; padding-left: 16px; color: var(--warn); font-size: 12px; }
 .hud-episode { margin-top: 4px; color: var(--muted); font-size: 11px; }
+.hud-threat { margin-top: 6px; display: flex; justify-content: space-between; gap: 10px; color: var(--fail); font: bold 12px monospace; animation: hud-threat-pulse 1.6s ease-in-out infinite; }
+.hud-noise { color: var(--warn); font-weight: normal; }
+@keyframes hud-threat-pulse { 50% { opacity: 0.55; } }
 
 .backup-menu { position: absolute; top: 56px; right: 12px; z-index: 5; text-align: right; }
 .backup-menu .menu-toggle { padding: 2px 10px; background: rgba(4, 22, 27, 0.75); }

@@ -4,7 +4,7 @@ import { formatFarad, formatHenry, formatHz, formatOhm } from '../../core/format
 import type { FilterProblem } from '../../solvers/circuit/filter.generate';
 import { fmtDb } from '../../solvers/circuit/filter.outcomes';
 import type { PhasorProblem } from '../../solvers/math/phasor.generate';
-import type { ProbProblem } from '../../solvers/prob/probability.generate';
+import { BAYES_TEXT, type ProbProblem } from '../../solvers/prob/probability.generate';
 import { esc } from '../dom';
 import { resistorSvg } from '../resistor';
 import { openSlotBoard } from '../slot-board/panel';
@@ -98,17 +98,19 @@ export function phasorWavesSvg(p: PhasorProblem): string {
   </svg>`;
 }
 
-/** İki kaçak sensörü ve gözlenen lamba durumları. */
+/** İki algılayıcı (kaçak sensörleri ya da sonar + hidrofon) ve gözlenen alarm durumları. */
 export function bayesSvg(p: Extract<ProbProblem, { variant: 'bayes' }>): string {
   const b = p.input;
+  const T = BAYES_TEXT[p.theme];
   const lamp = (x: number, on: boolean, name: string, sens: number, fa: number) => `
-    <rect x="${x}" y="40" width="150" height="120" rx="8" class="sym"/>
-    <circle cx="${x + 75}" cy="82" r="20" style="fill:${on ? '#ff5040' : '#1d3238'};stroke:#e6f4f5;stroke-width:2"/>
-    <text x="${x + 75}" y="126" class="lbl" text-anchor="middle">${esc(name)}: ${on ? 'ALARM' : 'sessiz'}</text>
-    <text x="${x + 75}" y="148" class="lbl dim" text-anchor="middle">tespit %${esc(n3(sens))} · yanlış %${esc(n3(fa))}</text>`;
-  return `<svg viewBox="0 0 400 200" class="circuit board" aria-label="Kaçak sensörleri">
-    ${lamp(30, true, 'S1', b.sens1, b.fa1)}${lamp(220, b.obs === 'both', 'S2', b.sens2, b.fa2)}
-    <text x="200" y="186" class="lbl" text-anchor="middle">bölmede kaçak önsel olasılığı %${esc(n3(b.prior))}</text>
+    <rect x="${x}" y="24" width="160" height="140" rx="8" class="sym"/>
+    <circle cx="${x + 80}" cy="62" r="20" style="fill:${on ? '#ff5040' : '#1d3238'};stroke:#e6f4f5;stroke-width:2"/>
+    <text x="${x + 80}" y="106" class="lbl" text-anchor="middle">${esc(name)}: ${on ? 'ALARM' : 'sessiz'}</text>
+    <text x="${x + 80}" y="128" class="lbl dim" text-anchor="middle">tespit %${esc(n3(sens))}</text>
+    <text x="${x + 80}" y="148" class="lbl dim" text-anchor="middle">yanlış alarm %${esc(n3(fa))}</text>`;
+  return `<svg viewBox="0 0 400 200" class="circuit board" aria-label="Algılayıcılar">
+    ${lamp(25, true, T.s1, b.sens1, b.fa1)}${lamp(215, b.obs === 'both', T.s2, b.sens2, b.fa2)}
+    <text x="200" y="186" class="lbl" text-anchor="middle">${esc(T.svg)} %${esc(n3(b.prior))}</text>
   </svg>`;
 }
 
