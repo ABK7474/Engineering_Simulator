@@ -29,6 +29,10 @@ export interface Difficulty {
   opamp?: { variants?: ('gain' | 'offset')[]; tolerance?: number };
   /** RC/RL aşaması: devre türleri ve pencerenin yarı genişliği. */
   rcRl?: { kinds?: ('rc' | 'rl')[]; window?: number };
+  /** Fazör aşaması: genlik (oran) ve faz (derece) kabul toleransları. */
+  phasor?: { ampTol?: number; phaseTol?: number };
+  /** Algoritma izleme: graf düğüm sayısı, dizi uzunluğu, ağaç anahtar sayısı aralıkları. */
+  algo?: { nodes?: [number, number]; length?: [number, number]; keys?: [number, number] };
 }
 
 export interface PropDef {
@@ -177,6 +181,18 @@ export function parseWorld(raw: unknown): WorldDef {
       if (rr !== undefined && need(isObj(rr), `oda '${id}': rcRl nesne olmalı`)) {
         need(rr.kinds === undefined || (Array.isArray(rr.kinds) && rr.kinds.length > 0 && rr.kinds.every((v) => v === 'rc' || v === 'rl')), `oda '${id}': rcRl.kinds rc/rl olmalı`);
         need(rr.window === undefined || (isNum(rr.window) && rr.window > 0 && rr.window <= 0.08), `oda '${id}': rcRl.window 0–0,08 olmalı`);
+      }
+      const ph = d.phasor as Record<string, unknown> | undefined;
+      if (ph !== undefined && need(isObj(ph), `oda '${id}': phasor nesne olmalı`)) {
+        need(ph.ampTol === undefined || (isNum(ph.ampTol) && ph.ampTol > 0 && ph.ampTol <= 0.1), `oda '${id}': phasor.ampTol 0–0,1 olmalı`);
+        need(ph.phaseTol === undefined || (isNum(ph.phaseTol) && ph.phaseTol > 0 && ph.phaseTol <= 10), `oda '${id}': phasor.phaseTol 0–10 olmalı`);
+      }
+      const al = d.algo as Record<string, unknown> | undefined;
+      if (al !== undefined && need(isObj(al), `oda '${id}': algo nesne olmalı`)) {
+        for (const k of ['nodes', 'length', 'keys'] as const) {
+          const v = al[k];
+          need(v === undefined || (pair(v) && isInt(v[0]) && isInt(v[1]) && v[0] >= 4 && v[0] <= v[1] && v[1] <= 10), `oda '${id}': algo.${k} [min, max] olmalı (4–10)`);
+        }
       }
       need(d.ledWindow_mA === undefined || (pair(d.ledWindow_mA) && d.ledWindow_mA[0] > 0 && d.ledWindow_mA[0] < d.ledWindow_mA[1]), `oda '${id}': ledWindow_mA [min, max] olmalı`);
     }

@@ -28,11 +28,11 @@ const problems = (mut: (w: WorldDef) => void) => {
 describe('içerik yüklenir ve doğrulanır', () => {
   it('season1 dünyası geçerli; oda zorluğuyla bütün aşamalar 20 tohumda doğrulanır', () => {
     const c = loadWorld();
-    expect(c.world.rooms.map((r) => r.id)).toEqual(['corridor-b2', 'lab-c1']);
+    expect(c.world.rooms.map((r) => r.id)).toEqual(['corridor-b2', 'lab-c1', 'power-p1', 'sensor-s1', 'core-k1', 'airlock-a1']);
     expect(c.stages['core-terminal'][0].config).toMatchObject({ binSize: 8 });
     expect(c.stages['core-terminal'][1].type).toBe('ds-trace');
     expect(c.stages['core-terminal'][1].config).toMatchObject({ ops: [10, 16], hideCounters: false });
-  });
+  }, 60_000);
 });
 
 describe('yapısal hatalar açıklamalı', () => {
@@ -73,13 +73,13 @@ describe('anlamsal hatalar açıklamalı', () => {
   it('arıza kendi açtığı kapının arkasında', () => {
     const msg = problems((w) => {
       w.faults[1].room = 'lab-c1'; // kilit paneli kilitlediği kapının öbür tarafına taşındı
-      w.faults[1].anchor = { wall: 'east', index: 0, along: 0.5 };
+      w.faults[1].anchor = { wall: 'east', index: 1, along: 0.5 };
     });
     expect(msg).toMatch(/'door-lock', kendi açtığı kapının arkasında/);
   });
 
   it('eşya ile terminal çakışması ve engel içindeki giriş', () => {
-    expect(problems((w) => (w.faults[0].anchor.index = 1))).toMatch(/eşya\/terminal çakışması/); // dolapla aynı yer
+    expect(problems((w) => (w.faults[0].anchor.index = 3))).toMatch(/eşya\/terminal çakışması/); // dolapla aynı yer
     expect(problems((w) => (w.rooms[0].entrance = { x: -0.77, z: 0.8, yaw: 0 }))).toMatch(/giriş noktası bir engelin içinde/);
   });
 
@@ -155,7 +155,7 @@ describe('yerleşim', () => {
   });
 
   it('pencereler yalnız dış cepheye bakıyor (dışa normal yönünde oda yok)', () => {
-    expect(L.windows.length).toBe(5);
+    expect(L.windows.length).toBe(20);
     for (const w of L.windows) expect(roomAt(L, w.x + w.nx * 2, w.z + w.nz * 2)).toBeNull();
   });
 
@@ -169,8 +169,8 @@ describe('yerleşim', () => {
   });
 
   it('oda köşeleri kapalı: kapısız her köşede kolon ve duvar içinde kalan dolgu bloğu', () => {
-    // koridorun güney ucu kapı (2 köşe atlanır), oda 2'nin kapısı köşede değil
-    expect(L.cornerFills.length).toBe(6);
+    // altı oda × 4 köşe; kapı hücresine değen köşeler atlanır (koridorun güney ucu, P-1/S-1/K-1/A-1 kapıları)
+    expect(L.cornerFills.length).toBe(15);
     for (const { rect: r } of L.rooms) {
       for (const [x, z] of [[r.minX, r.maxZ], [r.maxX, r.maxZ], [r.minX, r.minZ], [r.maxX, r.minZ]]) {
         const f = L.cornerFills.find((c) => c.minX < x && x < c.maxX && c.minZ < z && z < c.maxZ);

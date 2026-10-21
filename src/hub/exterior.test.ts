@@ -3,7 +3,7 @@ import worldJson from '../../content/world/season1-world.json';
 import { createRng } from '../core/rng';
 import { buildWorldLayout, insideAny } from '../world/layout';
 import { parseWorld } from '../world/schema';
-import { distanceToRects, expand, outsidePoint, rockLayout, seabedHeight, WALL_OUT } from './exterior';
+import { dishSpots, distanceToRects, expand, outsidePoint, rockLayout, seabedHeight, WALL_OUT } from './exterior';
 
 const L = buildWorldLayout(parseWorld(worldJson));
 const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
@@ -35,8 +35,17 @@ describe('dış sahne yerleşimi (yalnız pencerelerden görünür, iç hacimler
     }
   });
 
-  it('pencereler iki odada da var: koridor batısı ve kontrol odası batısı', () => {
-    expect(new Set(L.windows.map((w) => w.roomId))).toEqual(new Set(['corridor-b2', 'lab-c1']));
-    expect(L.windows.every((w) => w.nx === -1)).toBe(true);
+  it('her odada pencere var; koridorun ve kontrol odasının pencereleri batıya bakar', () => {
+    expect(new Set(L.windows.map((w) => w.roomId))).toEqual(new Set(['corridor-b2', 'lab-c1', 'power-p1', 'sensor-s1', 'core-k1', 'airlock-a1']));
+    expect(L.windows.filter((w) => w.roomId === 'corridor-b2' || w.roomId === 'lab-c1').every((w) => w.nx === -1)).toBe(true);
+  });
+});
+
+describe('çanak', () => {
+  it('sensör odasının penceresinin önünde, dışarıda ve iç hacimlerden uzak', () => {
+    const spots = dishSpots(L);
+    expect(spots).toHaveLength(1);
+    const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
+    expect(distanceToRects(interiors, spots[0].x, spots[0].z)).toBeGreaterThan(5);
   });
 });

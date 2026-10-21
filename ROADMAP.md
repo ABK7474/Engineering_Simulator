@@ -29,7 +29,7 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] Sesler: buhar püskürmesi, gaz kaçağı ve damla döngüleri (mesafeye göre), uzak yaratık gümbürtüsü/kükremesi (ışık titrer), ana bara beslenince sonar ping
 - [x] Performans: doku tekilleştirme (148 → 37 doku), oda başına statik gruplar, kapalı kapının arkası çizilmez, uzak düzlem 34 m. Başlangıç bakışı: önce 73 çağrı / 73,5 bin üçgen → sonra 104 çağrı / 86 bin üçgen
 - [x] ASSETS_NEEDED.md, CREDITS.md, DECISIONS.md güncel
-- [ ] Sonraki odalarda (2c): uydu çanağı dış sahneye (sensör odası), yeni temaların ekran görüntüsüyle kontrolü
+- [x] Sonraki odalarda (2c): çanak dış sahnede (sensör odası penceresinin karşısında, kodla üretilmiş, tarar, fener yanıp söner); dört yeni oda ekran görüntüsüyle kontrol edildi, konsol temiz
 
 ## Adım 2 — Dersler ve oyun (değer sırasıyla)
 ### 2a. Kalan devre/elektronik, DiffEq, Müh. Mat., Olasılık
@@ -44,7 +44,10 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] C# çıktı tahmini: `cs-output` türü, 10 elle yazılmış şablon (struct kopyası, virtual/new, kapanış, finally, string, static, ref, LINQ ertelenmesi, yield, kısa devre), yanılgı yamaları. `npm run gen:cs` → content/generated/cs-output.json (dotnet 10, 160 örnek). Kart: ai-core-runtime-01 (2 aşama)
 - Not: ai-core-index-01 ve ai-core-runtime-01 odalarına 2c'de (AI çekirdeği K-1) yerleşecek
 ### 2c. Yeni odalar ve zincirler
-- [ ] Hava kilidi, sensör/sonar, AI çekirdeği odaları; disiplinler arası zincirler; zorluk odadan odaya artar
+- [x] Dört yeni oda: güç P-1 (generator-sync), sensör S-1 (sonar-frontend), AI çekirdeği K-1 (ai-core-index → ai-core-runtime), hava kilidi A-1 (bilge-pumps → outer-door). Her odada pencere
+- [x] Disiplinler arası zincirler: yedek güç → P-1 jeneratör (Devre) → S-1 sonar (Elektronik + Müh. Mat.; ana bara ve jeneratör ister) → K-1 (Veri Yapıları → C#); C-1 valf → A-1 sintine (Olasılık) → dış kapı (DiffEq + Müh. Mat.)
+- [x] Zorluk odadan odaya: oda binSize/tolerance yeni türlere de uygulanır; fazör ve algo için oda ayarları (S-1 sıkı fazör toleransı, K-1 büyük graf/ağaç). 20 tohumda doğrulanır
+- [x] NEREUS replikleri: yeni odalara giriş, çözüm ve engel satırları
 ### 2d. Tehdit olayı
 - [ ] Yaratık yaklaşırken ışığı kesme bulmacası (sigorta + acil aydınlatma RC sönümü), sonar Bayes, gürültü seviyesi
 ### 2e. Kalıcı sistemler
@@ -55,3 +58,4 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - 2026-10-22 · Adım 0 ve 1 bitti. Sıradaki: 2a (diyot, filtre, süperpozisyon, RLC, Müh. Mat., olasılık türleri).
 - 2026-10-22 · 2a bitti (9 yeni tür, 368+ test). Sıradaki: 2b (ağaç/BFS/DFS/sıralama trace, C# çıktı tahmini).
 - 2026-10-22 · 2b bitti (algo-trace, cs-output; 401 test). Sıradaki: 2c (yeni odalar: güç P-1, hava kilidi A-1, sensör S-1, AI çekirdeği K-1; kartları yerleştir, zincirler, pencereler/dış sahne).
+- 2026-10-22 · 2c bitti (6 oda, 402 test). Sıradaki: 2d tehdit olayı.

@@ -147,6 +147,60 @@ function softDot(): THREE.Texture {
 
 // ---------------------------------------------------------------- sahne
 
+/** Sensör temalı odalarda, ilk pencerenin tam karşısında (kolon arkasında kalmasın), dışarıda `d` m uzakta çanak yeri. */
+export function dishSpots(L: Pick<WorldLayout, 'world' | 'windows'>, d = 10): { x: number; z: number; yaw: number }[] {
+  const out: { x: number; z: number; yaw: number }[] = [];
+  for (const r of L.world.rooms) {
+    if (r.theme !== 'sensor') continue;
+    const w = L.windows.find((x) => x.roomId === r.id);
+    if (!w) continue;
+    // Başlık pencereden uzağa, yukarı bakar (ağzı istasyona dönük olmasın)
+    out.push({ x: w.x + w.nx * d, z: w.z + w.nz * d, yaw: Math.atan2(w.nx, w.nz) });
+  }
+  return out;
+}
+
+/** Sonar/haberleşme çanağı: taban, direk ve yavaşça tarayan başlık (paraboloit + besleme kolları + uyarı feneri). */
+function buildDish(): { group: THREE.Group; head: THREE.Group; beacon: THREE.MeshBasicMaterial } {
+  const metal = withWaterFog(new THREE.MeshStandardMaterial({ color: 0x9aa8aa, roughness: 0.5, metalness: 0.3, emissive: 0x24444a }));
+  const dark = withWaterFog(new THREE.MeshStandardMaterial({ color: 0x2a3437, roughness: 0.8, metalness: 0.4 }));
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.4, 0.7, 10).translate(0, 0.35, 0), dark));
+  group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, 3.6, 8).translate(0, 2.5, 0), metal));
+  const head = new THREE.Group();
+  head.position.y = 4.4;
+  group.add(head);
+  head.add(new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.6), dark));
+  // Paraboloit y = r²/(4f): odak f = 1.5 m, ağız yarıçapı 2.2 m
+  const f = 1.5;
+  const prof = Array.from({ length: 12 }, (_, k) => {
+    const r = (2.2 * k) / 11;
+    return new THREE.Vector2(r, (r * r) / (4 * f));
+  });
+  const tilt = new THREE.Group();
+  tilt.rotation.x = -0.6; // ağız yukarı-ileri bakar
+  tilt.position.y = 0.4;
+  head.add(tilt);
+  const dishMat = withWaterFog(new THREE.MeshStandardMaterial({ color: 0xc4cfd0, roughness: 0.45, metalness: 0.2, emissive: 0x3a6268, side: THREE.DoubleSide }));
+  tilt.add(new THREE.Mesh(new THREE.LatheGeometry(prof, 24).rotateX(Math.PI / 2), dishMat));
+  // Besleme: odakta küçük gövde, ağız kenarından üç ince kol
+  const feed = new THREE.Vector3(0, 0, f);
+  tilt.add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.4, 8).rotateX(Math.PI / 2).translate(0, 0, f), dark));
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * Math.PI * 2;
+    const rim = new THREE.Vector3(Math.cos(a) * 2.1, Math.sin(a) * 2.1, (2.1 * 2.1) / (4 * f));
+    const len = rim.distanceTo(feed);
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, len, 5), metal);
+    strut.position.copy(rim).add(feed).multiplyScalar(0.5);
+    strut.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), feed.clone().sub(rim).normalize());
+    tilt.add(strut);
+  }
+  // Uyarı feneri: ışık kaynağı değil, yalnız parlayan malzeme
+  const beacon = new THREE.MeshBasicMaterial({ color: 0xff3020 });
+  head.add(new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6).translate(0, 0.42, -0.2), beacon));
+  return { group, head, beacon };
+}
+
 export interface Exterior {
   update: (dt: number, time: number, camera: THREE.Camera) => void;
   /** Dış grup bu karede çizildi mi (pencere görüş alanında mı). */
@@ -322,6 +376,15 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
     Object.assign(pass, { active: true, start: time - k * pass.duration, base: [w.x + w.nx * d, w.z + w.nz * d], dir: [-w.nz, w.nx] });
   };
 
+  // Sensör odasının çanağı (pencereden görünür); başlık yavaşça tarar, fener yanıp söner
+  const dishes = dishSpots(L).map((d) => {
+    const dish = buildDish();
+    dish.group.position.set(d.x, seabedHeight(d.x, d.z, distanceToRects(interiors, d.x, d.z)) + 0.1, d.z);
+    dish.head.rotation.y = d.yaw;
+    outside.add(dish.group);
+    return { ...dish, yaw: d.yaw };
+  });
+
   // Pencere önü zeminde dalgalı ışık deseni (koridorun içinde; dış grup gizliyken de görünür)
   const patches = windows.map((w) => {
     // uv.x = 0 duvar tarafı; SIDE_ROT ile içe doğru döner
@@ -394,6 +457,10 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
       if (!outside.visible) return;
 
       shaftMat.uniforms.uTime.value = time;
+      for (const d of dishes) {
+        d.head.rotation.y = d.yaw + Math.sin(time * 0.07) * 0.9;
+        d.beacon.color.setHex(Math.sin(time * 2.2) > 0.6 ? 0xff3020 : 0x3a0806);
+      }
       for (let i = 0; i < SNOW; i++) {
         const o = i * 3;
         snowPos[o + 1] -= snowVel[i * 2] * dt;

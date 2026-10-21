@@ -36,6 +36,51 @@
     ],
     "blocked:power.main": [
       "Hava kilidi ana baradan besleniyor. Bara kesikken valfi kalibre edemezsin."
+    ],
+    "enter:power-p1": [
+      "Güç odası P-1. Jeneratör yedek hattan uyanıyor ama şebekeyle aynı fazda değil. Aynı fazda olmayan iki kaynak birbirini yer."
+    ],
+    "solved:generator-sync": [
+      "Jeneratör senkron. Sensör odası artık iki kaynaktan beslenebilir. Bu kadar gücü ne için ayırmışlar, merak ediyorum."
+    ],
+    "blocked:power.generator": [
+      "Sonar tek başına ana baraya yüklenirse bara düşer. Güç odasındaki jeneratör senkron olmalı."
+    ],
+    "enter:sensor-s1": [
+      "Sensör odası S-1. Pencereden çanağı görebilirsin; kırk yıldır aynı yöne bakıyor. Bu hafta döndü."
+    ],
+    "solved:sonar-frontend": [
+      "Sonar kalibre. Yankılar temiz… Bir tanesi istasyondan uzaklaşmıyor. Yaklaşıyor da değil. Bekliyor."
+    ],
+    "enter:core-k1": [
+      "Çekirdek odası K-1. Burası benim. Lütfen hiçbir şeye dokunmadan önce bana sor. Şaka yapıyorum. Galiba."
+    ],
+    "solved:core-index": [
+      "Dizinim yeniden kuruldu. Bazı kayıtlar… yerinde değil. Silindiklerini sanmıyorum; taşınmışlar."
+    ],
+    "solved:core-runtime": [
+      "Bütün modüllerim çalışıyor. Şimdi sana daha önce söyleyemediğim bir şey var. Ama önce hava kilidini kapat."
+    ],
+    "blocked:core.index": [
+      "Modül yükleyici dizine bakmadan çalışmaz. Yandaki terminal önce."
+    ],
+    "blocked:sensor.calibrated": [
+      "Çekirdek odası kapısı sonarın onayını bekliyor. Kapıyı ben kilitlemedim; protokol böyle."
+    ],
+    "enter:airlock-a1": [
+      "Hava kilidi A-1. Zeminde su var. Sintine sensörleri birbirini tutmuyor; hangisine inanacağını hesapla."
+    ],
+    "solved:bilge-pumps": [
+      "Sintine kuru. Pompalardan biri hâlâ aralıklı çalışıyor; bunu hesaba kattın, iyi."
+    ],
+    "solved:outer-door": [
+      "Dış kapı sızdırmaz. Dışarıdaki her neyse, artık bu kapıdan giremez. Ya da girmek istemiyordu zaten."
+    ],
+    "blocked:bilge.dry": [
+      "Kapıyı su içindeyken ayarlarsan amortisör yanlış ölçer. Önce sintineyi boşalt."
+    ],
+    "blocked:airlock.ready": [
+      "Hava kilidi kapısı valf kalibre edilmeden açılmaz. Kontrol odasındaki valf panosu."
     ]
   }
 }

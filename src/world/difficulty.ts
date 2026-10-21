@@ -6,6 +6,8 @@
 //   trace.hideCounters = döngü sayaçlarını tabloda gizle.
 // - thevenin: thevenin.form (thevenin/norton), thevenin.tolerance. max-power: maxPower.binSize.
 // - opamp: opamp.variants (gain/offset), opamp.tolerance. rc-rl: rcRl.kinds (rc/rl), rcRl.window.
+// - diode, filter, damping: binSize = kutudaki aday sayısı. superposition, laplace: tolerance = kabul toleransı.
+// - phasor: phasor.ampTol, phasor.phaseTol. algo-trace: algo.nodes / algo.length / algo.keys aralıkları.
 
 import type { FaultCard, StageDef } from '../core/types';
 import { parseSeriesLedConfig } from '../solvers/circuit/series-led';
@@ -68,6 +70,17 @@ export function applyDifficulty(stage: StageDef, d: Difficulty): StageDef {
   } else if (stage.type === 'rc-rl' && d.rcRl) {
     if (d.rcRl.kinds) config.kinds = d.rcRl.kinds;
     if (d.rcRl.window !== undefined) config.window = d.rcRl.window;
+  } else if (stage.type === 'diode' || stage.type === 'filter' || stage.type === 'damping') {
+    if (d.binSize !== undefined) config.binSize = d.binSize;
+  } else if (stage.type === 'superposition' || stage.type === 'laplace') {
+    if (d.tolerance !== undefined) config.tolerance = d.tolerance;
+  } else if (stage.type === 'phasor' && d.phasor) {
+    if (d.phasor.ampTol !== undefined) config.ampTol = d.phasor.ampTol;
+    if (d.phasor.phaseTol !== undefined) config.phaseTol = d.phasor.phaseTol;
+  } else if (stage.type === 'algo-trace' && d.algo) {
+    if (d.algo.nodes) config.nodes = d.algo.nodes;
+    if (d.algo.length) config.length = d.algo.length;
+    if (d.algo.keys) config.keys = d.algo.keys;
   }
   return { ...stage, config };
 }

@@ -17,3 +17,4 @@ Belirsiz kalan ve beklemeden verilen kararlar; her biri bir cümle. Tarih: ilgil
 - algo-trace'te bozuk satır hiçbir zaman ilk satır olmaz (başlangıçtan hemen sonraki hata çok kolay bulunuyordu).
 - C# çıktı tahmini şablonları LLM'le değil elle yazıldı; yanılgılar kod yaması olarak tanımlanır ve çıktıları da gerçek derleyiciyle hesaplanır, böylece rapor "yazdığın çıktı şu yanılgının çıktısı" diyebilir.
 - C# çıktıları `npm run gen:cs` ile content/generated/cs-output.json'a yazılır; şablon değişip yeniden üretilmezse kod özeti tutmaz ve test kırılır.
+- Oyun açılışında dünya aşamaları 1 tohumla denetlenir (6 odada 3 tohum ≈ 1 sn sürüyordu); 20 tohumluk tam doğrulama world.test.ts'te.

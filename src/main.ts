@@ -61,7 +61,7 @@ import { openSettings } from './ui/settings';
 import { openTopicFlow } from './ui/topic-flow';
 
 // --- Dünya içeriği (JSON): doğrulanır; bozuksa açıklamalı hata verir ---
-const content = loadWorld(undefined, undefined, undefined, { verifySeeds: 3 });
+const content = loadWorld(undefined, undefined, undefined, { verifySeeds: 1 }); // 20 tohumluk tam doğrulama testlerde
 const W = content.world;
 const L = content.layout;
 const FAULTS = new Map(W.faults.map((f) => [f.id, f]));
