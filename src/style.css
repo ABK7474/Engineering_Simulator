@@ -301,3 +301,15 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .qty input:focus { border-color: var(--accent); outline: none; }
 .qty-preview { color: var(--accent); min-height: 1.2em; }
 .qty-preview.bad { color: var(--warn); }
+
+/* Zaman grafiği (rapor) */
+.report .plot { margin-top: 14px; padding: 8px 10px; background: #061a1f; border: 1px solid var(--line); border-radius: 6px; }
+.report .plot h4 { margin: 4px 0 6px; }
+.scope-plot { width: 100%; height: auto; display: block; }
+.scope-plot .plot-grid { stroke: rgba(63, 214, 208, 0.12); stroke-width: 1; }
+.scope-plot .plot-lbl { fill: var(--muted); font: 11px ui-monospace, monospace; }
+.scope-plot .plot-window { fill: rgba(64, 224, 128, 0.12); stroke: rgba(64, 224, 128, 0.5); stroke-dasharray: 4 3; }
+.scope-plot .plot-th { stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.scope-plot .plot-line { fill: none; stroke-width: 2.2; }
+.scope-plot .plot-line.correct { stroke: var(--ok); }
+.scope-plot .plot-line.chosen { stroke: var(--fail); stroke-dasharray: 5 3; }

@@ -16,7 +16,11 @@ export type OutcomeKind =
   | 'core_crash' // trace: sağlam bellek kaydının üstüne yazıldı, AI çekirdeği çöktü
   | 'sensor_misread' // trace: doğru kayıt, yanlış değer/eleman sayısı (sınır hatası): sensör yanlış okur
   | 'core_freeze' // trace: doğru kayıt, elemanlar doğru ama sıra ters: komutlar ters işlendi, panel donar
-  | 'signal_weak'; // max-power: yük gücü en büyük gücün altında, verici zayıf
+  | 'signal_weak' // max-power: yük gücü en büyük gücün altında, verici zayıf
+  | 'opamp_saturated' // op-amp: çıkış besleme rayını aştı, sinyal kırpıldı
+  | 'valve_slam' // rc-rl: valf penceresinden erken kapandı, darbe
+  | 'valve_late' // rc-rl: valf geç kapandı, basınç kaçağı
+  | 'valve_stuck'; // rc-rl: eşiğe hiç ulaşılmadı, valf kapanmadı
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -44,11 +48,25 @@ export interface StageResult {
   steps: string[];
   /** İsteğe bağlı tablo (ör. doğru trace); `bad` ve `chosen` satır dizinleri işaretlenir. */
   table?: { caption: string; head: string[]; rows: string[][]; bad?: number; good?: number; chosen?: number };
+  /** İsteğe bağlı zaman grafiği (ör. geçici hâl): eğriler, eşik çizgisi, kabul penceresi. */
+  plot?: TimePlot;
+}
+
+export interface TimePlot {
+  caption: string;
+  xLabel: string;
+  yLabel: string;
+  /** Eksen ölçeği: gösterilen değer = gerçek · ölçek (ör. s → ms için 1000). */
+  xScale: number;
+  yScale: number;
+  threshold: number;
+  window: [number, number];
+  series: { label: string; kind: 'correct' | 'chosen'; points: [number, number][] }[];
 }
 
 export interface StageDef {
   id: string;
-  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power';
+  type: 'series-led' | 'series-parallel' | 'ds-trace' | 'thevenin' | 'max-power' | 'opamp' | 'rc-rl';
   /** Ders kimliği (content/courses.json). Zorunlu; aralıklı tekrar için. */
   course: string;
   /** Konu etiketi (ör. "thevenin-norton"; kullanıcı konuları için "konu:<kimlik>"). Zorunlu. */

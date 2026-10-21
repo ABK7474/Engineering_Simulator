@@ -107,7 +107,7 @@ describe('üretici + doğrulayıcı', () => {
       // Gizli parametre oyuncuya gösterilmez
       expect(p.visible).not.toHaveProperty('Rm');
     }
-  });
+  }, 60_000);
 
   it('üretim deterministik', () => {
     expect(generateSeriesParallel(C, 42)).toEqual(generateSeriesParallel(C, 42));

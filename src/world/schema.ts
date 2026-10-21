@@ -25,6 +25,10 @@ export interface Difficulty {
   thevenin?: { form?: 'thevenin' | 'norton'; tolerance?: number };
   /** Max-power aşaması: kutudaki yük sayısı. */
   maxPower?: { binSize?: number };
+  /** Op-amp aşaması: devre varyantları ve kabul toleransı (aralığın oranı). */
+  opamp?: { variants?: ('gain' | 'offset')[]; tolerance?: number };
+  /** RC/RL aşaması: devre türleri ve pencerenin yarı genişliği. */
+  rcRl?: { kinds?: ('rc' | 'rl')[]; window?: number };
 }
 
 export interface PropDef {
@@ -160,6 +164,16 @@ export function parseWorld(raw: unknown): WorldDef {
       const mp = d.maxPower as Record<string, unknown> | undefined;
       if (mp !== undefined && need(isObj(mp), `oda '${id}': maxPower nesne olmalı`)) {
         need(mp.binSize === undefined || (isInt(mp.binSize) && mp.binSize >= 3 && mp.binSize <= 7), `oda '${id}': maxPower.binSize 3–7 olmalı`);
+      }
+      const oa = d.opamp as Record<string, unknown> | undefined;
+      if (oa !== undefined && need(isObj(oa), `oda '${id}': opamp nesne olmalı`)) {
+        need(oa.variants === undefined || (Array.isArray(oa.variants) && oa.variants.length > 0 && oa.variants.every((v) => v === 'gain' || v === 'offset')), `oda '${id}': opamp.variants gain/offset olmalı`);
+        need(oa.tolerance === undefined || (isNum(oa.tolerance) && oa.tolerance > 0 && oa.tolerance <= 0.1), `oda '${id}': opamp.tolerance 0–0,1 olmalı`);
+      }
+      const rr = d.rcRl as Record<string, unknown> | undefined;
+      if (rr !== undefined && need(isObj(rr), `oda '${id}': rcRl nesne olmalı`)) {
+        need(rr.kinds === undefined || (Array.isArray(rr.kinds) && rr.kinds.length > 0 && rr.kinds.every((v) => v === 'rc' || v === 'rl')), `oda '${id}': rcRl.kinds rc/rl olmalı`);
+        need(rr.window === undefined || (isNum(rr.window) && rr.window > 0 && rr.window <= 0.08), `oda '${id}': rcRl.window 0–0,08 olmalı`);
       }
       need(d.ledWindow_mA === undefined || (pair(d.ledWindow_mA) && d.ledWindow_mA[0] > 0 && d.ledWindow_mA[0] < d.ledWindow_mA[1]), `oda '${id}': ledWindow_mA [min, max] olmalı`);
     }

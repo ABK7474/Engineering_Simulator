@@ -5,6 +5,7 @@
 // - ds-trace: trace.ops = izleme adım sayısı, trace.structures = yapı türleri, trace.corruptions = hata türleri,
 //   trace.hideCounters = döngü sayaçlarını tabloda gizle.
 // - thevenin: thevenin.form (thevenin/norton), thevenin.tolerance. max-power: maxPower.binSize.
+// - opamp: opamp.variants (gain/offset), opamp.tolerance. rc-rl: rcRl.kinds (rc/rl), rcRl.window.
 
 import type { FaultCard, StageDef } from '../core/types';
 import { parseSeriesLedConfig } from '../solvers/circuit/series-led';
@@ -15,7 +16,11 @@ import { parseMaxPowerConfig } from '../solvers/circuit/max-power';
 import { generateMaxPower } from '../solvers/circuit/max-power.generate';
 import { parseTheveninConfig } from '../solvers/circuit/thevenin';
 import { generateThevenin } from '../solvers/circuit/thevenin.generate';
+import { parseOpampConfig } from '../solvers/circuit/opamp';
+import { generateOpamp } from '../solvers/circuit/opamp.generate';
 import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
+import { parseRcRlConfig } from '../solvers/ode/rc-rl';
+import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
 import type { Difficulty } from './schema';
 
@@ -38,6 +43,12 @@ export function applyDifficulty(stage: StageDef, d: Difficulty): StageDef {
     if (d.thevenin.tolerance !== undefined) config.tolerance = d.thevenin.tolerance;
   } else if (stage.type === 'max-power' && d.maxPower) {
     if (d.maxPower.binSize !== undefined) config.binSize = d.maxPower.binSize;
+  } else if (stage.type === 'opamp' && d.opamp) {
+    if (d.opamp.variants) config.variants = d.opamp.variants;
+    if (d.opamp.tolerance !== undefined) config.tolerance = d.opamp.tolerance;
+  } else if (stage.type === 'rc-rl' && d.rcRl) {
+    if (d.rcRl.kinds) config.kinds = d.rcRl.kinds;
+    if (d.rcRl.window !== undefined) config.window = d.rcRl.window;
   }
   return { ...stage, config };
 }
@@ -54,6 +65,8 @@ const CHECKERS: Record<StageDef['type'], (config: unknown) => (seed: number) => 
   'ds-trace': (c) => ((cfg) => (seed: number) => generateDsTrace(cfg, seed))(parseDsTraceConfig(structuredClone(c))),
   thevenin: (c) => ((cfg) => (seed: number) => generateThevenin(cfg, seed))(parseTheveninConfig(c)),
   'max-power': (c) => ((cfg) => (seed: number) => generateMaxPower(cfg, seed))(parseMaxPowerConfig(c)),
+  opamp: (c) => ((cfg) => (seed: number) => generateOpamp(cfg, seed))(parseOpampConfig(c)),
+  'rc-rl': (c) => ((cfg) => (seed: number) => generateRcRl(cfg, seed))(parseRcRlConfig(c)),
 };
 
 /** Her aşama birçok tohumda doğrulanmış problem üretebilmeli; üretemeyenler açıklamalı döner. */

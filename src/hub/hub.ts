@@ -381,6 +381,31 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           sounds.play('jam', { volume: 0.3 });
         });
         return T0 + 2;
+      case 'opamp_saturated':
+        at(T0, () => {
+          t.setLed(0xff5040, 1.2, true);
+          t.setScreen('SENSÖR DOYDU\nSİNYAL KIRPIK', '#ff5040', true);
+          sounds.play('jam', { volume: 0.4 });
+        });
+        return T0 + 2;
+      case 'valve_slam':
+        at(T0 + 0.3, () => {
+          sounds.play('jam', { volume: 1 });
+          effects.sparkBurst(t.ledPosition, 40);
+          t.setScreen('VALF ÇARPTI\nDARBE', '#ff5040', true);
+        });
+        return T0 + 2.2;
+      case 'valve_late':
+        at(T0, () => t.setScreen('VALF GEÇ\nBASINÇ KAÇAĞI', '#ffb030', true));
+        at(T0 + 1.2, () => sounds.play('jam', { volume: 0.6 }));
+        return T0 + 2.4;
+      case 'valve_stuck':
+        at(T0, () => {
+          t.setLed(0, 0, true);
+          t.setScreen('VALF\nATEŞLEMEDİ', '#ffb030', true);
+          sounds.play('jam', { volume: 0.3 });
+        });
+        return T0 + 2;
       case 'core_freeze':
         at(T0, () => {
           t.setLed(0xffb030, 0.8, true);

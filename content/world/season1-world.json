@@ -146,6 +146,20 @@
         },
         "maxPower": {
           "binSize": 5
+        },
+        "opamp": {
+          "variants": [
+            "gain",
+            "offset"
+          ],
+          "tolerance": 0.04
+        },
+        "rcRl": {
+          "kinds": [
+            "rc",
+            "rl"
+          ],
+          "window": 0.05
         }
       }
     }
@@ -252,6 +266,29 @@
         "solved": "ANA BARA\nBESLENİYOR"
       },
       "blockedHint": "E: Çekirdek çevrimdışı — haritaya bak"
+    },
+    {
+      "id": "airlock-valve",
+      "card": "airlock-valve-01",
+      "room": "lab-c1",
+      "model": "Prop_AccessPoint",
+      "anchor": {
+        "wall": "north",
+        "index": 0,
+        "along": 0.5
+      },
+      "requires": [
+        "power.main"
+      ],
+      "provides": [
+        "airlock.ready"
+      ],
+      "screen": {
+        "fault": "HAVA KİLİDİ\nKİLİTLİ",
+        "blocked": "ANA BARA\nBEKLENİYOR",
+        "solved": "HAVA KİLİDİ\nHAZIR"
+      },
+      "blockedHint": "E: Ana bara kesik — haritaya bak"
     }
   ]
 }

@@ -30,6 +30,12 @@
     ],
     "blocked:core.online": [
       "Bu pano çekirdeğin onayı olmadan açılmaz. Önce kontrol bilgisayarı."
+    ],
+    "solved:airlock-valve": [
+      "Hava kilidi hazır. Dışarıda bir şey var; sonarın yakaladığı yanıt bu kapıdan geçmek istiyor olabilir. Ya da ben fazla düşünüyorum."
+    ],
+    "blocked:power.main": [
+      "Hava kilidi ana baradan besleniyor. Bara kesikken valfi kalibre edemezsin."
     ]
   }
 }

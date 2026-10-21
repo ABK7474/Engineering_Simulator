@@ -160,6 +160,42 @@
       "drainPerMinute": {
         "power": 0.3
       }
+    },
+    "opamp_saturated": {
+      "label": "Basınç sensörü kırpılıyor, kilit kör",
+      "loss": {
+        "oxygen": 3,
+        "power": 3
+      }
+    },
+    "valve_slam": {
+      "label": "Valf çarptı, conta hasarlı",
+      "loss": {
+        "oxygen": 6,
+        "power": 4
+      },
+      "drainPerMinute": {
+        "oxygen": 0.4
+      }
+    },
+    "valve_late": {
+      "label": "Hava kilidinden su sızıyor",
+      "loss": {
+        "oxygen": 5
+      },
+      "drainPerMinute": {
+        "oxygen": 0.5
+      }
+    },
+    "valve_stuck": {
+      "label": "Valf kapanmadı, kilit açık kaldı",
+      "loss": {
+        "oxygen": 4,
+        "power": 2
+      },
+      "drainPerMinute": {
+        "oxygen": 0.3
+      }
     }
   },
   "overheat": {

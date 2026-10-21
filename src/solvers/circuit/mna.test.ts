@@ -174,3 +174,44 @@ describe('Ek testler', () => {
     ).toThrow(/iki kez/);
   });
 });
+
+describe('ideal op-amp (OA)', () => {
+  it('eviren yükselteç: Vin = 1 V, R₁ = 1 kΩ, Rf = 10 kΩ → Vout = −10 V, giriş akımı 1 mA', () => {
+    const els: Element[] = [
+      { id: 'Vin', kind: 'V', a: 'in', b: '0', volts: 1 },
+      { id: 'R1', kind: 'R', a: 'in', b: 'n', ohms: 1000 },
+      { id: 'Rf', kind: 'R', a: 'n', b: 'out', ohms: 10_000 },
+      { id: 'U1', kind: 'OA', a: '0', b: 'n', out: 'out' },
+    ];
+    const s = solveDC(els);
+    expect(s.voltage.out).toBeCloseTo(-10, 9);
+    expect(s.voltage.n).toBeCloseTo(0, 12); // sanal toprak
+    expect(s.current.R1).toBeCloseTo(0.001, 12);
+    const chk = checkSolution(els, s);
+    expect(chk.kcl).toBeLessThan(1e-12);
+    expect(chk.power).toBeLessThan(1e-9);
+  });
+
+  it('evirmeyen yükselteç: Vin = 0,5 V, Rg = 1 kΩ, Rf = 3 kΩ → Vout = 0,5·(1 + 3) = 2 V', () => {
+    const s = solveDC([
+      { id: 'Vin', kind: 'V', a: 'p', b: '0', volts: 0.5 },
+      { id: 'Rg', kind: 'R', a: 'n', b: '0', ohms: 1000 },
+      { id: 'Rf', kind: 'R', a: 'out', b: 'n', ohms: 3000 },
+      { id: 'U1', kind: 'OA', a: 'p', b: 'n', out: 'out' },
+    ]);
+    expect(s.voltage.out).toBeCloseTo(2, 12);
+    expect(s.voltage.n).toBeCloseTo(0.5, 12);
+  });
+
+  it('referanslı ofset: Vs = 1 V, Vref = 2,5 V, Rf = 10 kΩ, Rg = 10 kΩ, Rr = 20 kΩ → Vout = 1·(1 + 1 + 0,5) − 2,5·0,5 = 1,25 V', () => {
+    const s = solveDC([
+      { id: 'Vs', kind: 'V', a: 'p', b: '0', volts: 1 },
+      { id: 'Vref', kind: 'V', a: 'r', b: '0', volts: 2.5 },
+      { id: 'Rg', kind: 'R', a: 'n', b: '0', ohms: 10_000 },
+      { id: 'Rr', kind: 'R', a: 'n', b: 'r', ohms: 20_000 },
+      { id: 'Rf', kind: 'R', a: 'out', b: 'n', ohms: 10_000 },
+      { id: 'U1', kind: 'OA', a: 'p', b: 'n', out: 'out' },
+    ]);
+    expect(s.voltage.out).toBeCloseTo(1.25, 12);
+  });
+});

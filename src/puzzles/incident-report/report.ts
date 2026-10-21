@@ -2,6 +2,7 @@
 
 import type { StageResult } from '../../core/types';
 import { esc } from '../dom';
+import { plotSvg } from '../scope-plot/plot';
 
 export interface IncidentReportOptions {
   /** Yalnızca başarısızlıkta gösterilir: yedek parçayla yeni deneme. */
@@ -38,6 +39,7 @@ export function showIncidentReport(root: HTMLElement, r: StageResult, opts: Inci
           <ol class="steps">${r.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
         </section>
       </div>
+      ${r.plot ? `<div class="plot"><h4>${esc(r.plot.caption)}</h4>${plotSvg(r.plot)}</div>` : ''}
       ${r.table ? tableHtml(r.table) : ''}
       <footer>
         ${!r.success && opts.onRetry ? '<button class="primary" data-act="retry">Yedek parçayla tekrar dene</button>' : ''}

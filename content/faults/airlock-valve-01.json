@@ -1,0 +1,123 @@
+{
+  "id": "airlock-valve-01",
+  "title": "Hava kilidi valfi",
+  "briefing": "Hava kilidi iki aşamada hazırlanır: önce basınç sensörünün sinyali op-amp ile ADC aralığına şartlandırılır (Elektronik), sonra valf sürücüsünün ateşleme anı birinci mertebe devreyle pencereye oturtulur (Diferansiyel Denklemler).",
+  "stages": [
+    {
+      "id": "pressure-sensor",
+      "type": "opamp",
+      "course": "elektrik-elektronik-devreler",
+      "topic": "op-amp",
+      "title": "Basınç sensörü şartlandırma",
+      "briefing": "İdeal op-amp, geri besleme varken iki girişini eşit tutar ve girişlerinden akım çekmez. Evirmeyen yükselteç: V_out = V_s·(1 + Rf/Rg). (−) girişe bir de Rr üzerinden V_ref bağlanırsa (−) düğümünde KCL: V_out = V_s·(1 + Rf/Rg + Rf/Rr) − V_ref·Rf/Rr. İki uç noktadan önce eğimi (kazanç), sonra ofseti bul. Tek beslemede çıkış 0 ile Vcc dışına çıkamaz.",
+      "config": {
+        "variants": [
+          "gain",
+          "offset"
+        ],
+        "vcc": 5,
+        "sensorLo": [
+          0.2,
+          0.25,
+          0.3,
+          0.4,
+          0.5
+        ],
+        "sensorHi": [
+          0.8,
+          1.0,
+          1.2,
+          1.5
+        ],
+        "vref": [
+          1.0,
+          1.25,
+          2.5
+        ],
+        "answer": {
+          "Rf": [
+            10000,
+            100000
+          ],
+          "Rg": [
+            1000,
+            100000
+          ],
+          "Rr": [
+            10000,
+            470000
+          ]
+        },
+        "tolerance": 0.04,
+        "binSize": 7,
+        "minSpan": 1.5,
+        "railMargin": 0.15
+      }
+    },
+    {
+      "id": "valve-timer",
+      "type": "rc-rl",
+      "course": "diferansiyel-denklemler",
+      "topic": "birinci-mertebe-gecici-hal",
+      "title": "Valf zamanlayıcısı",
+      "briefing": "Birinci mertebe devre: RC·dv/dt + v = Vs ya da L·di/dt + R·i = Vs. Çözüm, kalıcı değere zaman sabitiyle üstel yaklaşır: x(t) = x∞ + (x₀ − x∞)·e^(−t/τ), τ = RC ya da L/R. Eşiğe varış anı t = τ·ln((x∞ − x₀)/(x∞ − x_eş)). Başlangıç değerini (ön yük) unutma; RL'de R hem τ'yu hem kalıcı akımı değiştirir.",
+      "config": {
+        "kinds": [
+          "rc",
+          "rl"
+        ],
+        "vs": [
+          12,
+          24
+        ],
+        "rc": {
+          "C_uF": [
+            10,
+            22,
+            47,
+            100
+          ],
+          "v0": [
+            0.1,
+            0.2,
+            0.3
+          ],
+          "vth": [
+            0.6,
+            0.7,
+            0.8
+          ]
+        },
+        "rl": {
+          "L_mH": [
+            100,
+            220,
+            470
+          ],
+          "i0_mA": [
+            0,
+            10,
+            20
+          ],
+          "ith_mA": [
+            40,
+            60,
+            80
+          ]
+        },
+        "answer": {
+          "rc": [
+            1000,
+            100000
+          ],
+          "rl": [
+            22,
+            220
+          ]
+        },
+        "window": 0.05,
+        "binSize": 5
+      }
+    }
+  ]
+}

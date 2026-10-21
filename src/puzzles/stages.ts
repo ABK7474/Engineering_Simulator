@@ -16,6 +16,10 @@ import { parseMaxPowerConfig } from '../solvers/circuit/max-power';
 import { generateMaxPower } from '../solvers/circuit/max-power.generate';
 import { resolveMaxPowerOutcome } from '../solvers/circuit/max-power.outcomes';
 import { buildMaxPowerReport } from '../solvers/circuit/max-power.report';
+import { parseOpampConfig } from '../solvers/circuit/opamp';
+import { generateOpamp } from '../solvers/circuit/opamp.generate';
+import { resolveOpampOutcome } from '../solvers/circuit/opamp.outcomes';
+import { buildOpampReport } from '../solvers/circuit/opamp.report';
 import { parseTheveninConfig } from '../solvers/circuit/thevenin';
 import { generateThevenin } from '../solvers/circuit/thevenin.generate';
 import { resolveTheveninOutcome, type TheveninAnswer } from '../solvers/circuit/thevenin.outcomes';
@@ -24,6 +28,11 @@ import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
 import { resolveTraceOutcome, type TraceAnswer } from '../solvers/ds/ds-trace.outcomes';
 import { buildDsTraceReport } from '../solvers/ds/ds-trace.report';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
+import { parseRcRlConfig } from '../solvers/ode/rc-rl';
+import { generateRcRl } from '../solvers/ode/rc-rl.generate';
+import { resolveRcRlOutcome } from '../solvers/ode/rc-rl.outcomes';
+import { buildRcRlReport } from '../solvers/ode/rc-rl.report';
+import { openOpampPanel, openRcRlPanel } from './airlock/panels';
 import { openCircuitBoardPanel } from './circuit-board/panel';
 import { openSeriesCircuitPanel } from './series-circuit/panel';
 import { openMaxPowerPanel, openTheveninPanel } from './power/panels';
@@ -151,6 +160,34 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
           const id = answer as string;
           const outcome = resolveMaxPowerOutcome(problem, id);
           return { outcome, result: buildMaxPowerReport(def.id, config, problem, id, outcome) };
+        },
+      };
+    },
+  },
+  opamp: {
+    validate: (def) => void parseOpampConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateOpamp(parseOpampConfig(def.config), seed);
+      return {
+        open: (ctx) => openOpampPanel(ctx.root, { ...ctx, problem, onSubmit: (pl) => ctx.onSubmit(pl) }),
+        evaluate(answer) {
+          const pl = answer as Record<string, string>;
+          const outcome = resolveOpampOutcome(problem, pl);
+          return { outcome, result: buildOpampReport(def.id, problem, pl, outcome) };
+        },
+      };
+    },
+  },
+  'rc-rl': {
+    validate: (def) => void parseRcRlConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateRcRl(parseRcRlConfig(def.config), seed);
+      return {
+        open: (ctx) => openRcRlPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
+        evaluate(answer) {
+          const id = answer as string;
+          const outcome = resolveRcRlOutcome(problem, id);
+          return { outcome, result: buildRcRlReport(def.id, problem, id, outcome) };
         },
       };
     },
