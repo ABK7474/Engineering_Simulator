@@ -50,6 +50,11 @@ import { parsePhasorConfig } from '../solvers/math/phasor';
 import { buildPhasorReport, generatePhasor, resolvePhasorOutcome, type PhasorAnswer } from '../solvers/math/phasor.generate';
 import { parseProbConfig } from '../solvers/prob/probability';
 import { buildProbReport, generateProb, resolveProbOutcome } from '../solvers/prob/probability.generate';
+import { buildAlgoReport, generateAlgoTrace, parseAlgoTraceConfig, resolveAlgoOutcome, type AlgoTraceAnswer } from '../solvers/algo/algo-trace';
+import { openAlgoTracePanel } from './algo-trace/panel';
+import { buildCsReport, generateCsOutput, parseCsOutputConfig, resolveCsOutcome } from '../solvers/cs/cs-output';
+import { CS_GENERATED, CS_TEMPLATES } from '../solvers/cs/content';
+import { openCsOutputPanel } from './cs-output/panel';
 import { parseRcRlConfig } from '../solvers/ode/rc-rl';
 import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { resolveRcRlOutcome } from '../solvers/ode/rc-rl.outcomes';
@@ -386,6 +391,34 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
           const x = problem.variant === 'bayes' ? (answer as number) : problem.bin.find((b) => b.id === answer)!.n;
           const outcome = resolveProbOutcome(problem, x);
           return { outcome, result: buildProbReport(def.id, problem, x, outcome) };
+        },
+      };
+    },
+  },
+  'algo-trace': {
+    validate: (def) => void parseAlgoTraceConfig(def.config),
+    prepare(def, seed) {
+      const problem = generateAlgoTrace(parseAlgoTraceConfig(def.config), seed);
+      return {
+        open: (ctx) => openAlgoTracePanel(ctx.root, { ...ctx, problem, onSubmit: (a) => ctx.onSubmit(a) }),
+        evaluate(answer, rng) {
+          const a = answer as AlgoTraceAnswer;
+          const outcome = resolveAlgoOutcome(problem, a, rng);
+          return { outcome, result: buildAlgoReport(def.id, problem, a, outcome) };
+        },
+      };
+    },
+  },
+  'cs-output': {
+    validate: (def) => void parseCsOutputConfig(def.config, CS_TEMPLATES, CS_GENERATED),
+    prepare(def, seed) {
+      const problem = generateCsOutput(parseCsOutputConfig(def.config, CS_TEMPLATES, CS_GENERATED), seed, CS_TEMPLATES, CS_GENERATED);
+      return {
+        open: (ctx) => openCsOutputPanel(ctx.root, { ...ctx, problem, onSubmit: (lines) => ctx.onSubmit(lines) }),
+        evaluate(answer) {
+          const lines = answer as string[];
+          const outcome = resolveCsOutcome(problem, lines);
+          return { outcome, result: buildCsReport(def.id, problem, lines, outcome) };
         },
       };
     },

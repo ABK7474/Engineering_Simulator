@@ -40,8 +40,9 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] İçerik testi: content/faults altındaki bütün kartlar doğrulanır ve 5 tohumda üretilir (src/puzzles/cards.test.ts)
 - Not: generator-sync-01, sonar-frontend-01, outer-door-01, bilge-pumps-01 henüz dünyada değil; odalarına 2c'de yerleşecek
 ### 2b. Veri yapıları + C#
-- [ ] Ağaç, BFS/DFS, sıralama (trace altyapısı)
-- [ ] C# çıktı tahmini (dotnet ile üretimde bir kez çalıştır → JSON)
+- [x] Ağaç, BFS/DFS, sıralama: yeni `algo-trace` türü (BFS, özyinelemeli DFS, ekleme ve seçme sıralaması, BST ekleme yolu + pre/postorder). Bağımsız ikinci uygulama + tek onarım noktası; gösterilen C# kodu `npm run verify:algo` ile gerçek dotnet'te 200/200 tohum birebir. Kart: ai-core-index-01 (3 aşama)
+- [x] C# çıktı tahmini: `cs-output` türü, 10 elle yazılmış şablon (struct kopyası, virtual/new, kapanış, finally, string, static, ref, LINQ ertelenmesi, yield, kısa devre), yanılgı yamaları. `npm run gen:cs` → content/generated/cs-output.json (dotnet 10, 160 örnek). Kart: ai-core-runtime-01 (2 aşama)
+- Not: ai-core-index-01 ve ai-core-runtime-01 odalarına 2c'de (AI çekirdeği K-1) yerleşecek
 ### 2c. Yeni odalar ve zincirler
 - [ ] Hava kilidi, sensör/sonar, AI çekirdeği odaları; disiplinler arası zincirler; zorluk odadan odaya artar
 ### 2d. Tehdit olayı
@@ -53,3 +54,4 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 (her oturumun sonunda kısa not: ne bitti, ne yarım kaldı, ilk yapılacak şey)
 - 2026-10-22 · Adım 0 ve 1 bitti. Sıradaki: 2a (diyot, filtre, süperpozisyon, RLC, Müh. Mat., olasılık türleri).
 - 2026-10-22 · 2a bitti (9 yeni tür, 368+ test). Sıradaki: 2b (ağaç/BFS/DFS/sıralama trace, C# çıktı tahmini).
+- 2026-10-22 · 2b bitti (algo-trace, cs-output; 401 test). Sıradaki: 2c (yeni odalar: güç P-1, hava kilidi A-1, sensör S-1, AI çekirdeği K-1; kartları yerleştir, zincirler, pencereler/dış sahne).

@@ -1,0 +1,41 @@
+{
+  "id": "ai-core-runtime-01",
+  "title": "AI çekirdeği: modül yükleyici",
+  "briefing": "Çekirdek, onarılan modülleri yüklemeden önce her birinin konsol çıktısının öngörülmesini istiyor. Derleyici kapalı: programı kafanda çalıştır.",
+  "stages": [
+    {
+      "id": "core-modules",
+      "type": "cs-output",
+      "course": "ileri-programlama",
+      "topic": "deger-referans-tipleri",
+      "title": "Bellek modülleri",
+      "briefing": "C#'ta struct ve int gibi değer tipleri atamada ve parametrede KOPYALANIR; class, dizi, List ve string gibi referans tipleri ise aynı nesneyi gösterir (string değişmezdir). ref parametre çağıranın değişkeninin kendisidir. static alan sınıfa aittir, bütün nesnelerce paylaşılır. virtual/override nesnenin gerçek türüne, new ile gizleme değişkenin statik türüne göre seçilir.",
+      "config": {
+        "templates": [
+          "struct-copy",
+          "ref-params",
+          "static-field",
+          "string-immutable",
+          "virtual-new"
+        ]
+      }
+    },
+    {
+      "id": "core-events",
+      "type": "cs-output",
+      "course": "ileri-programlama",
+      "topic": "calisma-sirasi",
+      "title": "Olay işleyici",
+      "briefing": "Satırların hangi sırayla ve kaç kez çalıştığına dikkat: lambda değişkeni değil değişkenin kendisini yakalar; LINQ sorgusu ve yield return numaralandırılana kadar çalışmaz; finally her çıkışta (return dahil) çalışır; && ve || kısa devre yapar.",
+      "config": {
+        "templates": [
+          "closure-loop",
+          "try-finally",
+          "linq-deferred",
+          "yield-lazy",
+          "short-circuit"
+        ]
+      }
+    }
+  ]
+}

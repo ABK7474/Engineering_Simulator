@@ -35,6 +35,9 @@ import { parsePhasorConfig } from '../solvers/math/phasor';
 import { generatePhasor } from '../solvers/math/phasor.generate';
 import { parseProbConfig } from '../solvers/prob/probability';
 import { generateProb } from '../solvers/prob/probability.generate';
+import { generateAlgoTrace, parseAlgoTraceConfig } from '../solvers/algo/algo-trace';
+import { generateCsOutput, parseCsOutputConfig } from '../solvers/cs/cs-output';
+import { CS_GENERATED, CS_TEMPLATES } from '../solvers/cs/content';
 import { parseRcRlConfig } from '../solvers/ode/rc-rl';
 import { generateRcRl } from '../solvers/ode/rc-rl.generate';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
@@ -90,6 +93,8 @@ const CHECKERS: Record<StageDef['type'], (config: unknown) => (seed: number) => 
   stability: (c) => ((cfg) => (seed: number) => generateStability(cfg, seed))(parseStabilityConfig(c)),
   laplace: (c) => ((cfg) => (seed: number) => generateLaplace(cfg, seed))(parseLaplaceConfig(c)),
   phasor: (c) => ((cfg) => (seed: number) => generatePhasor(cfg, seed))(parsePhasorConfig(c)),
+  'algo-trace': (c) => ((cfg) => (seed: number) => generateAlgoTrace(cfg, seed))(parseAlgoTraceConfig(c)),
+  'cs-output': (c) => ((cfg) => (seed: number) => generateCsOutput(cfg, seed, CS_TEMPLATES, CS_GENERATED))(parseCsOutputConfig(c, CS_TEMPLATES, CS_GENERATED)),
   probability: (c) => ((cfg) => (seed: number) => generateProb(cfg, seed))(parseProbConfig(c)),
 };
 

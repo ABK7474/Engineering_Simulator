@@ -1,0 +1,680 @@
+{
+  "templates": [
+    {
+      "id": "struct-copy",
+      "title": "Değer tipi (struct) kopyalanır",
+      "explain": "struct bir değer tipidir: atama, parametreye geçirme ve diziye koyma birer KOPYA üretir. b = a sonrası b'yi değiştirmek a'yı etkilemez; Drain(a) kopyayı azaltır. Dizi elemanına arr[0].Fill(...) ile doğrudan erişmek ise dizideki kopyayı yerinde değiştirir.",
+      "code": [
+        "using System;",
+        "",
+        "struct Tank",
+        "{",
+        "    public int Level;",
+        "    public void Fill(int amount) { Level += amount; }",
+        "}",
+        "",
+        "class Program",
+        "{",
+        "    static void Drain(Tank t) { t.Level -= {B}; }",
+        "",
+        "    static void Main()",
+        "    {",
+        "        var a = new Tank { Level = {A} };",
+        "        var b = a;",
+        "        b.Fill({C});",
+        "        Drain(a);",
+        "        Console.WriteLine(a.Level);",
+        "        Console.WriteLine(b.Level);",
+        "        Tank[] arr = { a, b };",
+        "        arr[0].Fill({C});",
+        "        Console.WriteLine(a.Level + arr[0].Level);",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "A": [
+          20,
+          30,
+          40,
+          50
+        ],
+        "B": [
+          3,
+          5,
+          7
+        ],
+        "C": [
+          4,
+          6,
+          8
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "as-class",
+          "text": "Tank sınıf (referans tipi) gibi düşünülmüş: a, b ve arr[0] aynı nesneyi gösteriyormuş gibi.",
+          "patches": [
+            {
+              "find": "struct Tank",
+              "replace": "class Tank"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "virtual-new",
+      "title": "virtual/override ile new (gizleme) farkı",
+      "explain": "override edilen virtual yöntem, değişkenin statik türünden bağımsız olarak nesnenin GERÇEK türüne göre seçilir (geç bağlama). new ile gizlenen yöntem ise derleme zamanındaki statik türe göre seçilir: Pump türünden değişkenle çağrılırsa taban sınıfınki çalışır. Report() taban sınıfta derlendiği için Limit()'in taban sürümünü, Rate()'in ise override sürümünü çağırır.",
+      "code": [
+        "using System;",
+        "",
+        "class Pump",
+        "{",
+        "    public virtual int Rate() => {A};",
+        "    public int Limit() => {B};",
+        "    public int Report() => Rate() + Limit();",
+        "}",
+        "",
+        "class TurboPump : Pump",
+        "{",
+        "    public override int Rate() => {A} * 2;",
+        "    public new int Limit() => {B} * 3;",
+        "}",
+        "",
+        "class Program",
+        "{",
+        "    static void Main()",
+        "    {",
+        "        Pump p = new TurboPump();",
+        "        TurboPump t = (TurboPump)p;",
+        "        Console.WriteLine(p.Rate());",
+        "        Console.WriteLine(p.Limit());",
+        "        Console.WriteLine(t.Limit());",
+        "        Console.WriteLine(p.Report());",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "A": [
+          4,
+          6,
+          7,
+          9
+        ],
+        "B": [
+          5,
+          8,
+          11
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "new-as-override",
+          "text": "new ile gizlenen yöntem override gibi düşünülmüş: Pump türünden çağrıda da TurboPump sürümü çalışır sanılmış.",
+          "patches": [
+            {
+              "find": "public int Limit() =>",
+              "replace": "public virtual int Limit() =>"
+            },
+            {
+              "find": "public new int Limit()",
+              "replace": "public override int Limit()"
+            }
+          ]
+        },
+        {
+          "id": "static-dispatch",
+          "text": "virtual/override yok sayılmış: yöntem her zaman değişkenin statik türüne göre seçilir sanılmış.",
+          "patches": [
+            {
+              "find": "public virtual int Rate()",
+              "replace": "public int Rate()"
+            },
+            {
+              "find": "public override int Rate()",
+              "replace": "public new int Rate()"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "closure-loop",
+      "title": "Kapanışların döngü değişkenini yakalaması",
+      "explain": "Lambda bir değişkeni değeriyle değil, DEĞİŞKENİN KENDİSİYLE yakalar. for döngüsündeki i tek bir değişkendir; lambdalar çağrıldığında döngü bitmiş ve i son değerini (koşulu bozan değeri) almıştır. foreach döngüsünün değişkeni ise (C# 5'ten beri) her turda yenidir; her lambda kendi j'sini görür.",
+      "code": [
+        "using System;",
+        "using System.Collections.Generic;",
+        "",
+        "class Program",
+        "{",
+        "    static void Main()",
+        "    {",
+        "        var actions = new List<Func<int>>();",
+        "        for (int i = 1; i <= {N}; i++)",
+        "        {",
+        "            actions.Add(() => i * {K});",
+        "        }",
+        "        foreach (int j in new[] { {A}, {B} })",
+        "        {",
+        "            actions.Add(() => j + 1);",
+        "        }",
+        "        int total = 0;",
+        "        foreach (var f in actions)",
+        "        {",
+        "            total += f();",
+        "            Console.WriteLine(total);",
+        "        }",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "N": [
+          2,
+          3
+        ],
+        "K": [
+          2,
+          3,
+          5
+        ],
+        "A": [
+          4,
+          7
+        ],
+        "B": [
+          10,
+          12
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "copy-per-iteration",
+          "text": "for döngüsünde her lambda o turdaki i'nin kopyasını yakalar sanılmış.",
+          "patches": [
+            {
+              "find": "actions.Add(() => i * {K});",
+              "replace": "int copy = i;\n            actions.Add(() => copy * {K});"
+            }
+          ]
+        },
+        {
+          "id": "shared-foreach",
+          "text": "foreach değişkeni de tek değişkenmiş gibi düşünülmüş (C# 4 öncesi davranış).",
+          "patches": [
+            {
+              "find": "foreach (int j in new[] { {A}, {B} })\n        {\n            actions.Add(() => j + 1);",
+              "replace": "int j = 0;\n        foreach (int v in new[] { {A}, {B} })\n        {\n            j = v;\n            actions.Add(() => j + 1);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "try-finally",
+      "title": "try/catch/finally sırası",
+      "explain": "finally bloğu try'dan return ile çıkılsa da, istisna yakalansa da HER ZAMAN çalışır ve yöntem gerçekten dönmeden önce çalışır. Bu yüzden 'finally' satırı, çağıranın toplamı yazdırmasından önce gelir. İstisna fırlatıldığında try'ın kalan satırları atlanır.",
+      "code": [
+        "using System;",
+        "",
+        "class Program",
+        "{",
+        "    static int Read(int x)",
+        "    {",
+        "        try",
+        "        {",
+        "            if (x > {L}) throw new InvalidOperationException();",
+        "            Console.WriteLine(\"try \" + x);",
+        "            return x * 2;",
+        "        }",
+        "        catch (InvalidOperationException)",
+        "        {",
+        "            Console.WriteLine(\"catch \" + x);",
+        "            return -1;",
+        "        }",
+        "        finally",
+        "        {",
+        "            Console.WriteLine(\"finally \" + x);",
+        "        }",
+        "    }",
+        "",
+        "    static void Main()",
+        "    {",
+        "        int sum = Read({A}) + Read({B});",
+        "        Console.WriteLine(sum);",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "L": [
+          10,
+          20,
+          30
+        ],
+        "A": [
+          3,
+          7,
+          9
+        ],
+        "B": [
+          35,
+          40,
+          52
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "finally-only-on-error",
+          "text": "finally yalnız istisna olunca çalışır sanılmış.",
+          "patches": [
+            {
+              "find": "            Console.WriteLine(\"catch \" + x);\n            return -1;\n        }\n        finally\n        {\n            Console.WriteLine(\"finally \" + x);\n        }",
+              "replace": "            Console.WriteLine(\"catch \" + x);\n            Console.WriteLine(\"finally \" + x);\n            return -1;\n        }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "string-immutable",
+      "title": "string değişmezdir",
+      "explain": "string nesneleri değişmezdir: ToUpper ve Replace yeni bir string DÖNDÜRÜR, s'yi değiştirmez. Dönen değer atanmazsa kaybolur. StringBuilder ise değişebilir: Append ve Insert aynı nesneyi yerinde değiştirir.",
+      "code": [
+        "using System;",
+        "using System.Text;",
+        "",
+        "class Program",
+        "{",
+        "    static void Main()",
+        "    {",
+        "        string s = \"{W}\";",
+        "        s.ToUpper();",
+        "        string t = s.Replace('{X}', '{Y}');",
+        "        Console.WriteLine(s);",
+        "        Console.WriteLine(t);",
+        "        var sb = new StringBuilder(s);",
+        "        sb.Append(t.Length);",
+        "        sb.Insert(0, '#');",
+        "        Console.WriteLine(sb);",
+        "        Console.WriteLine(s.Length + sb.Length);",
+        "    }",
+        "}"
+      ],
+      "cases": [
+        {
+          "W": "pompa",
+          "X": "p",
+          "Y": "b"
+        },
+        {
+          "W": "valf",
+          "X": "a",
+          "Y": "e"
+        },
+        {
+          "W": "sonar",
+          "X": "o",
+          "Y": "u"
+        },
+        {
+          "W": "kapak",
+          "X": "k",
+          "Y": "t"
+        },
+        {
+          "W": "kablo",
+          "X": "b",
+          "Y": "p"
+        },
+        {
+          "W": "conta",
+          "X": "t",
+          "Y": "n"
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "mutating-call",
+          "text": "ToUpper'ın s'yi yerinde değiştirdiği sanılmış.",
+          "patches": [
+            {
+              "find": "        s.ToUpper();",
+              "replace": "        s = s.ToUpper();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "static-field",
+      "title": "static alan bütün nesnelerce paylaşılır",
+      "explain": "static alan sınıfa aittir; bütün nesneler TEK bir count'u paylaşır. Her kurucu çağrısı aynı count'u artırır. Sensor c = a yeni nesne oluşturmaz, a'nın gösterdiği nesneyi gösterir; kurucu çalışmaz.",
+      "code": [
+        "using System;",
+        "",
+        "class Sensor",
+        "{",
+        "    static int count;",
+        "    int id;",
+        "    public Sensor() { count += {S}; id = count; }",
+        "    public int Id => id;",
+        "    public static int Count => count;",
+        "}",
+        "",
+        "class Program",
+        "{",
+        "    static void Main()",
+        "    {",
+        "        var a = new Sensor();",
+        "        var b = new Sensor();",
+        "        Sensor c = a;",
+        "        var d = new Sensor();",
+        "        Console.WriteLine(a.Id);",
+        "        Console.WriteLine(c.Id + d.Id);",
+        "        Console.WriteLine(b.Id * {M} + Sensor.Count);",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "S": [
+          2,
+          3,
+          5,
+          7
+        ],
+        "M": [
+          2,
+          3
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "per-instance",
+          "text": "static alanın her nesnede ayrı olduğu sanılmış.",
+          "patches": [
+            {
+              "find": "    static int count;",
+              "replace": "    int count;"
+            },
+            {
+              "find": "public static int Count => count;",
+              "replace": "public int Count => count;"
+            },
+            {
+              "find": "Sensor.Count",
+              "replace": "d.Count"
+            }
+          ]
+        },
+        {
+          "id": "assign-copies",
+          "text": "Sensor c = a satırının yeni bir nesne oluşturduğu (kurucuyu çalıştırdığı) sanılmış.",
+          "patches": [
+            {
+              "find": "Sensor c = a;",
+              "replace": "var c = new Sensor();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ref-params",
+      "title": "Değer, referans ve ref parametreleri",
+      "explain": "int parametre değerle geçer: yöntemdeki level += ... çağıranı etkilemez. Dizi bir referans tipidir: marks[0] += ... çağıranın dizisini değiştirir; ama marks = new int[...] yalnız yerel kopyayı yeni diziye yönlendirir, çağıranın değişkeni eski diziyi göstermeye devam eder. ref ile geçen total ise çağıranın değişkeninin kendisidir.",
+      "code": [
+        "using System;",
+        "",
+        "class Program",
+        "{",
+        "    static void Adjust(int level, int[] marks, ref int total)",
+        "    {",
+        "        level += {A};",
+        "        marks[0] += {A};",
+        "        marks = new int[] { {B}, {B} };",
+        "        total += level + marks[1];",
+        "    }",
+        "",
+        "    static void Main()",
+        "    {",
+        "        int level = {C};",
+        "        int[] marks = { 1, 2 };",
+        "        int total = 0;",
+        "        Adjust(level, marks, ref total);",
+        "        Console.WriteLine(level);",
+        "        Console.WriteLine(marks[0] + marks[1]);",
+        "        Console.WriteLine(total);",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "A": [
+          5,
+          10,
+          15
+        ],
+        "B": [
+          4,
+          6,
+          9
+        ],
+        "C": [
+          20,
+          30
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "array-rebind",
+          "text": "Yöntemde diziye yeni dizi atamanın çağıranın değişkenini de değiştirdiği sanılmış.",
+          "patches": [
+            {
+              "find": "int[] marks, ref int total)",
+              "replace": "ref int[] marks, ref int total)"
+            },
+            {
+              "find": "Adjust(level, marks, ref total);",
+              "replace": "Adjust(level, ref marks, ref total);"
+            }
+          ]
+        },
+        {
+          "id": "int-by-ref",
+          "text": "int parametrenin de referansla geçtiği sanılmış.",
+          "patches": [
+            {
+              "find": "static void Adjust(int level,",
+              "replace": "static void Adjust(ref int level,"
+            },
+            {
+              "find": "Adjust(level, marks,",
+              "replace": "Adjust(ref level, marks,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "linq-deferred",
+      "title": "LINQ sorguları ertelenmiş çalışır",
+      "explain": "Where bir sorgu TANIMLAR, hemen çalışmaz; sonuç her numaralandırmada (Count, Sum, foreach) o anki listeye ve o anki limit değerine göre yeniden hesaplanır. Lambda limit değişkenini yakaladığı için sonradan yapılan atama da etkilidir. ToList() çağrılsaydı o anki sonuç dondurulurdu.",
+      "code": [
+        "using System;",
+        "using System.Collections.Generic;",
+        "using System.Linq;",
+        "",
+        "class Program",
+        "{",
+        "    static void Main()",
+        "    {",
+        "        var readings = new List<int> { {A}, {B}, {C} };",
+        "        int limit = {L};",
+        "        var high = readings.Where(r => r > limit);",
+        "        readings.Add({D});",
+        "        limit = {M};",
+        "        Console.WriteLine(high.Count());",
+        "        Console.WriteLine(high.Sum());",
+        "        readings.Clear();",
+        "        Console.WriteLine(high.Count());",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "A": [
+          12,
+          18
+        ],
+        "B": [
+          25,
+          31
+        ],
+        "C": [
+          40,
+          47
+        ],
+        "D": [
+          22,
+          58
+        ],
+        "L": [
+          15,
+          20
+        ],
+        "M": [
+          30,
+          35
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "eager",
+          "text": "Where'in tanımlandığı anda çalışıp sonucu sakladığı sanılmış.",
+          "patches": [
+            {
+              "find": "readings.Where(r => r > limit);",
+              "replace": "readings.Where(r => r > limit).ToList();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yield-lazy",
+      "title": "yield return tembel üretir",
+      "explain": "yield return kullanan yöntem çağrıldığında gövdesi çalışmaz; foreach her yeni eleman istediğinde bir sonraki yield'e kadar ilerler. Bu yüzden 'tara' ve 'oku' satırları iç içe yazılır ve break olunca üretim de durur: kalan elemanlar hiç taranmaz.",
+      "code": [
+        "using System;",
+        "using System.Collections.Generic;",
+        "",
+        "class Program",
+        "{",
+        "    static IEnumerable<int> Scan(int n)",
+        "    {",
+        "        for (int i = 1; i <= n; i++)",
+        "        {",
+        "            Console.WriteLine(\"tara \" + i);",
+        "            yield return i * {K};",
+        "        }",
+        "    }",
+        "",
+        "    static void Main()",
+        "    {",
+        "        foreach (int v in Scan({N}))",
+        "        {",
+        "            if (v > {L}) break;",
+        "            Console.WriteLine(\"oku \" + v);",
+        "        }",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "N": [
+          3,
+          4
+        ],
+        "K": [
+          3,
+          4,
+          5
+        ],
+        "L": [
+          5,
+          8,
+          11
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "eager-iterator",
+          "text": "Önce bütün elemanların üretildiği, sonra okunduğu sanılmış.",
+          "patches": [
+            {
+              "find": "foreach (int v in Scan({N}))",
+              "replace": "foreach (int v in new List<int>(Scan({N})))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "short-circuit",
+      "title": "&& ve || kısa devre yapar",
+      "explain": "|| sol taraf true ise, && sol taraf false ise sağ tarafı HİÇ değerlendirmez; sağdaki yöntem çağrılmaz, yan etkisi (yazdırma, sayaç) olmaz. | ve & ise iki tarafı da her zaman değerlendirir.",
+      "code": [
+        "using System;",
+        "",
+        "class Program",
+        "{",
+        "    static int calls;",
+        "",
+        "    static bool Check(int id, bool result)",
+        "    {",
+        "        calls += id * {W};",
+        "        Console.WriteLine(\"kontrol \" + id);",
+        "        return result;",
+        "    }",
+        "",
+        "    static void Main()",
+        "    {",
+        "        if (Check(1, {P}) || Check(2, {Q}))",
+        "            Console.WriteLine(\"geçti\");",
+        "        if (Check(3, {Q}) && Check(4, {P}))",
+        "            Console.WriteLine(\"ikisi\");",
+        "        Console.WriteLine(calls);",
+        "    }",
+        "}"
+      ],
+      "params": {
+        "P": [
+          true,
+          false
+        ],
+        "Q": [
+          true,
+          false
+        ],
+        "W": [
+          1,
+          10
+        ]
+      },
+      "misconceptions": [
+        {
+          "id": "no-short-circuit",
+          "text": "|| ve &&'in iki tarafı da her zaman değerlendirir sanılmış.",
+          "patches": [
+            {
+              "find": " || ",
+              "replace": " | "
+            },
+            {
+              "find": " && ",
+              "replace": " & "
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

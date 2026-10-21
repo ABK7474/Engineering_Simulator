@@ -274,6 +274,12 @@ button { font: inherit; cursor: pointer; }
 .code .ln i { display: inline-block; width: 2.6em; padding-right: 0.8em; text-align: right; color: var(--muted); font-style: normal; opacity: 0.6; user-select: none; }
 .code .ln.hl { background: rgba(63, 214, 208, 0.16); }
 .trace-wrap { overflow: auto; max-height: 60vh; border: 1px solid var(--line); border-radius: 6px; }
+.algo-graph { max-width: 260px; margin: 0 auto; }
+.cs-lines { display: grid; gap: 6px; margin-bottom: 8px; }
+.cs-line { display: flex; align-items: center; gap: 8px; }
+.cs-line i { width: 1.6em; text-align: right; color: var(--muted); font-style: normal; }
+.cs-line input { flex: 1; font: 14px monospace; }
+.trace-body .schematic { margin-top: 10px; }
 table.trace { border-collapse: collapse; width: 100%; font: 12.5px/1.4 ui-monospace, monospace; }
 table.trace th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 500; text-align: left; }
 table.trace th, table.trace td { padding: 4px 8px; border-bottom: 1px solid rgba(31, 85, 96, 0.6); white-space: nowrap; }

@@ -1,0 +1,96 @@
+{
+  "id": "ai-core-index-01",
+  "title": "AI çekirdeği: dizin ve ağ",
+  "briefing": "Yapay zekâ çekirdeğinin bellek dizini, ağ haritası ve görev sıralayıcısı bozuk kayıtlarla açılmıyor. Her kayıtta tek bir adım yanlış yazılmış; kodu izleyerek bul ve düzelt.",
+  "stages": [
+    {
+      "id": "core-index",
+      "type": "algo-trace",
+      "course": "veri-yapilari",
+      "topic": "ikili-arama-agaci",
+      "title": "Kayıt dizini (ikili arama ağacı)",
+      "briefing": "İkili arama ağacında her düğümün solundaki anahtarlar küçük, sağındakiler büyük ya da eşittir. Ekleme kökten başlar ve her düğümde karşılaştırarak boş bir yere iner; uğranan düğümler 'yol'dur. Ağacın şekli ekleme sırasına bağlıdır. Preorder: kök–sol–sağ; postorder: sol–sağ–kök; inorder sıralı listeyi verir.",
+      "config": {
+        "variants": [
+          "bst"
+        ],
+        "nodes": [
+          6,
+          8
+        ],
+        "extraEdges": [
+          1,
+          3
+        ],
+        "length": [
+          6,
+          8
+        ],
+        "keys": [
+          8,
+          10
+        ]
+      }
+    },
+    {
+      "id": "core-network",
+      "type": "algo-trace",
+      "course": "veri-yapilari",
+      "topic": "graf-gezinme",
+      "title": "Ağ haritası (BFS / DFS)",
+      "briefing": "Genişlik öncelikli arama (BFS) kuyrukla çalışır: düğümler başlangıca uzaklık sırasıyla çıkar; komşu kuyruğa eklenirken işaretlenir. Derinlik öncelikli arama (DFS) özyinelemelidir: bir dalı sonuna kadar izler, komşusu kalmayınca geri döner; çağrı yığını o anki yolu tutar. İki aramada da komşular listedeki sırayla denenir.",
+      "config": {
+        "variants": [
+          "bfs",
+          "dfs"
+        ],
+        "nodes": [
+          7,
+          8
+        ],
+        "extraEdges": [
+          2,
+          3
+        ],
+        "length": [
+          6,
+          8
+        ],
+        "keys": [
+          7,
+          9
+        ]
+      }
+    },
+    {
+      "id": "core-scheduler",
+      "type": "algo-trace",
+      "course": "veri-yapilari",
+      "topic": "siralama",
+      "title": "Görev sıralayıcı",
+      "briefing": "Ekleme sıralaması her adımda a[i]'yi soldaki sıralı öneke, büyükleri birer sağa kaydırarak yerleştirir; kaydırma sayısı önekte a[i]'den büyük eleman sayısıdır. Seçme sıralaması her adımda sıralanmamış kısmın en küçüğünü bulup a[i] ile takas eder; dizinin geri kalanının sırası takasla değişir.",
+      "config": {
+        "variants": [
+          "insertion",
+          "selection"
+        ],
+        "nodes": [
+          6,
+          8
+        ],
+        "extraEdges": [
+          1,
+          3
+        ],
+        "length": [
+          7,
+          8
+        ],
+        "keys": [
+          7,
+          9
+        ]
+      }
+    }
+  ]
+}

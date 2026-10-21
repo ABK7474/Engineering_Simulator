@@ -1,0 +1,4703 @@
+{
+ "dotnet": "10.0.112",
+ "instances": [
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 3,
+    "C": 4
+   },
+   "hash": "5c4c08b2",
+   "output": [
+    "20",
+    "24",
+    "44"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "21",
+      "21",
+      "50"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 3,
+    "C": 6
+   },
+   "hash": "a6dd40ce",
+   "output": [
+    "20",
+    "26",
+    "46"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "23",
+      "23",
+      "58"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 3,
+    "C": 8
+   },
+   "hash": "93132e9a",
+   "output": [
+    "20",
+    "28",
+    "48"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "25",
+      "25",
+      "66"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 5,
+    "C": 4
+   },
+   "hash": "fc1141c4",
+   "output": [
+    "20",
+    "24",
+    "44"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "19",
+      "19",
+      "46"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 5,
+    "C": 6
+   },
+   "hash": "9ca0a008",
+   "output": [
+    "20",
+    "26",
+    "46"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "21",
+      "21",
+      "54"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 5,
+    "C": 8
+   },
+   "hash": "49711694",
+   "output": [
+    "20",
+    "28",
+    "48"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "23",
+      "23",
+      "62"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 7,
+    "C": 4
+   },
+   "hash": "490c3e96",
+   "output": [
+    "20",
+    "24",
+    "44"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "17",
+      "17",
+      "42"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 7,
+    "C": 6
+   },
+   "hash": "39f91372",
+   "output": [
+    "20",
+    "26",
+    "46"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "19",
+      "19",
+      "50"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 20,
+    "B": 7,
+    "C": 8
+   },
+   "hash": "597a73fe",
+   "output": [
+    "20",
+    "28",
+    "48"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "21",
+      "21",
+      "58"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 3,
+    "C": 4
+   },
+   "hash": "c15f6641",
+   "output": [
+    "30",
+    "34",
+    "64"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "31",
+      "31",
+      "70"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 3,
+    "C": 6
+   },
+   "hash": "c2499071",
+   "output": [
+    "30",
+    "36",
+    "66"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "33",
+      "33",
+      "78"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 3,
+    "C": 8
+   },
+   "hash": "9d4b9869",
+   "output": [
+    "30",
+    "38",
+    "68"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "35",
+      "35",
+      "86"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 5,
+    "C": 4
+   },
+   "hash": "3c8d72b3",
+   "output": [
+    "30",
+    "34",
+    "64"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "29",
+      "29",
+      "66"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 5,
+    "C": 6
+   },
+   "hash": "96d08643",
+   "output": [
+    "30",
+    "36",
+    "66"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "31",
+      "31",
+      "74"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 5,
+    "C": 8
+   },
+   "hash": "b696a25b",
+   "output": [
+    "30",
+    "38",
+    "68"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "33",
+      "33",
+      "82"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 7,
+    "C": 4
+   },
+   "hash": "5c5283e5",
+   "output": [
+    "30",
+    "34",
+    "64"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "27",
+      "27",
+      "62"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 7,
+    "C": 6
+   },
+   "hash": "44247b95",
+   "output": [
+    "30",
+    "36",
+    "66"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "29",
+      "29",
+      "70"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 30,
+    "B": 7,
+    "C": 8
+   },
+   "hash": "867cd36d",
+   "output": [
+    "30",
+    "38",
+    "68"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "31",
+      "31",
+      "78"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 40,
+    "B": 3,
+    "C": 4
+   },
+   "hash": "f4285c7c",
+   "output": [
+    "40",
+    "44",
+    "84"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "41",
+      "41",
+      "90"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 40,
+    "B": 3,
+    "C": 6
+   },
+   "hash": "21647560",
+   "output": [
+    "40",
+    "46",
+    "86"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "43",
+      "43",
+      "98"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 40,
+    "B": 3,
+    "C": 8
+   },
+   "hash": "4e9806ec",
+   "output": [
+    "40",
+    "48",
+    "88"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "45",
+      "45",
+      "106"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 40,
+    "B": 5,
+    "C": 4
+   },
+   "hash": "5cdd00fa",
+   "output": [
+    "40",
+    "44",
+    "84"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "39",
+      "39",
+      "86"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 40,
+    "B": 5,
+    "C": 6
+   },
+   "hash": "1919e496",
+   "output": [
+    "40",
+    "46",
+    "86"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "41",
+      "41",
+      "94"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "struct-copy",
+   "params": {
+    "A": 40,
+    "B": 5,
+    "C": 8
+   },
+   "hash": "02b0eae2",
+   "output": [
+    "40",
+    "48",
+    "88"
+   ],
+   "misconceptions": [
+    {
+     "id": "as-class",
+     "output": [
+      "43",
+      "43",
+      "102"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 4,
+    "B": 5
+   },
+   "hash": "0756ce70",
+   "output": [
+    "8",
+    "5",
+    "15",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "8",
+      "15",
+      "15",
+      "23"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "4",
+      "5",
+      "15",
+      "9"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 4,
+    "B": 8
+   },
+   "hash": "f1fc3e86",
+   "output": [
+    "8",
+    "8",
+    "24",
+    "16"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "8",
+      "24",
+      "24",
+      "32"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "4",
+      "8",
+      "24",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 4,
+    "B": 11
+   },
+   "hash": "69a03766",
+   "output": [
+    "8",
+    "11",
+    "33",
+    "19"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "8",
+      "33",
+      "33",
+      "41"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "4",
+      "11",
+      "33",
+      "15"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 6,
+    "B": 5
+   },
+   "hash": "36a48bc8",
+   "output": [
+    "12",
+    "5",
+    "15",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "12",
+      "15",
+      "15",
+      "27"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "6",
+      "5",
+      "15",
+      "11"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 6,
+    "B": 8
+   },
+   "hash": "adcf4c76",
+   "output": [
+    "12",
+    "8",
+    "24",
+    "20"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "12",
+      "24",
+      "24",
+      "36"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "6",
+      "8",
+      "24",
+      "14"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 6,
+    "B": 11
+   },
+   "hash": "5f54488a",
+   "output": [
+    "12",
+    "11",
+    "33",
+    "23"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "12",
+      "33",
+      "33",
+      "45"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "6",
+      "11",
+      "33",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 7,
+    "B": 5
+   },
+   "hash": "b4682776",
+   "output": [
+    "14",
+    "5",
+    "15",
+    "19"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "14",
+      "15",
+      "15",
+      "29"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "7",
+      "5",
+      "15",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 7,
+    "B": 8
+   },
+   "hash": "3d51bcfc",
+   "output": [
+    "14",
+    "8",
+    "24",
+    "22"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "14",
+      "24",
+      "24",
+      "38"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "7",
+      "8",
+      "24",
+      "15"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 7,
+    "B": 11
+   },
+   "hash": "d0216f86",
+   "output": [
+    "14",
+    "11",
+    "33",
+    "25"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "14",
+      "33",
+      "33",
+      "47"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "7",
+      "11",
+      "33",
+      "18"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 9,
+    "B": 5
+   },
+   "hash": "44af9f92",
+   "output": [
+    "18",
+    "5",
+    "15",
+    "23"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "18",
+      "15",
+      "15",
+      "33"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "9",
+      "5",
+      "15",
+      "14"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 9,
+    "B": 8
+   },
+   "hash": "afbc0f10",
+   "output": [
+    "18",
+    "8",
+    "24",
+    "26"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "18",
+      "24",
+      "24",
+      "42"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "9",
+      "8",
+      "24",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "virtual-new",
+   "params": {
+    "A": 9,
+    "B": 11
+   },
+   "hash": "4673bc7a",
+   "output": [
+    "18",
+    "11",
+    "33",
+    "29"
+   ],
+   "misconceptions": [
+    {
+     "id": "new-as-override",
+     "output": [
+      "18",
+      "33",
+      "33",
+      "51"
+     ]
+    },
+    {
+     "id": "static-dispatch",
+     "output": [
+      "9",
+      "11",
+      "33",
+      "20"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 2,
+    "A": 4,
+    "B": 10
+   },
+   "hash": "7c2f58a4",
+   "output": [
+    "6",
+    "12",
+    "17",
+    "28"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "11",
+      "22"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "6",
+      "12",
+      "23",
+      "34"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 2,
+    "A": 4,
+    "B": 12
+   },
+   "hash": "4c8094a6",
+   "output": [
+    "6",
+    "12",
+    "17",
+    "30"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "11",
+      "24"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "6",
+      "12",
+      "25",
+      "38"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 2,
+    "A": 7,
+    "B": 10
+   },
+   "hash": "8708f663",
+   "output": [
+    "6",
+    "12",
+    "20",
+    "31"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "14",
+      "25"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "6",
+      "12",
+      "23",
+      "34"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 2,
+    "A": 7,
+    "B": 12
+   },
+   "hash": "19ffffc9",
+   "output": [
+    "6",
+    "12",
+    "20",
+    "33"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "14",
+      "27"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "6",
+      "12",
+      "25",
+      "38"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 3,
+    "A": 4,
+    "B": 10
+   },
+   "hash": "90fc14f5",
+   "output": [
+    "9",
+    "18",
+    "23",
+    "34"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "14",
+      "25"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "9",
+      "18",
+      "29",
+      "40"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 3,
+    "A": 4,
+    "B": 12
+   },
+   "hash": "a0361a1f",
+   "output": [
+    "9",
+    "18",
+    "23",
+    "36"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "14",
+      "27"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "9",
+      "18",
+      "31",
+      "44"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 3,
+    "A": 7,
+    "B": 10
+   },
+   "hash": "6cfd54f2",
+   "output": [
+    "9",
+    "18",
+    "26",
+    "37"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "17",
+      "28"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "9",
+      "18",
+      "29",
+      "40"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 3,
+    "A": 7,
+    "B": 12
+   },
+   "hash": "de4c4820",
+   "output": [
+    "9",
+    "18",
+    "26",
+    "39"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "17",
+      "30"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "9",
+      "18",
+      "31",
+      "44"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 5,
+    "A": 4,
+    "B": 10
+   },
+   "hash": "e28a42ef",
+   "output": [
+    "15",
+    "30",
+    "35",
+    "46"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "20",
+      "31"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "15",
+      "30",
+      "41",
+      "52"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 5,
+    "A": 4,
+    "B": 12
+   },
+   "hash": "0ac20e45",
+   "output": [
+    "15",
+    "30",
+    "35",
+    "48"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "20",
+      "33"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "15",
+      "30",
+      "43",
+      "56"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 5,
+    "A": 7,
+    "B": 10
+   },
+   "hash": "ddfb76f0",
+   "output": [
+    "15",
+    "30",
+    "38",
+    "49"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "23",
+      "34"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "15",
+      "30",
+      "41",
+      "52"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 2,
+    "K": 5,
+    "A": 7,
+    "B": 12
+   },
+   "hash": "32b9ae82",
+   "output": [
+    "15",
+    "30",
+    "38",
+    "51"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "23",
+      "36"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "15",
+      "30",
+      "43",
+      "56"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 2,
+    "A": 4,
+    "B": 10
+   },
+   "hash": "a0df64dd",
+   "output": [
+    "8",
+    "16",
+    "24",
+    "29",
+    "40"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "12",
+      "17",
+      "28"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "8",
+      "16",
+      "24",
+      "35",
+      "46"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 2,
+    "A": 4,
+    "B": 12
+   },
+   "hash": "bfa4af47",
+   "output": [
+    "8",
+    "16",
+    "24",
+    "29",
+    "42"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "12",
+      "17",
+      "30"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "8",
+      "16",
+      "24",
+      "37",
+      "50"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 2,
+    "A": 7,
+    "B": 10
+   },
+   "hash": "5364961a",
+   "output": [
+    "8",
+    "16",
+    "24",
+    "32",
+    "43"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "12",
+      "20",
+      "31"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "8",
+      "16",
+      "24",
+      "35",
+      "46"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 2,
+    "A": 7,
+    "B": 12
+   },
+   "hash": "1e83f168",
+   "output": [
+    "8",
+    "16",
+    "24",
+    "32",
+    "45"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "2",
+      "6",
+      "12",
+      "20",
+      "33"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "8",
+      "16",
+      "24",
+      "37",
+      "50"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "A": 4,
+    "B": 10
+   },
+   "hash": "76e2484c",
+   "output": [
+    "12",
+    "24",
+    "36",
+    "41",
+    "52"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "18",
+      "23",
+      "34"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "12",
+      "24",
+      "36",
+      "47",
+      "58"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "A": 4,
+    "B": 12
+   },
+   "hash": "d01b72ee",
+   "output": [
+    "12",
+    "24",
+    "36",
+    "41",
+    "54"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "18",
+      "23",
+      "36"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "12",
+      "24",
+      "36",
+      "49",
+      "62"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "A": 7,
+    "B": 10
+   },
+   "hash": "adb1eaab",
+   "output": [
+    "12",
+    "24",
+    "36",
+    "44",
+    "55"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "18",
+      "26",
+      "37"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "12",
+      "24",
+      "36",
+      "47",
+      "58"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "A": 7,
+    "B": 12
+   },
+   "hash": "2ef8f5f1",
+   "output": [
+    "12",
+    "24",
+    "36",
+    "44",
+    "57"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "3",
+      "9",
+      "18",
+      "26",
+      "39"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "12",
+      "24",
+      "36",
+      "49",
+      "62"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "A": 4,
+    "B": 10
+   },
+   "hash": "69c0e246",
+   "output": [
+    "20",
+    "40",
+    "60",
+    "65",
+    "76"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "30",
+      "35",
+      "46"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "20",
+      "40",
+      "60",
+      "71",
+      "82"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "A": 4,
+    "B": 12
+   },
+   "hash": "0499fb44",
+   "output": [
+    "20",
+    "40",
+    "60",
+    "65",
+    "78"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "30",
+      "35",
+      "48"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "20",
+      "40",
+      "60",
+      "73",
+      "86"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "A": 7,
+    "B": 10
+   },
+   "hash": "7732b189",
+   "output": [
+    "20",
+    "40",
+    "60",
+    "68",
+    "79"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "30",
+      "38",
+      "49"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "20",
+      "40",
+      "60",
+      "71",
+      "82"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "closure-loop",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "A": 7,
+    "B": 12
+   },
+   "hash": "b5b3b423",
+   "output": [
+    "20",
+    "40",
+    "60",
+    "68",
+    "81"
+   ],
+   "misconceptions": [
+    {
+     "id": "copy-per-iteration",
+     "output": [
+      "5",
+      "15",
+      "30",
+      "38",
+      "51"
+     ]
+    },
+    {
+     "id": "shared-foreach",
+     "output": [
+      "20",
+      "40",
+      "60",
+      "73",
+      "86"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 3,
+    "B": 35
+   },
+   "hash": "69a71d16",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 35",
+    "finally 35",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 35",
+      "finally 35",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 3,
+    "B": 40
+   },
+   "hash": "ac1459ea",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 40",
+    "finally 40",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 40",
+      "finally 40",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 3,
+    "B": 52
+   },
+   "hash": "2d77bed9",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 52",
+    "finally 52",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 52",
+      "finally 52",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 7,
+    "B": 35
+   },
+   "hash": "4d6e0af2",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 35",
+    "finally 35",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 35",
+      "finally 35",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 7,
+    "B": 40
+   },
+   "hash": "2f91f106",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 40",
+    "finally 40",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 40",
+      "finally 40",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 7,
+    "B": 52
+   },
+   "hash": "7c3dc0e5",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 52",
+    "finally 52",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 52",
+      "finally 52",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 9,
+    "B": 35
+   },
+   "hash": "4c2ae28c",
+   "output": [
+    "try 9",
+    "finally 9",
+    "catch 35",
+    "finally 35",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 9",
+      "catch 35",
+      "finally 35",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 9,
+    "B": 40
+   },
+   "hash": "0fadbb8c",
+   "output": [
+    "try 9",
+    "finally 9",
+    "catch 40",
+    "finally 40",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 9",
+      "catch 40",
+      "finally 40",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 10,
+    "A": 9,
+    "B": 52
+   },
+   "hash": "cfce5937",
+   "output": [
+    "try 9",
+    "finally 9",
+    "catch 52",
+    "finally 52",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 9",
+      "catch 52",
+      "finally 52",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 3,
+    "B": 35
+   },
+   "hash": "e1febe59",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 35",
+    "finally 35",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 35",
+      "finally 35",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 3,
+    "B": 40
+   },
+   "hash": "f6f6fb4d",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 40",
+    "finally 40",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 40",
+      "finally 40",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 3,
+    "B": 52
+   },
+   "hash": "e66637fa",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 52",
+    "finally 52",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 52",
+      "finally 52",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 7,
+    "B": 35
+   },
+   "hash": "2b439845",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 35",
+    "finally 35",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 35",
+      "finally 35",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 7,
+    "B": 40
+   },
+   "hash": "38604be9",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 40",
+    "finally 40",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 40",
+      "finally 40",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 7,
+    "B": 52
+   },
+   "hash": "33f571c6",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 52",
+    "finally 52",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 52",
+      "finally 52",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 9,
+    "B": 35
+   },
+   "hash": "bae5d9eb",
+   "output": [
+    "try 9",
+    "finally 9",
+    "catch 35",
+    "finally 35",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 9",
+      "catch 35",
+      "finally 35",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 9,
+    "B": 40
+   },
+   "hash": "be0de4fb",
+   "output": [
+    "try 9",
+    "finally 9",
+    "catch 40",
+    "finally 40",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 9",
+      "catch 40",
+      "finally 40",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 20,
+    "A": 9,
+    "B": 52
+   },
+   "hash": "1c801814",
+   "output": [
+    "try 9",
+    "finally 9",
+    "catch 52",
+    "finally 52",
+    "17"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 9",
+      "catch 52",
+      "finally 52",
+      "17"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 30,
+    "A": 3,
+    "B": 35
+   },
+   "hash": "6b5b2ccc",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 35",
+    "finally 35",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 35",
+      "finally 35",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 30,
+    "A": 3,
+    "B": 40
+   },
+   "hash": "2ede05cc",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 40",
+    "finally 40",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 40",
+      "finally 40",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 30,
+    "A": 3,
+    "B": 52
+   },
+   "hash": "87f8b077",
+   "output": [
+    "try 3",
+    "finally 3",
+    "catch 52",
+    "finally 52",
+    "5"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 3",
+      "catch 52",
+      "finally 52",
+      "5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 30,
+    "A": 7,
+    "B": 35
+   },
+   "hash": "bc5d9128",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 35",
+    "finally 35",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 35",
+      "finally 35",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 30,
+    "A": 7,
+    "B": 40
+   },
+   "hash": "b8e61898",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 40",
+    "finally 40",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 40",
+      "finally 40",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "try-finally",
+   "params": {
+    "L": 30,
+    "A": 7,
+    "B": 52
+   },
+   "hash": "1db28dd3",
+   "output": [
+    "try 7",
+    "finally 7",
+    "catch 52",
+    "finally 52",
+    "13"
+   ],
+   "misconceptions": [
+    {
+     "id": "finally-only-on-error",
+     "output": [
+      "try 7",
+      "catch 52",
+      "finally 52",
+      "13"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "string-immutable",
+   "params": {
+    "W": "pompa",
+    "X": "p",
+    "Y": "b"
+   },
+   "hash": "69a3d50b",
+   "output": [
+    "pompa",
+    "bomba",
+    "#pompa5",
+    "12"
+   ],
+   "misconceptions": [
+    {
+     "id": "mutating-call",
+     "output": [
+      "POMPA",
+      "POMPA",
+      "#POMPA5",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "string-immutable",
+   "params": {
+    "W": "valf",
+    "X": "a",
+    "Y": "e"
+   },
+   "hash": "d103c655",
+   "output": [
+    "valf",
+    "velf",
+    "#valf4",
+    "10"
+   ],
+   "misconceptions": [
+    {
+     "id": "mutating-call",
+     "output": [
+      "VALF",
+      "VALF",
+      "#VALF4",
+      "10"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "string-immutable",
+   "params": {
+    "W": "sonar",
+    "X": "o",
+    "Y": "u"
+   },
+   "hash": "350b6325",
+   "output": [
+    "sonar",
+    "sunar",
+    "#sonar5",
+    "12"
+   ],
+   "misconceptions": [
+    {
+     "id": "mutating-call",
+     "output": [
+      "SONAR",
+      "SONAR",
+      "#SONAR5",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "string-immutable",
+   "params": {
+    "W": "kapak",
+    "X": "k",
+    "Y": "t"
+   },
+   "hash": "ea08a589",
+   "output": [
+    "kapak",
+    "tapat",
+    "#kapak5",
+    "12"
+   ],
+   "misconceptions": [
+    {
+     "id": "mutating-call",
+     "output": [
+      "KAPAK",
+      "KAPAK",
+      "#KAPAK5",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "string-immutable",
+   "params": {
+    "W": "kablo",
+    "X": "b",
+    "Y": "p"
+   },
+   "hash": "86d8fcbb",
+   "output": [
+    "kablo",
+    "kaplo",
+    "#kablo5",
+    "12"
+   ],
+   "misconceptions": [
+    {
+     "id": "mutating-call",
+     "output": [
+      "KABLO",
+      "KABLO",
+      "#KABLO5",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "string-immutable",
+   "params": {
+    "W": "conta",
+    "X": "t",
+    "Y": "n"
+   },
+   "hash": "ffed346b",
+   "output": [
+    "conta",
+    "conna",
+    "#conta5",
+    "12"
+   ],
+   "misconceptions": [
+    {
+     "id": "mutating-call",
+     "output": [
+      "CONTA",
+      "CONTA",
+      "#CONTA5",
+      "12"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 2,
+    "M": 2
+   },
+   "hash": "3f2e4447",
+   "output": [
+    "2",
+    "8",
+    "14"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "2",
+      "4",
+      "6"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "2",
+      "14",
+      "16"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 2,
+    "M": 3
+   },
+   "hash": "7fa5c932",
+   "output": [
+    "2",
+    "8",
+    "18"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "2",
+      "4",
+      "8"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "2",
+      "14",
+      "20"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 3,
+    "M": 2
+   },
+   "hash": "18d7330e",
+   "output": [
+    "3",
+    "12",
+    "21"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "3",
+      "6",
+      "9"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "3",
+      "21",
+      "24"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 3,
+    "M": 3
+   },
+   "hash": "e5bb84c3",
+   "output": [
+    "3",
+    "12",
+    "27"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "3",
+      "6",
+      "12"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "3",
+      "21",
+      "30"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 5,
+    "M": 2
+   },
+   "hash": "ea7a41cc",
+   "output": [
+    "5",
+    "20",
+    "35"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "5",
+      "10",
+      "15"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "5",
+      "35",
+      "40"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 5,
+    "M": 3
+   },
+   "hash": "746eb469",
+   "output": [
+    "5",
+    "20",
+    "45"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "5",
+      "10",
+      "20"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "5",
+      "35",
+      "50"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 7,
+    "M": 2
+   },
+   "hash": "8447608a",
+   "output": [
+    "7",
+    "28",
+    "49"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "7",
+      "14",
+      "21"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "7",
+      "49",
+      "56"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "static-field",
+   "params": {
+    "S": 7,
+    "M": 3
+   },
+   "hash": "8fb6653f",
+   "output": [
+    "7",
+    "28",
+    "63"
+   ],
+   "misconceptions": [
+    {
+     "id": "per-instance",
+     "output": [
+      "7",
+      "14",
+      "28"
+     ]
+    },
+    {
+     "id": "assign-copies",
+     "output": [
+      "7",
+      "49",
+      "70"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 5,
+    "B": 6,
+    "C": 20
+   },
+   "hash": "d829f7b9",
+   "output": [
+    "20",
+    "8",
+    "31"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "12",
+      "31"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "25",
+      "8",
+      "31"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 5,
+    "B": 6,
+    "C": 30
+   },
+   "hash": "68eab01e",
+   "output": [
+    "30",
+    "8",
+    "41"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "12",
+      "41"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "35",
+      "8",
+      "41"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 5,
+    "B": 9,
+    "C": 20
+   },
+   "hash": "80c91153",
+   "output": [
+    "20",
+    "8",
+    "34"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "18",
+      "34"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "25",
+      "8",
+      "34"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 5,
+    "B": 9,
+    "C": 30
+   },
+   "hash": "435a90d8",
+   "output": [
+    "30",
+    "8",
+    "44"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "18",
+      "44"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "35",
+      "8",
+      "44"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 10,
+    "B": 4,
+    "C": 20
+   },
+   "hash": "7f62632d",
+   "output": [
+    "20",
+    "13",
+    "34"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "8",
+      "34"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "30",
+      "13",
+      "34"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 10,
+    "B": 4,
+    "C": 30
+   },
+   "hash": "c3788df2",
+   "output": [
+    "30",
+    "13",
+    "44"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "8",
+      "44"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "40",
+      "13",
+      "44"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 10,
+    "B": 6,
+    "C": 20
+   },
+   "hash": "9eb4b239",
+   "output": [
+    "20",
+    "13",
+    "36"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "12",
+      "36"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "30",
+      "13",
+      "36"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 10,
+    "B": 6,
+    "C": 30
+   },
+   "hash": "2f756a9e",
+   "output": [
+    "30",
+    "13",
+    "46"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "12",
+      "46"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "40",
+      "13",
+      "46"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 10,
+    "B": 9,
+    "C": 20
+   },
+   "hash": "4753cbd3",
+   "output": [
+    "20",
+    "13",
+    "39"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "18",
+      "39"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "30",
+      "13",
+      "39"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 10,
+    "B": 9,
+    "C": 30
+   },
+   "hash": "09e54b58",
+   "output": [
+    "30",
+    "13",
+    "49"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "18",
+      "49"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "40",
+      "13",
+      "49"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 15,
+    "B": 4,
+    "C": 20
+   },
+   "hash": "ce94f215",
+   "output": [
+    "20",
+    "18",
+    "39"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "8",
+      "39"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "35",
+      "18",
+      "39"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 15,
+    "B": 4,
+    "C": 30
+   },
+   "hash": "633bb8fa",
+   "output": [
+    "30",
+    "18",
+    "49"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "8",
+      "49"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "45",
+      "18",
+      "49"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 15,
+    "B": 6,
+    "C": 20
+   },
+   "hash": "056ba641",
+   "output": [
+    "20",
+    "18",
+    "41"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "20",
+      "12",
+      "41"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "35",
+      "18",
+      "41"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "ref-params",
+   "params": {
+    "A": 15,
+    "B": 6,
+    "C": 30
+   },
+   "hash": "5523b366",
+   "output": [
+    "30",
+    "18",
+    "51"
+   ],
+   "misconceptions": [
+    {
+     "id": "array-rebind",
+     "output": [
+      "30",
+      "12",
+      "51"
+     ]
+    },
+    {
+     "id": "int-by-ref",
+     "output": [
+      "45",
+      "18",
+      "51"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 40,
+    "D": 22,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "d238f770",
+   "output": [
+    "1",
+    "40",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "65",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 40,
+    "D": 22,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "e5f2fc80",
+   "output": [
+    "1",
+    "40",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "65",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 40,
+    "D": 58,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "427790b3",
+   "output": [
+    "2",
+    "98",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "65",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 40,
+    "D": 58,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "7ef13a03",
+   "output": [
+    "2",
+    "98",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "65",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 47,
+    "D": 22,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "4b49258b",
+   "output": [
+    "1",
+    "47",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "72",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 47,
+    "D": 22,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "a45e1f6f",
+   "output": [
+    "1",
+    "47",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "72",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 47,
+    "D": 58,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "f4a21614",
+   "output": [
+    "2",
+    "105",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "72",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 25,
+    "C": 47,
+    "D": 58,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "6049dc70",
+   "output": [
+    "2",
+    "105",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "72",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 40,
+    "D": 22,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "2659b0cb",
+   "output": [
+    "2",
+    "71",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "71",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 40,
+    "D": 22,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "24a6fdaf",
+   "output": [
+    "2",
+    "71",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "71",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 40,
+    "D": 58,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "1fd35354",
+   "output": [
+    "3",
+    "129",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "71",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 40,
+    "D": 58,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "178d91b0",
+   "output": [
+    "3",
+    "129",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "71",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 47,
+    "D": 22,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "ae6487b0",
+   "output": [
+    "2",
+    "78",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "78",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 47,
+    "D": 22,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "1a409fc0",
+   "output": [
+    "2",
+    "78",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "78",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 47,
+    "D": 58,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "7f4fb7f3",
+   "output": [
+    "3",
+    "136",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "78",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 12,
+    "B": 31,
+    "C": 47,
+    "D": 58,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "18647443",
+   "output": [
+    "3",
+    "136",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "78",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 40,
+    "D": 22,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "79e94c82",
+   "output": [
+    "1",
+    "40",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "3",
+      "83",
+      "3"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 40,
+    "D": 22,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "1317efae",
+   "output": [
+    "1",
+    "40",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "65",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 40,
+    "D": 58,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "3245cd55",
+   "output": [
+    "2",
+    "98",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "3",
+      "83",
+      "3"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 40,
+    "D": 58,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "112a4109",
+   "output": [
+    "2",
+    "98",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "65",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 47,
+    "D": 22,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "c2780139",
+   "output": [
+    "1",
+    "47",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "3",
+      "90",
+      "3"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 47,
+    "D": 22,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "cfdecde9",
+   "output": [
+    "1",
+    "47",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "72",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 47,
+    "D": 58,
+    "L": 15,
+    "M": 30
+   },
+   "hash": "e31559b2",
+   "output": [
+    "2",
+    "105",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "3",
+      "90",
+      "3"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "linq-deferred",
+   "params": {
+    "A": 18,
+    "B": 25,
+    "C": 47,
+    "D": 58,
+    "L": 20,
+    "M": 30
+   },
+   "hash": "704c95e2",
+   "output": [
+    "2",
+    "105",
+    "0"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager",
+     "output": [
+      "2",
+      "72",
+      "2"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "L": 5
+   },
+   "hash": "57396f52",
+   "output": [
+    "tara 1",
+    "oku 3",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 3"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "L": 8
+   },
+   "hash": "123de24b",
+   "output": [
+    "tara 1",
+    "oku 3",
+    "tara 2",
+    "oku 6",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 3",
+      "oku 6"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 3,
+    "L": 11
+   },
+   "hash": "58b6d13f",
+   "output": [
+    "tara 1",
+    "oku 3",
+    "tara 2",
+    "oku 6",
+    "tara 3",
+    "oku 9"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 3",
+      "oku 6",
+      "oku 9"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 4,
+    "L": 5
+   },
+   "hash": "e1e5acd1",
+   "output": [
+    "tara 1",
+    "oku 4",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 4"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 4,
+    "L": 8
+   },
+   "hash": "3080fe88",
+   "output": [
+    "tara 1",
+    "oku 4",
+    "tara 2",
+    "oku 8",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 4",
+      "oku 8"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 4,
+    "L": 11
+   },
+   "hash": "1302d162",
+   "output": [
+    "tara 1",
+    "oku 4",
+    "tara 2",
+    "oku 8",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 4",
+      "oku 8"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "L": 5
+   },
+   "hash": "8f90662c",
+   "output": [
+    "tara 1",
+    "oku 5",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "L": 8
+   },
+   "hash": "88a007fd",
+   "output": [
+    "tara 1",
+    "oku 5",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 3,
+    "K": 5,
+    "L": 11
+   },
+   "hash": "fa9c38cd",
+   "output": [
+    "tara 1",
+    "oku 5",
+    "tara 2",
+    "oku 10",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "oku 5",
+      "oku 10"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 3,
+    "L": 5
+   },
+   "hash": "1b93da0d",
+   "output": [
+    "tara 1",
+    "oku 3",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 3"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 3,
+    "L": 8
+   },
+   "hash": "85fcf47c",
+   "output": [
+    "tara 1",
+    "oku 3",
+    "tara 2",
+    "oku 6",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 3",
+      "oku 6"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 3,
+    "L": 11
+   },
+   "hash": "f38fbb7e",
+   "output": [
+    "tara 1",
+    "oku 3",
+    "tara 2",
+    "oku 6",
+    "tara 3",
+    "oku 9",
+    "tara 4"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 3",
+      "oku 6",
+      "oku 9"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 4,
+    "L": 5
+   },
+   "hash": "8706128e",
+   "output": [
+    "tara 1",
+    "oku 4",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 4"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 4,
+    "L": 8
+   },
+   "hash": "38bdf73f",
+   "output": [
+    "tara 1",
+    "oku 4",
+    "tara 2",
+    "oku 8",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 4",
+      "oku 8"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 4,
+    "L": 11
+   },
+   "hash": "764e3a0b",
+   "output": [
+    "tara 1",
+    "oku 4",
+    "tara 2",
+    "oku 8",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 4",
+      "oku 8"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 5,
+    "L": 5
+   },
+   "hash": "f4b636e3",
+   "output": [
+    "tara 1",
+    "oku 5",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 5,
+    "L": 8
+   },
+   "hash": "17d3419a",
+   "output": [
+    "tara 1",
+    "oku 5",
+    "tara 2"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 5"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "yield-lazy",
+   "params": {
+    "N": 4,
+    "K": 5,
+    "L": 11
+   },
+   "hash": "d4746638",
+   "output": [
+    "tara 1",
+    "oku 5",
+    "tara 2",
+    "oku 10",
+    "tara 3"
+   ],
+   "misconceptions": [
+    {
+     "id": "eager-iterator",
+     "output": [
+      "tara 1",
+      "tara 2",
+      "tara 3",
+      "tara 4",
+      "oku 5",
+      "oku 10"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "short-circuit",
+   "params": {
+    "P": true,
+    "Q": true,
+    "W": 1
+   },
+   "hash": "38ac1df1",
+   "output": [
+    "kontrol 1",
+    "geçti",
+    "kontrol 3",
+    "kontrol 4",
+    "ikisi",
+    "8"
+   ],
+   "misconceptions": [
+    {
+     "id": "no-short-circuit",
+     "output": [
+      "kontrol 1",
+      "kontrol 2",
+      "geçti",
+      "kontrol 3",
+      "kontrol 4",
+      "ikisi",
+      "10"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "short-circuit",
+   "params": {
+    "P": true,
+    "Q": true,
+    "W": 10
+   },
+   "hash": "71e12e33",
+   "output": [
+    "kontrol 1",
+    "geçti",
+    "kontrol 3",
+    "kontrol 4",
+    "ikisi",
+    "80"
+   ],
+   "misconceptions": [
+    {
+     "id": "no-short-circuit",
+     "output": [
+      "kontrol 1",
+      "kontrol 2",
+      "geçti",
+      "kontrol 3",
+      "kontrol 4",
+      "ikisi",
+      "100"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "short-circuit",
+   "params": {
+    "P": true,
+    "Q": false,
+    "W": 1
+   },
+   "hash": "ffb43217",
+   "output": [
+    "kontrol 1",
+    "geçti",
+    "kontrol 3",
+    "4"
+   ],
+   "misconceptions": [
+    {
+     "id": "no-short-circuit",
+     "output": [
+      "kontrol 1",
+      "kontrol 2",
+      "geçti",
+      "kontrol 3",
+      "kontrol 4",
+      "10"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "short-circuit",
+   "params": {
+    "P": true,
+    "Q": false,
+    "W": 10
+   },
+   "hash": "90a67c99",
+   "output": [
+    "kontrol 1",
+    "geçti",
+    "kontrol 3",
+    "40"
+   ],
+   "misconceptions": [
+    {
+     "id": "no-short-circuit",
+     "output": [
+      "kontrol 1",
+      "kontrol 2",
+      "geçti",
+      "kontrol 3",
+      "kontrol 4",
+      "100"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "short-circuit",
+   "params": {
+    "P": false,
+    "Q": false,
+    "W": 1
+   },
+   "hash": "8e2f20ed",
+   "output": [
+    "kontrol 1",
+    "kontrol 2",
+    "kontrol 3",
+    "6"
+   ],
+   "misconceptions": [
+    {
+     "id": "no-short-circuit",
+     "output": [
+      "kontrol 1",
+      "kontrol 2",
+      "kontrol 3",
+      "kontrol 4",
+      "10"
+     ]
+    }
+   ]
+  },
+  {
+   "template": "short-circuit",
+   "params": {
+    "P": false,
+    "Q": false,
+    "W": 10
+   },
+   "hash": "ec1f094f",
+   "output": [
+    "kontrol 1",
+    "kontrol 2",
+    "kontrol 3",
+    "60"
+   ],
+   "misconceptions": [
+    {
+     "id": "no-short-circuit",
+     "output": [
+      "kontrol 1",
+      "kontrol 2",
+      "kontrol 3",
+      "kontrol 4",
+      "100"
+     ]
+    }
+   ]
+  }
+ ]
+}
