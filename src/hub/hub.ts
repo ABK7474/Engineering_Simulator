@@ -90,7 +90,7 @@ export interface Hub {
   /** Tehdit sona erdi: gölge uzaklaşarak geçer. */
   creaturePass: () => void;
   /** Geliştirme/test kancaları (oyunda kullanılmaz). */
-  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void; teleport: (x: number, z: number, yaw?: number) => void };
+  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void; teleport: (x: number, z: number, yaw?: number) => void; doors: () => Record<string, number>; breakdown: () => Record<string, { calls: number; triangles: number }>; materials: () => Record<string, { meshes: number; materials: number; signatures: number }>; heavy: (room: string) => [string, number][]; hide: (name: string, hidden: boolean) => number; describe: (index: number) => string };
   stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean; room: string | null };
 }
 
@@ -171,6 +171,9 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const first = layout.terminals[0];
   const effects = new Effects(scene, new THREE.Vector3(first?.x ?? 0, CEILING - 0.3, first?.z ?? 0));
   const tweens = new Tweens();
+  // Durum kapıları (açıldı/kapandı) ayrı zamanlayıcıda: sonuç efektleri `tweens`i temizler; açılmakta olan bir
+  // kapının animasyonu silinirse kapı yarı açık kalırdı.
+  const doorTweens = new Tweens();
   const player = createPlayer(camera, renderer.domElement, new THREE.Vector3(opts.spawn.x, 0, opts.spawn.z));
   camera.rotation.set(0, opts.spawn.yaw, 0, 'YXZ');
   const leaks = layout.leaks.map((l) => new THREE.Vector3(l.x, l.y, l.z));
@@ -273,6 +276,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
 
     if (ledFlicker) ledFlicker.t.setLed(ledFlicker.color, THREE.MathUtils.lerp(ledFlicker.lo, ledFlicker.hi, Math.random()), true);
     tweens.update(dt);
+    doorTweens.update(dt);
     effects.update(dt);
     for (const d of doors.values()) d.update();
     for (const t of terminals.values()) t.update(dt);
@@ -610,7 +614,12 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       }
       if (Math.abs(door.openAmount - target) < 0.01) return;
       sounds.play(open ? 'door_open' : 'door_close');
-      moveDoor(door, 0, 1.6, target);
+      const from = door.openAmount;
+      doorTweens.add((_dt, el) => {
+        const k = Math.min(1, el / 1.6);
+        door.openAmount = THREE.MathUtils.lerp(from, target, ease(k));
+        return k < 1;
+      });
     },
     resetTerminals(ids) {
       tweens.clear();
@@ -648,6 +657,77 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     debug: {
       setYaw: (rad) => camera.rotation.set(0, rad, 0, 'YXZ'),
       forceShadowPass: (k) => exterior.forcePass(k),
+      doors: () => Object.fromEntries([...doors.values()].map((d) => [d.id, Math.round(d.openAmount * 1000) / 1000])),
+      hide(name, hidden) {
+        let n = 0;
+        scene.traverse((o) => {
+          if (o.name === name || o.type === name || (name.startsWith('#') && o.parent === scene && scene.children.indexOf(o) === Number(name.slice(1)))) {
+            o.visible = !hidden;
+            n++;
+          }
+        });
+        return n;
+      },
+      describe(index) {
+        const o = scene.children[index];
+        if (!o) return '';
+        const kinds = new Set<string>();
+        o.traverse((c) => {
+          const m = (c as THREE.Mesh).material as THREE.Material | undefined;
+          if (m) kinds.add(`${c.type}:${m.name || m.type}`);
+        });
+        return `${o.name || o.type} [${[...kinds].slice(0, 6).join(', ')}]`;
+      },
+      heavy(room) {
+        const tris: Record<string, number> = {};
+        const count: Record<string, number> = {};
+        scene.getObjectByName(`room:${room}`)?.traverse((o) => {
+          for (const [k, v] of Object.entries((o.userData.tris ?? {}) as Record<string, number>)) tris[k] = (tris[k] ?? 0) + v;
+          for (const [k, v] of Object.entries((o.userData.count ?? {}) as Record<string, number>)) count[k] = Math.max(count[k] ?? 0, v);
+        });
+        return Object.entries(tris).sort((a, b) => b[1] - a[1]).slice(0, 40).map(([k, v]) => [`${k}×${count[k]}`, v]);
+      },
+      materials() {
+        const out: Record<string, { meshes: number; materials: number; signatures: number }> = {};
+        for (const c of scene.children) {
+          if (!c.name.startsWith('room:') && c.name !== 'shared') continue;
+          const mats = new Set<THREE.Material>();
+          const sigs = new Set<string>();
+          let meshes = 0;
+          c.traverse((o) => {
+            if (!(o instanceof THREE.Mesh)) return;
+            meshes++;
+            const m = o.material as THREE.MeshStandardMaterial;
+            mats.add(m);
+            sigs.add([m.type, m.map?.uuid, m.normalMap?.uuid, m.roughnessMap?.uuid, m.metalnessMap?.uuid, m.color?.getHexString(), m.transparent, m.side].join('|'));
+          });
+          out[c.name] = { meshes, materials: mats.size, signatures: sigs.size };
+        }
+        return out;
+      },
+      breakdown() {
+        // Her görünür üst düzey nesneyi sırayla gizleyip çizer; farkı o nesnenin payıdır.
+        const draw = () => {
+          renderer.render(scene, camera);
+          return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
+        };
+        const base = draw();
+        const out: Record<string, { calls: number; triangles: number }> = { toplam: base };
+        const groups = new Map<string, THREE.Object3D[]>();
+        for (const c of scene.children) {
+          if (!c.visible) continue;
+          const key = c.name || c.type;
+          groups.set(key, [...(groups.get(key) ?? []), c]);
+        }
+        for (const [key, objs] of groups) {
+          objs.forEach((o) => (o.visible = false));
+          const r = draw();
+          objs.forEach((o) => (o.visible = true));
+          if (base.calls - r.calls > 0) out[key] = { calls: base.calls - r.calls, triangles: base.triangles - r.triangles };
+        }
+        draw();
+        return out;
+      },
       teleport: (x, z, yaw) => teleport(x, z, yaw ?? yawOf()),
     },
     stats() {

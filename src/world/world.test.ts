@@ -163,7 +163,7 @@ describe('yerleşim', () => {
     for (const t of L.terminals) expect(roomAt(L, t.x, t.z)).toBe(t.fault.room);
     const lock = L.terminals.find((t) => t.fault.id === 'door-lock')!;
     expect(lock).toMatchObject({ rotY: 0 });
-    expect(lock.x).toBeCloseTo(-1.33, 6);
+    expect(lock.x).toBeCloseTo(-1.54, 6); // pilastere yaslı: çarpışma yüzünden (−1,55) 0,22 − 0,21 m içeride
     expect(lock.z).toBeCloseTo(-23.8, 6);
     expect(lock.collider.minY).toBe(1.1); // eğilerek altından geçilebilir
   });
@@ -240,7 +240,8 @@ describe('oda giydirme ve yürünebilirlik', () => {
     for (const { def } of L.rooms) {
       const mine = L.placements.filter((p) => p.room === def.id && !['WallAstra_Straight', 'WallAstra_Straight_Window', 'WallAstra_Straight_Broken', 'TopCables_Straight', 'TopCables_Straight_Hanging', 'BottomMetal_Straight', 'Platform_DarkPlates', 'Prop_Light_Wide', 'Column_Simple'].includes(p.model));
       expect(mine.length, def.id).toBeGreaterThan(5);
-      expect(mine.some((p) => p.model.startsWith('Details_')), def.id).toBe(true);
+      // 3B süs yalnız düz, dış (komşusuz) duvara konur; sensör odasının duvarları pencere/ortak/kapı/terminal
+      if (def.id !== 'sensor-s1') expect(mine.some((p) => p.model.startsWith('Details_')), def.id).toBe(true);
       expect(L.decor.find((d) => d.room === def.id)!.grime.length, def.id).toBeGreaterThan(0);
     }
     const solids = L.colliders.filter((c) => c.tag !== 'wall');

@@ -17,12 +17,21 @@ export interface Atmosphere {
   takeBursts: () => THREE.Vector3[];
 }
 
+/** Atlasa bakan bütün doku UV'leri; yalnız map bölünürse aynı dokuyu kullanan emissiveMap bütün atlası gösterir. */
+const TILED_UVS: [string, string][] = [
+  ['MAP', 'vMapUv'],
+  ['EMISSIVEMAP', 'vEmissiveMapUv'],
+  ['ALPHAMAP', 'vAlphaMapUv'],
+  ['ROUGHNESSMAP', 'vRoughnessMapUv'],
+  ['NORMALMAP', 'vNormalMapUv'],
+];
+
 /** Atlas karosunu örneğe göre seçen materyal yaması (uv = uv·ölçek + aTile). */
 function tiled<M extends THREE.Material>(mat: M, scale: [number, number]): M {
   mat.onBeforeCompile = (sh) => {
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 aTile;')
-      .replace('#include <uv_vertex>', `#include <uv_vertex>\n#ifdef USE_MAP\nvMapUv = vMapUv * vec2(${scale[0].toFixed(6)}, ${scale[1].toFixed(6)}) + aTile;\n#endif`);
+      .replace('#include <uv_vertex>', `#include <uv_vertex>\n${TILED_UVS.map((u) => `#ifdef USE_${u[0]}\n${u[1]} = ${u[1]} * vec2(${scale[0].toFixed(6)}, ${scale[1].toFixed(6)}) + aTile;\n#endif`).join('\n')}`);
   };
   mat.customProgramCacheKey = () => `tiled-${scale[0]}-${scale[1]}`;
   return mat;
@@ -78,7 +87,7 @@ export function buildAtmosphere(scene: THREE.Scene, L: WorldLayout): Atmosphere 
     scene.add(
       instancedQuads(wallGrime.length, grimeMat, (k, m) => {
         const g = wallGrime[k];
-        m.compose(tmpV.set(g.x, g.y, g.z), tmpQ.setFromEuler(tmpE.set(0, g.rotY, 0)), tmpS.set(g.w, g.h, 1));
+        m.compose(tmpV.set(g.x, g.y, g.z), tmpQ.setFromEuler(tmpE.set(-(g.tilt ?? 0), g.rotY, 0, 'YXZ')), tmpS.set(g.w, g.h, 1));
         // Atlas: satır = tür (yukarıdan), sütun = varyant; canvas y aşağı, uv y yukarı
         return [g.variant * 0.25, 1 - (GRIME_ROWS[g.kind] + 1) * 0.25];
       }),
@@ -103,7 +112,7 @@ export function buildAtmosphere(scene: THREE.Scene, L: WorldLayout): Atmosphere 
     scene.add(
       instancedQuads(signs.length, signMat, (k, m) => {
         const s = signs[k];
-        m.compose(tmpV.set(s.x, s.y, s.z), tmpQ.setFromEuler(tmpE.set(0, s.rotY, 0)), tmpS.set(s.w, s.h, 1));
+        m.compose(tmpV.set(s.x, s.y, s.z), tmpQ.setFromEuler(tmpE.set(-(s.tilt ?? 0), s.rotY, 0, 'YXZ')), tmpS.set(s.w, s.h, 1));
         return [(k % sa.cols) / sa.cols, 1 - (Math.floor(k / sa.cols) + 1) / sa.rows];
       }),
     );
@@ -120,7 +129,7 @@ export function buildAtmosphere(scene: THREE.Scene, L: WorldLayout): Atmosphere 
     const mat = new THREE.MeshBasicMaterial({ map: sc.texture, toneMapped: false, color: 0xc8c8c8 });
     screenMats.push(mat);
     const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), mat, list.length);
-    list.forEach((s, k) => mesh.setMatrixAt(k, new THREE.Matrix4().compose(tmpV.set(s.x, s.y, s.z), tmpQ.setFromEuler(tmpE.set(0, s.rotY, 0)), tmpS.set(s.w, s.h, 1))));
+    list.forEach((s, k) => mesh.setMatrixAt(k, new THREE.Matrix4().compose(tmpV.set(s.x, s.y, s.z), tmpQ.setFromEuler(tmpE.set(-(s.tilt ?? 0), s.rotY, 0, 'YXZ')), tmpS.set(s.w, s.h, 1))));
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
     scene.add(mesh);
@@ -130,7 +139,7 @@ export function buildAtmosphere(scene: THREE.Scene, L: WorldLayout): Atmosphere 
     screens.forEach((s, k) => {
       // Ekranın 2 cm arkasında, kenarlardan 4 cm taşan kutu
       const back = tmpV.set(Math.sin(s.rotY), 0, Math.cos(s.rotY)).multiplyScalar(-0.025);
-      frame.setMatrixAt(k, new THREE.Matrix4().compose(new THREE.Vector3(s.x + back.x, s.y, s.z + back.z), tmpQ.setFromEuler(tmpE.set(0, s.rotY, 0)), tmpS.set(s.w + 0.08, s.h + 0.08, 0.04)));
+      frame.setMatrixAt(k, new THREE.Matrix4().compose(new THREE.Vector3(s.x + back.x, s.y, s.z + back.z), tmpQ.setFromEuler(tmpE.set(-(s.tilt ?? 0), s.rotY, 0, 'YXZ')), tmpS.set(s.w + 0.08, s.h + 0.08, 0.04)));
     });
     frame.instanceMatrix.needsUpdate = true;
     frame.computeBoundingSphere();

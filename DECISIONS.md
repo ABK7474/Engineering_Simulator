@@ -23,3 +23,16 @@ Belirsiz kalan ve beklemeden verilen kararlar; her biri bir cümle. Tarih: ilgil
 - Pratik oturumu (Defter → Tekrar) kaynak harcamaz, ipuçları da ücretsizdir; öğrenme tekrarı cezalandırılmasın diye. Arıza panelindeki ipucu güç harcatır (balance.hintCost).
 - İpuçları cevabı vermez: ilk kademe yöntem, ikinci kademe (varsa) hesaplanmış ara değer (ör. ω_n, G(0), kritik kazanç, bozuk adımın hangi yarıda olduğu).
 - Final, bütün arızalar onarılınca bir kez gösterilir; oyun bitmez, serbest dolaşmaya dönülür.
+- Çizim bütçesi: görüntü başına ≤ 150 çizim çağrısı ve ≤ 150 bin üçgen (hedef: öğrenci dizüstülerinin tümleşik GPU'su). `npm run e2e` her odada denetler.
+- Oda modelleri malzeme başına BatchedMesh ile çizilir (görsel olarak aynı malzemeler birleştirilir, örnek başına görüş alanı ayıklaması); en kötü görüntü 221 → 115 çağrı.
+- Kapı kanatları yana değil yukarı (tavanın üstüne) kayar ve tam açıkken gizlenir: duvarlarda cep olmadığından yana kayan kanat komşu duvardaki terminale biniyordu.
+- Koridor ve güç odasında tavan borusu / yer kablosu olasılıkları düşürüldü (üçgen bütçesi); görünüm karakteri korunur.
+- Erişim noktası terminallerinin ekranı model gereği yana bakıyor; gövdenin ön yüzüne aynı durumu gösteren şerit ekran eklendi.
+- Arızanın `requires`'ı odasının kapı koşulunu da içermeli (ör. K-1'deki core-index: sensor.calibrated); yoksa harita ulaşılamayan arızayı "açık" gösterir. playthrough.test.ts denetler.
+- Kapı açma/kapama animasyonu ayrı zamanlayıcıda (doorTweens): sonuç efektleri ana zamanlayıcıyı temizliyordu, kapı açılırken başka bir cevap gönderilirse kapı yarı açık takılı kalıyordu (e2e yakaladı).
+- Harita 3B görüntüyle aynı eksenlerde: x sağa, z aşağı (oyuncunun başlangıçta baktığı −z yukarıda). Önceki y = −z çizimi aynalıydı: ileri yürüyünce işaretçi geri gidiyor, sağdaki oda solda görünüyordu (kullanıcı bildirdi).
+- Duvar dekoru (süs, iz, levha, ekran) çarpışma yüzüne (1,55 m) değil, WallAstra panelinin gerçek yüzeyine konur: panel ~11° geriye yatık (GLB'ye ışın atılarak ölçüldü), dekor da aynı eğimde. Eskiden 0,5–0,8 m önde havada duruyordu (kullanıcı görüntüleri).
+- Duvar modülünün ortasında çıkıntılı pilaster var: dekor ±0,3 m'ye konmaz; duvar terminali pilastere yaslanır (`mount`), çarpışma kutusu değişmez.
+- Ortak duvarlarda yatık panel komşu odanın hacmine taşar: oraya 3B süs/ekran konmaz (komşudan havada görünürdü); iz/levha komşu köşe kolonlarından uzak (±1,25 m).
+- Her duvar yuvasında doluluk listesi (eşya, terminal, kolon, önceki dekor); zemin kablosu/lambası ve tavan borusu/fan/menfez de birbirine, eşyalara ve lamba armatürlerine binmez. 5,7 m'lik Prop_Cable_3 rastgele zemin dekorundan çıkarıldı. `decor.test.ts` ve GLB kutularıyla `intersect.test.ts` denetler.
+- Her odada en az bir kir/pas izi garanti (sıkı kurallarla bazı odalarda zar hiç tutmuyordu).

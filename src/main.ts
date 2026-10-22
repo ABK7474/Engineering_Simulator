@@ -588,6 +588,13 @@ if (import.meta.env.DEV) {
         progress.world.states = [...new Set([...states(), ...granted])];
         refreshAll();
       },
+      /** E2E: açık aşamanın kodla hesaplanmış doğru cevabı. */
+      solution: (fid: string) => structuredClone(getRun(fid).run.solution),
+      /** E2E: açık paneli kapatıp cevabı panelin göndereceği yoldan değerlendirir (olay raporu açılır). */
+      submit: (fid: string, answer: unknown) => {
+        ui.querySelectorAll('.overlay').forEach((o) => o.remove());
+        void runAttempt(fid, answer);
+      },
       /** Test kısayolu: bütün arızaları onarılmış say ve finali göster. */
       solveAll: () => {
         for (const f of W.faults) progress.faults[f.id] = { stagesDone: stagesOf(f.id).length };

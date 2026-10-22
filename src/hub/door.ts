@@ -3,6 +3,7 @@
 // Kanatlar hareketli olduğu için gölge düşürmez (sabit gölge haritası bozulmasın).
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { DoorLayout } from '../world/layout';
 import { boxProjectUVs, pbrMaterial, type Assets } from './assets';
 import { toBox } from './building';
@@ -17,7 +18,9 @@ export interface Door {
   update: () => void;
 }
 
-const LEAF_TRAVEL = 2.15;
+// Kanatlar yukarı, tavanın (5 m) üstüne kayar: yana kaysalardı duvarda cep olmadığı için komşu duvar hücresinin
+// önüne çıkıp oradaki terminale/eşyaya binerlerdi. Tam açıkken gizlenir (dış pencerelerden çatı üstünde görünmesin).
+const LEAF_TRAVEL = 5.1;
 
 export function createDoor(scene: THREE.Scene, assets: Assets, d: DoorLayout): Door {
   // Model tek yüzlü: iki taraftan da görünsün diye çift taraflı.
@@ -27,14 +30,19 @@ export function createDoor(scene: THREE.Scene, assets: Assets, d: DoorLayout): D
   root.rotation.y = d.rotY;
   scene.add(root);
   const makeLeaf = () => {
+    // Kanadın bütün parçaları aynı malzemede: tek geometriye birleştirilir (kanat başına bir çizim çağrısı).
     const leaf = new THREE.Group();
     const src = assets.models.Door_Metal;
     src.updateMatrixWorld(true);
+    const parts: THREE.BufferGeometry[] = [];
     src.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
-      const geo = o.geometry.clone().applyMatrix4(o.matrixWorld);
-      leaf.add(new THREE.Mesh(boxProjectUVs(geo, 0.5), rust));
+      const geo = boxProjectUVs(o.geometry.clone().applyMatrix4(o.matrixWorld), 0.5);
+      for (const name of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv'].includes(name)) geo.deleteAttribute(name);
+      if (!geo.getAttribute('normal')) geo.computeVertexNormals();
+      parts.push(geo);
     });
+    leaf.add(new THREE.Mesh(mergeGeometries(parts), rust));
     leaf.position.z = -0.05;
     root.add(leaf);
     return leaf;
@@ -50,8 +58,8 @@ export function createDoor(scene: THREE.Scene, assets: Assets, d: DoorLayout): D
     collider: toBox(d.collider),
     position: new THREE.Vector3(d.x, 2, d.z),
     update() {
-      left.position.x = -api.openAmount * LEAF_TRAVEL;
-      right.position.x = api.openAmount * LEAF_TRAVEL;
+      left.position.y = right.position.y = api.openAmount * LEAF_TRAVEL;
+      root.visible = api.openAmount < 0.999;
     },
   };
   return api;

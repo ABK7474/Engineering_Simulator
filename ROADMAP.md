@@ -67,3 +67,17 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - 2026-10-22 · 2c bitti (6 oda, 402 test). Sıradaki: 2d tehdit olayı.
 - 2026-10-22 · 2d bitti (416 test). Sıradaki: 2e (aralıklı tekrar, kayıtlar/formül defteri, ipucu, Sezon 1 finali).
 - 2026-10-22 · 2e bitti (425 test). Adım 2'nin tamamı bitti. Kalan: kullanıcının isteyeceği tarayıcı e2e turu ve `npm run verify:cs` / `verify:algo` (yavaş testler).
+
+## Doğrulama turu (2026-10-22)
+- [x] `npm run verify:cs` 100/100; yeni `npm run e2e` (başsız Chrome): koridordan finale 12 arıza, W ile kapıdan yürüme, tehdit olayı, konsol temiz
+- [x] Düğümde baştan sona oynanış testi (kapalı kapılarla yürünebilirlik): core-index koşul hatası bulundu, düzeltildi
+- [x] Her aşamada çözücünün cevabı başarı veriyor (12 kart × 20 tohum)
+- [x] Harita aynalıydı (ileri/geri ve sağ/sol ters) → eksenler 3B görüntüyle eşlendi; oda etiketleri komşu odanın altında kalmıyor
+- [x] Kapı animasyonu sonuç efektleriyle siliniyordu, kapı yarı açık kalıyordu → ayrı zamanlayıcı
+- [x] Görsel inceleme: yana kayan kapı kanadı, tabela atlası (emissive), okunmayan terminal ekranı, belirlenimci olmayan giydirme (tarayıcı ≠ düğüm), sensör odasında süs yok → düzeltildi
+- [x] Çizim bütçesi (≤150 çağrı, ≤150k üçgen): BatchedMesh, tek parça kapı kanadı, daha az ağır dekor → bütün görüntüler bütçede
+- [x] HANDCHECK.md: 13 el hesabı, src/handcheck.test.ts ile çözücülerle karşılaştırıldı; uyuşmazlık yok
+- [x] Son `npm run e2e` (bütün düzeltmelerden sonra): 12 arıza → final, bütün kapılar tam açık, 13 görüntünün hepsi bütçede (en fazla 106 çağrı / 100 bin üçgen), konsol temiz (31,3 dk)
+- [x] Kullanıcının bildirdiği iç içe geçme/havada durma: duvar dekoru gerçek (yatık) duvar yüzeyine, pilaster ve ortak duvar kuralları, zemin/tavan çakışmaları, elle konmuş kablolar; GLB kutularıyla genel tarama testi (`intersect.test.ts`) sıfır çakışma
+- [x] `npm run screens` (hızlı görsel kontrol, ~10 dk) eklendi
+

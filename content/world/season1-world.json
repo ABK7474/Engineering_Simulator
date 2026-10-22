@@ -569,15 +569,18 @@
         "along": 0.5
       },
       "requires": [
-        "core.online"
+        "core.online",
+        "sensor.calibrated"
       ],
       "provides": [
         "core.index"
       ],
       "screen": {
         "fault": "DİZİN\nBOZUK",
-        "solved": "DİZİN\nYENİDEN KURULDU"
-      }
+        "solved": "DİZİN\nYENİDEN KURULDU",
+        "blocked": "SONAR ONAYI\nBEKLENİYOR"
+      },
+      "blockedHint": "E: Çekirdek odası sonar onayını bekliyor — haritaya bak"
     },
     {
       "id": "core-runtime",

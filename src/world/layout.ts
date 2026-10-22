@@ -4,7 +4,7 @@
 
 import themesJson from '../../content/world/themes.json';
 import type { ModelId } from './catalog';
-import { dressRoom, footprint, parseThemes, type RoomDecor, type ThemeId, type WallSlot } from './dressing';
+import { dressRoom, flatFootprint, footprint, parseThemes, type RoomDecor, type ThemeId, type WallSlot } from './dressing';
 import type { DoorDef, FaultDef, RoomDef, Side, TerminalModel, WorldDef } from './schema';
 
 export type { ModelId } from './catalog';
@@ -33,6 +33,8 @@ export interface Placement {
   rotY: number;
   /** Tavan için modeli X ekseninde ters çevir. */
   flip?: boolean;
+  /** Duvara yaslanan süs: yatık panele uysun diye yerel X ekseninde geriye eğim (radyan). */
+  tilt?: number;
   /** Ait olduğu oda (odalara göre gizleme/çizim grupları). */
   room?: string;
 }
@@ -194,9 +196,10 @@ function bandRect(ex: number, ez: number, ax: number, az: number, nx: number, nz
 }
 
 /** Terminal modelleri: duvara yaslanma biçimi ve çarpışma kutusu. */
-export const TERMINAL_SPEC: Record<TerminalModel, { back: 'x' | 'z'; backDepth: number; alongHalf: number; depth: number; minY?: number; maxY?: number }> = {
-  // Duvar terminali: arkası modelin −x yüzü; yerden 1,1 m yukarıda başlar (eğilen altından geçer).
-  Prop_AccessPoint: { back: 'x', backDepth: 0.22, alongHalf: 0.66, depth: 0.44, minY: 1.1, maxY: 1.6 },
+export const TERMINAL_SPEC: Record<TerminalModel, { back: 'x' | 'z'; backDepth: number; alongHalf: number; depth: number; minY?: number; maxY?: number; mount?: number }> = {
+  // Duvar terminali: arkası modelin −x yüzü; yerden 1,1 m yukarıda başlar (eğilen altından geçer). Model, hücre
+  // ortasındaki pilastere yaslansın diye çarpışma yüzünden `mount` kadar geride (pilaster 1,1–1,6 m'de ~0,2 m geride).
+  Prop_AccessPoint: { back: 'x', backDepth: 0.22, alongHalf: 0.66, depth: 0.44, minY: 1.1, maxY: 1.6, mount: 0.21 },
   // Ayakta duran konsol: arkası modelin −z yüzü; ekranı +z'ye bakar.
   Prop_Computer: { back: 'z', backDepth: 0.22, alongHalf: 0.37, depth: 0.57 },
 };
@@ -215,8 +218,8 @@ export function placeTerminal(r: RoomDef, f: FaultDef): { x: number; z: number; 
   // Hücre içinde konum (t = 0 hücrenin başı, 1 sonu), duvar iç yüzünde
   const fx = ex + ax * MODULE * (t - 0.5) + nx * WALL_DEPTH;
   const fz = ez + az * MODULE * (t - 0.5) + nz * WALL_DEPTH;
-  const x = fx + nx * spec.backDepth;
-  const z = fz + nz * spec.backDepth;
+  const x = fx + nx * (spec.backDepth - (spec.mount ?? 0));
+  const z = fz + nz * (spec.backDepth - (spec.mount ?? 0));
   // Modelin arka ekseni duvara (−n) bakacak şekilde dönüş
   // `+ 0`: atan2(−0, 1) = −0'ı 0'a çevirir
   const rotY = (spec.back === 'x' ? Math.atan2(-nz, nx) : Math.atan2(nx, nz)) + 0;
@@ -328,7 +331,7 @@ export function buildWorldLayout(world: WorldDef, opts: { trace?: string[] } = {
         if (isWindow) windows.push({ roomId: r.id, side, x: ex, z: ez, nx: -nx, nz: -nz });
         if (spec.broken?.includes(k)) leaks.push({ x: ex + nx * WALL_DEPTH, y: 1.2, z: ez + nz * WALL_DEPTH });
         const [ax, az] = along(side);
-        slots.push({ side, index: k, x: ex + nx * WALL_DEPTH, z: ez + nz * WALL_DEPTH, ax, az, nx, nz, window: Boolean(isWindow), broken: Boolean(spec.broken?.includes(k)) });
+        slots.push({ side, index: k, x: ex + nx * WALL_DEPTH, z: ez + nz * WALL_DEPTH, ax, az, nx, nz, window: Boolean(isWindow), broken: Boolean(spec.broken?.includes(k)), shared: Boolean(neighborCell(world.rooms, r, side, k)) });
       }
     }
 
@@ -364,13 +367,18 @@ export function buildWorldLayout(world: WorldDef, opts: { trace?: string[] } = {
       }
     }
 
-    // Eşyalar
+    // Eşyalar (elle konmuş). Kutusuz yassı olanlar (kablo) çarpışmasız, ama giydirme onlara binmesin.
+    const handFlat: Rect[] = [];
     for (const pr of r.props) {
       const x = rc.minX + pr.u;
       const z = rc.maxZ - pr.v;
       add(pr.model as ModelId, x, pr.model === 'Prop_Vent_Wide' ? 0.001 : 0, z, pr.rotY);
       const f = footprint(pr.model as ModelId, x, z, pr.rotY);
       if (f) colliders.push(f);
+      else {
+        const flat = flatFootprint(pr.model as ModelId, x, z, pr.rotY);
+        if (flat) handFlat.push(flat);
+      }
     }
 
     // Tema giydirmesi: duvar boyu setler, tavan, zemin, süsler. Kapı önü, terminal önü ve giriş boş kalır.
@@ -398,12 +406,15 @@ export function buildWorldLayout(world: WorldDef, opts: { trace?: string[] } = {
       rect: rc,
       theme,
       slots,
-      blocked: colliders.slice(firstCollider).filter((c) => c.tag !== 'wall').concat(terminals.filter((x) => x.fault.room === r.id).map((x) => x.collider)),
+      blocked: colliders.slice(firstCollider).filter((c) => c.tag !== 'wall').concat(terminals.filter((x) => x.fault.room === r.id).map((x) => x.collider), handFlat),
       keepOut,
       cells,
       ceiling: CEILING,
       maxDepth: r.type === 'corridor' ? (2 * WALL_INNER - CLEAR_PATH) / 2 : 2.4,
       lampIndices: Array.from({ length: lampFixtures.length - lampStart }, (_, k) => lampStart + k),
+      wallInner: WALL_INNER,
+      // Armatür modeli yerleşim noktasından −x yönüne 1,32 m uzanır (genişlik 0,44 m); tavan dekoru buna binmesin
+      ceilingBlocked: lampFixtures.slice(lampStart).map((l) => ({ minX: l.x + MODULE / 6 - 1.42, maxX: l.x + MODULE / 6 + 0.1, minZ: l.z - 0.32, maxZ: l.z + 0.32 })),
       trace: opts.trace,
     });
     P.push(...dressed.placements);

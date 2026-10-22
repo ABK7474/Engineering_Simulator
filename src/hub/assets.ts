@@ -70,41 +70,82 @@ export function pbrMaterial(set: PbrSet, repeat: THREE.Vector2, extra: THREE.Mes
   });
 }
 
-const tmpMatrix = new THREE.Matrix4();
 const tmpQuat = new THREE.Quaternion();
 const tmpEuler = new THREE.Euler();
 const tmpPos = new THREE.Vector3();
 const ONE = new THREE.Vector3(1, 1, 1);
 
 function placementMatrix(p: Placement, out: THREE.Matrix4): THREE.Matrix4 {
-  tmpEuler.set(p.flip ? Math.PI : 0, p.rotY, 0, 'YXZ');
+  // Yatık duvara yaslanan süsler: yerel X'te −tilt (üst kenar odadan uzaklaşır)
+  tmpEuler.set((p.flip ? Math.PI : 0) - (p.tilt ?? 0), p.rotY, 0, 'YXZ');
   tmpQuat.setFromEuler(tmpEuler);
   return out.compose(tmpPos.set(p.x, p.y, p.z), tmpQuat, ONE);
 }
 
+/** Görsel olarak birebir aynı malzemeler aynı imzayı verir (dokular, renkler, sayısal özellikler). */
+export function materialSignature(m: THREE.Material): string {
+  const s = m as THREE.MeshStandardMaterial;
+  const tex = (t: THREE.Texture | null | undefined) => (t ? `${t.source.uuid}:${t.repeat.x},${t.repeat.y}:${t.offset.x},${t.offset.y}` : '-');
+  return [
+    m.type, tex(s.map), tex(s.normalMap), tex(s.roughnessMap), tex(s.metalnessMap), tex(s.aoMap), tex(s.emissiveMap), tex(s.alphaMap),
+    s.color?.getHexString(), s.emissive?.getHexString(), s.emissiveIntensity, s.roughness, s.metalness, s.normalScale?.x,
+    m.opacity, m.transparent, m.side, m.alphaTest, m.vertexColors, s.flatShading, m.depthWrite,
+  ].join('|');
+}
+
 /**
- * Aynı modelin tüm yerleşimlerini, modelin her (geometri, malzeme) parçası için tek bir
- * InstancedMesh ile çizer. Sabit nesneler: gölge düşürür ve alır (gölge haritası bir kez çizilir).
+ * Bir odanın sabit modellerini malzeme başına TEK çizim çağrısında çizer (BatchedMesh: farklı geometriler,
+ * örnek başına dönüşüm ve örnek başına görüş alanı ayıklaması). Görsel olarak aynı malzemeler birleştirilir.
+ * `material` parçanın malzemesini değiştirmeye (ör. cam), `castShadow` gölge kararına izin verir.
  */
-export function instanceAll(models: Assets['models'], placements: readonly Placement[]): THREE.Group {
+export function batchAll(
+  models: Assets['models'],
+  placements: readonly Placement[],
+  opts: { material?: (m: THREE.Material, modelId: ModelId) => THREE.Material; castShadow?: (modelId: ModelId, m: THREE.Material) => boolean } = {},
+): THREE.Group {
   const group = new THREE.Group();
+  type Part = { geo: THREE.BufferGeometry; matrices: THREE.Matrix4[]; model: ModelId };
+  const buckets = new Map<string, { material: THREE.Material; cast: boolean; parts: Map<THREE.BufferGeometry, Part> }>();
   const byModel = new Map<ModelId, Placement[]>();
   for (const p of placements) byModel.set(p.model, [...(byModel.get(p.model) ?? []), p]);
-
   for (const [id, list] of byModel) {
     const root = models[id];
     root.updateMatrixWorld(true);
     root.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
-      const inst = new THREE.InstancedMesh(o.geometry, o.material, list.length);
-      list.forEach((p, k) => inst.setMatrixAt(k, placementMatrix(p, tmpMatrix).multiply(o.matrixWorld)));
-      inst.instanceMatrix.needsUpdate = true;
-      inst.computeBoundingSphere();
-      inst.castShadow = true;
-      inst.receiveShadow = true;
-      inst.name = `${id}/${o.name}`;
-      group.add(inst);
+      const material = opts.material ? opts.material(o.material as THREE.Material, id) : (o.material as THREE.Material);
+      const cast = opts.castShadow ? opts.castShadow(id, material) : true;
+      const g = o.geometry as THREE.BufferGeometry;
+      const layout = Object.keys(g.attributes).sort().map((k) => `${k}${g.attributes[k].itemSize}`).join(',');
+      const key = `${materialSignature(material)}#${cast}#${layout}#${g.index ? 'i' : 'n'}`;
+      const b = buckets.get(key) ?? { material, cast, parts: new Map() };
+      buckets.set(key, b);
+      const part = b.parts.get(g) ?? { geo: g, matrices: [], model: id };
+      b.parts.set(g, part);
+      for (const p of list) part.matrices.push(placementMatrix(p, new THREE.Matrix4()).multiply(o.matrixWorld));
     });
+  }
+  for (const b of buckets.values()) {
+    const parts = [...b.parts.values()];
+    const instances = parts.reduce((a, p) => a + p.matrices.length, 0);
+    const verts = parts.reduce((a, p) => a + p.geo.getAttribute('position').count, 0);
+    const indices = parts.reduce((a, p) => a + (p.geo.index?.count ?? 0), 0);
+    const mesh = new THREE.BatchedMesh(instances, verts, indices || undefined, b.material);
+    for (const p of parts) {
+      const gid = mesh.addGeometry(p.geo);
+      for (const m of p.matrices) mesh.setMatrixAt(mesh.addInstance(gid), m);
+    }
+    mesh.castShadow = b.cast;
+    mesh.receiveShadow = true;
+    mesh.name = (b.material as THREE.Material).name || 'batch';
+    // Geliştirme dökümü için: model başına üçgen
+    const tris: Record<string, number> = {};
+    for (const p of parts) tris[p.model] = (tris[p.model] ?? 0) + (((p.geo.index?.count ?? p.geo.getAttribute('position').count) / 3) * p.matrices.length);
+    mesh.userData.tris = tris;
+    const count: Record<string, number> = {};
+    for (const p of parts) count[p.model] = Math.max(count[p.model] ?? 0, p.matrices.length);
+    mesh.userData.count = count;
+    group.add(mesh);
   }
   return group;
 }

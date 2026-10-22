@@ -40,27 +40,32 @@ export function mountMap(root: HTMLElement): { toggle: (open?: boolean) => void;
     render(v) {
       if (el.hidden) return;
       const pad = 3;
-      const vb = [v.bounds.minX - pad, -v.bounds.maxZ - pad, v.bounds.maxX - v.bounds.minX + 2 * pad, v.bounds.maxZ - v.bounds.minZ + 2 * pad];
-      const rooms = v.rooms
-        .filter((r) => r.discovered)
-        .map(
-          (r) => `<g class="map-room${r.current ? ' current' : ''}">
-            <rect x="${r.rect.minX}" y="${-r.rect.maxZ}" width="${r.rect.maxX - r.rect.minX}" height="${r.rect.maxZ - r.rect.minZ}" rx="0.4"/>
-            <text x="${(r.rect.minX + r.rect.maxX) / 2}" y="${-(r.rect.minZ + r.rect.maxZ) / 2}" text-anchor="middle">${esc(r.name)}</text></g>`,
-        )
-        .join('');
+      const vb = [v.bounds.minX - pad, v.bounds.minZ - pad, v.bounds.maxX - v.bounds.minX + 2 * pad, v.bounds.maxZ - v.bounds.minZ + 2 * pad];
+      // Önce bütün oda dikdörtgenleri, sonra etiketler: komşu odanın dikdörtgeni etiketin üstünü örtmesin.
+      // Eksenler 3B görüntüyle aynı: x sağa, z aşağı (oyuncunun başlangıçta baktığı −z haritada yukarı).
+      const known = v.rooms.filter((r) => r.discovered);
+      const rooms =
+        known
+          .map(
+            (r) => `<g class="map-room${r.current ? ' current' : ''}">
+            <rect x="${r.rect.minX}" y="${r.rect.minZ}" width="${r.rect.maxX - r.rect.minX}" height="${r.rect.maxZ - r.rect.minZ}" rx="0.4"/></g>`,
+          )
+          .join('') +
+        known
+          .map((r) => `<g class="map-room${r.current ? ' current' : ''}"><text x="${(r.rect.minX + r.rect.maxX) / 2}" y="${(r.rect.minZ + r.rect.maxZ) / 2}" text-anchor="middle">${esc(r.name)}</text></g>`)
+          .join('');
       const doors = v.doors
         .filter((d) => d.visible)
         .map((d) =>
           d.horizontal
-            ? `<line class="map-door ${d.open ? 'open' : 'locked'}" x1="${d.x - 1.6}" y1="${-d.z}" x2="${d.x + 1.6}" y2="${-d.z}"/>`
-            : `<line class="map-door ${d.open ? 'open' : 'locked'}" x1="${d.x}" y1="${-d.z - 1.6}" x2="${d.x}" y2="${-d.z + 1.6}"/>`,
+            ? `<line class="map-door ${d.open ? 'open' : 'locked'}" x1="${d.x - 1.6}" y1="${d.z}" x2="${d.x + 1.6}" y2="${d.z}"/>`
+            : `<line class="map-door ${d.open ? 'open' : 'locked'}" x1="${d.x}" y1="${d.z - 1.6}" x2="${d.x}" y2="${d.z + 1.6}"/>`,
         )
         .join('');
       const faults = v.faults
         .filter((f) => f.visible)
         .map(
-          (f) => `<g class="map-fault ${f.status}${f.id === v.target ? ' target' : ''}" transform="translate(${f.x} ${-f.z})">
+          (f) => `<g class="map-fault ${f.status}${f.id === v.target ? ' target' : ''}" transform="translate(${f.x} ${f.z})">
             ${f.id === v.target ? '<circle class="pulse" r="2.2"/>' : ''}
             <circle r="1.05"/><text y="0.42" text-anchor="middle">${ICON[f.status]}</text>
             <title>${esc(f.label)}</title></g>`,
@@ -68,7 +73,7 @@ export function mountMap(root: HTMLElement): { toggle: (open?: boolean) => void;
         .join('');
       const p = v.player;
       const player = p
-        ? `<g class="map-player" transform="translate(${p.x} ${-p.z}) rotate(${(-p.yaw * 180) / Math.PI})">
+        ? `<g class="map-player" transform="translate(${p.x} ${p.z}) rotate(${(-p.yaw * 180) / Math.PI})">
             <circle r="0.7"/><path d="M0 -2.2 L0.9 -0.4 L-0.9 -0.4 Z"/></g>`
         : '';
       const target = v.faults.find((f) => f.id === v.target);

@@ -33,10 +33,10 @@ import { buildSuperReport, resolveSuperOutcome } from '../solvers/circuit/superp
 import { formatUnit } from '../solvers/circuit/design-core';
 import { parseTheveninConfig } from '../solvers/circuit/thevenin';
 import { generateThevenin } from '../solvers/circuit/thevenin.generate';
-import { resolveTheveninOutcome, type TheveninAnswer } from '../solvers/circuit/thevenin.outcomes';
+import { expected, resolveTheveninOutcome, type TheveninAnswer } from '../solvers/circuit/thevenin.outcomes';
 import { buildTheveninReport } from '../solvers/circuit/thevenin.report';
 import { generateDsTrace } from '../solvers/ds/ds-trace.generate';
-import { resolveTraceOutcome, type TraceAnswer } from '../solvers/ds/ds-trace.outcomes';
+import { editableVars, resolveTraceOutcome, type TraceAnswer } from '../solvers/ds/ds-trace.outcomes';
 import { buildDsTraceReport } from '../solvers/ds/ds-trace.report';
 import { parseDsTraceConfig } from '../solvers/ds/ir';
 import { parseDampingConfig } from '../solvers/ode/damping';
@@ -51,7 +51,7 @@ import { parsePhasorConfig } from '../solvers/math/phasor';
 import { buildPhasorReport, generatePhasor, resolvePhasorOutcome, type PhasorAnswer } from '../solvers/math/phasor.generate';
 import { parseProbConfig } from '../solvers/prob/probability';
 import { BAYES_TEXT, buildProbReport, generateProb, resolveProbOutcome } from '../solvers/prob/probability.generate';
-import { buildAlgoReport, generateAlgoTrace, parseAlgoTraceConfig, resolveAlgoOutcome, type AlgoTraceAnswer } from '../solvers/algo/algo-trace';
+import { buildAlgoReport, editableColumns, generateAlgoTrace, parseAlgoTraceConfig, resolveAlgoOutcome, type AlgoTraceAnswer } from '../solvers/algo/algo-trace';
 import { openAlgoTracePanel } from './algo-trace/panel';
 import { buildCsReport, generateCsOutput, parseCsOutputConfig, resolveCsOutcome } from '../solvers/cs/cs-output';
 import { CS_GENERATED, CS_TEMPLATES } from '../solvers/cs/content';
@@ -85,6 +85,8 @@ export interface StagePanelContext {
 export interface StageRun {
   /** Kademeli ipuçları (yöntem, sonra hesaplanmış ara değer); her biri kaynak harcatır. */
   hints: string[];
+  /** Kodun hesapladığı doğru cevap (evaluate'in beklediği biçimde); testler ve geliştirme turu için, oyuncuya gösterilmez. */
+  solution: unknown;
   open: (ctx: StagePanelContext) => void;
   evaluate: (answer: unknown, rng: Rng) => { outcome: Outcome; result: StageResult };
 }
@@ -102,6 +104,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateSeriesLed(parseSeriesLedConfig(def.config), seed);
       return {
         hints: hintsFor('series-led', problem),
+        solution: problem.correctId,
         open: (ctx) =>
           openSeriesCircuitPanel(ctx.root, {
             title: ctx.title,
@@ -130,6 +133,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateSeriesParallel(config, seed);
       return {
         hints: hintsFor('series-parallel', problem),
+        solution: Object.fromEntries(Object.entries(problem.answer).map(([slot, r]) => [slot, problem.bin.find((b) => b.r === r)!.id])),
         open: (ctx) =>
           openCircuitBoardPanel(ctx.root, {
             title: ctx.title,
@@ -155,6 +159,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateDsTrace(parseDsTraceConfig(structuredClone(def.config)), seed);
       return {
         hints: hintsFor('ds-trace', problem),
+        solution: { row: problem.bad, structs: problem.rows[problem.bad].after.structs, vars: Object.fromEntries(editableVars(problem).map((v) => [v, problem.rows[problem.bad].after.vars[v] ?? null])) },
         open: (ctx) =>
           openTracePanel(ctx.root, {
             title: ctx.title,
@@ -179,6 +184,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateThevenin(parseTheveninConfig(def.config), seed);
       return {
         hints: hintsFor('thevenin', problem),
+        solution: expected(problem),
         open: (ctx) => openTheveninPanel(ctx.root, { ...ctx, problem, onSubmit: (a) => ctx.onSubmit(a) }),
         evaluate(answer) {
           const a = answer as TheveninAnswer;
@@ -195,6 +201,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateMaxPower(config, seed);
       return {
         hints: hintsFor('max-power', problem),
+        solution: problem.bin.find((b) => b.r === problem.answer)!.id,
         open: (ctx) => openMaxPowerPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -210,6 +217,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateOpamp(parseOpampConfig(def.config), seed);
       return {
         hints: hintsFor('opamp', problem),
+        solution: Object.fromEntries(Object.entries(problem.answer).map(([slot, r]) => [slot, problem.bin.find((b) => b.r === r)!.id])),
         open: (ctx) => openOpampPanel(ctx.root, { ...ctx, problem, onSubmit: (pl) => ctx.onSubmit(pl) }),
         evaluate(answer) {
           const pl = answer as Record<string, string>;
@@ -225,6 +233,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateRcRl(parseRcRlConfig(def.config), seed);
       return {
         hints: hintsFor('rc-rl', problem),
+        solution: problem.bin.find((b) => b.r === problem.answer)!.id,
         open: (ctx) => openRcRlPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -242,6 +251,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const unit = n.params[n.unknown].unit;
       return {
         hints: hintsFor('superposition', problem),
+        solution: problem.answer,
         open: (ctx) =>
           openNumericPanel(ctx.root, {
             ...ctx,
@@ -269,6 +279,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateDiode(parseDiodeConfig(def.config), seed);
       return {
         hints: hintsFor('diode', problem),
+        solution: problem.bin.find((b) => b.r === problem.answer)!.id,
         open: (ctx) => openDiodePanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -284,6 +295,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateFilter(parseFilterConfig(def.config), seed);
       return {
         hints: hintsFor('filter', problem),
+        solution: problem.bin.find((b) => b.r === problem.answer)!.id,
         open: (ctx) => openFilterPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -299,6 +311,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateDamping(parseDampingConfig(def.config), seed);
       return {
         hints: hintsFor('damping', problem),
+        solution: problem.bin.find((b) => b.c === problem.answer)!.id,
         open: (ctx) => openDampingPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -314,6 +327,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateStability(parseStabilityConfig(def.config), seed);
       return {
         hints: hintsFor('stability', problem),
+        solution: problem.bin.find((b) => b.k === problem.answer)!.id,
         open: (ctx) => openStabilityPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;
@@ -329,6 +343,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateLaplace(parseLaplaceConfig(def.config), seed);
       return {
         hints: hintsFor('laplace', problem),
+        solution: { final: problem.final, slope: problem.slope },
         open: (ctx) =>
           openNumericPanel(ctx.root, {
             ...ctx,
@@ -359,6 +374,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generatePhasor(parsePhasorConfig(def.config), seed);
       return {
         hints: hintsFor('phasor', problem),
+        solution: { a: problem.sum.a, phi: problem.sum.phi },
         open: (ctx) =>
           openNumericPanel(ctx.root, {
             ...ctx,
@@ -389,6 +405,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateProb(parseProbConfig(def.config), seed);
       return {
         hints: hintsFor('probability', problem),
+        solution: problem.variant === 'bayes' ? problem.answer : problem.bin.find((b) => b.n === problem.answer)!.id,
         open: (ctx) =>
           problem.variant === 'bayes'
             ? openNumericPanel(ctx.root, {
@@ -421,6 +438,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateAlgoTrace(parseAlgoTraceConfig(def.config), seed);
       return {
         hints: hintsFor('algo-trace', problem),
+        solution: { row: problem.bad, cells: Object.fromEntries(editableColumns(problem, problem.bad).map((c) => [c.id, problem.rows[problem.bad][c.id]])) },
         open: (ctx) => openAlgoTracePanel(ctx.root, { ...ctx, problem, onSubmit: (a) => ctx.onSubmit(a) }),
         evaluate(answer, rng) {
           const a = answer as AlgoTraceAnswer;
@@ -436,6 +454,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateCsOutput(parseCsOutputConfig(def.config, CS_TEMPLATES, CS_GENERATED), seed, CS_TEMPLATES, CS_GENERATED);
       return {
         hints: hintsFor('cs-output', problem),
+        solution: [...problem.instance.output],
         open: (ctx) => openCsOutputPanel(ctx.root, { ...ctx, problem, onSubmit: (lines) => ctx.onSubmit(lines) }),
         evaluate(answer) {
           const lines = answer as string[];
@@ -451,6 +470,7 @@ const ADAPTERS: Record<StageDef['type'], StageAdapter> = {
       const problem = generateLightDecay(parseLightDecayConfig(def.config), seed);
       return {
         hints: hintsFor('light-decay', problem),
+        solution: problem.bin.find((b) => b.r === problem.answer)!.id,
         open: (ctx) => openLightDecayPanel(ctx.root, { ...ctx, problem, onSubmit: (id) => ctx.onSubmit(id) }),
         evaluate(answer) {
           const id = answer as string;

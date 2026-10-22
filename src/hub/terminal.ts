@@ -43,15 +43,28 @@ export function createTerminal(scene: THREE.Scene, t: TerminalLayout, sharedLigh
   const onScreen = (along: number, lift: number, side = 0) =>
     spec.center.clone().addScaledVector(DIR, along).addScaledVector(NORMAL, lift).add(new THREE.Vector3(side, 0, 0));
 
-  const canvas = document.createElement('canvas');
-  [canvas.width, canvas.height] = spec.canvas;
-  const ctx = canvas.getContext('2d')!;
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(...spec.size), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
+  const surface = (w: number, h: number) => {
+    const canvas = document.createElement('canvas');
+    [canvas.width, canvas.height] = [w, h];
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return { canvas, ctx: canvas.getContext('2d')!, tex };
+  };
+  const surfaces = [surface(...spec.canvas)];
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(...spec.size), new THREE.MeshBasicMaterial({ map: surfaces[0].tex, fog: false }));
   screen.position.copy(onScreen(spec.offset, 0.006));
   screen.rotation.x = -Math.PI / 4;
   root.add(screen);
+  if (t.model === 'Prop_AccessPoint') {
+    // Bu modelin ekranı kolun ucunda, duvar boyunca yana bakıyor: önünde duran oyuncu göremez. Gövdenin odaya
+    // bakan ön yüzüne (model +x) aynı durumu gösteren yatay bir şerit ekran.
+    const front = surface(320, 192);
+    surfaces.push(front);
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.25), new THREE.MeshBasicMaterial({ map: front.tex, fog: false }));
+    strip.position.set(0.226, 1.3, 0.05);
+    strip.rotation.y = Math.PI / 2;
+    root.add(strip);
+  }
 
   const ledMat = new THREE.MeshStandardMaterial({ color: 0x331111, emissive: 0x000000, roughness: 0.3 });
   const led = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), ledMat);
@@ -68,20 +81,22 @@ export function createTerminal(scene: THREE.Scene, t: TerminalLayout, sharedLigh
   let state = { text: '', color: '#fff', blink: false };
   let blinkT = 0;
   const draw = (visible: boolean) => {
-    ctx.fillStyle = '#020807';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (visible && state.text) {
-      ctx.fillStyle = state.color;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const lines = state.text.split('\n');
-      // En uzun satır ekranın %70'ine sığana kadar küçült (kenarları modelin çerçevesi örtüyor).
-      let size = 30;
-      do ctx.font = `bold ${size}px monospace`;
-      while (size-- > 12 && Math.max(...lines.map((l) => ctx.measureText(l).width)) > canvas.width * 0.7);
-      lines.forEach((l, k) => ctx.fillText(l, canvas.width / 2, canvas.height / 2 + (k - (lines.length - 1) / 2) * 30));
+    for (const { canvas, ctx, tex } of surfaces) {
+      ctx.fillStyle = '#020807';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (visible && state.text) {
+        ctx.fillStyle = state.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const lines = state.text.split('\n');
+        // En uzun satır ekranın %70'ine sığana kadar küçült (kenarları modelin çerçevesi örtüyor).
+        let size = 30;
+        do ctx.font = `bold ${size}px monospace`;
+        while (size-- > 12 && Math.max(...lines.map((l) => ctx.measureText(l).width)) > canvas.width * 0.7);
+        lines.forEach((l, k) => ctx.fillText(l, canvas.width / 2, canvas.height / 2 + (k - (lines.length - 1) / 2) * 30));
+      }
+      tex.needsUpdate = true;
     }
-    tex.needsUpdate = true;
   };
 
   const ledWorld = root.localToWorld(led.position.clone());

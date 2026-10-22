@@ -32,8 +32,11 @@ export function walkTargets(L: WorldLayout): WalkTarget[] {
   return out;
 }
 
-/** Erişilemeyen hedeflerin listesi (boşsa her yer yürünebilir). */
-export function unreachable(L: WorldLayout): WalkTarget[] {
+/**
+ * Erişilemeyen hedeflerin listesi (boşsa her yer yürünebilir). `closedDoors` verilirse o kapıların açıklığı engel
+ * sayılır (oyunun belirli bir anındaki durum); `targets` verilmezse bütün terminaller, girişler ve kapılar.
+ */
+export function unreachable(L: WorldLayout, opts: { closedDoors?: ReadonlySet<string>; targets?: WalkTarget[] } = {}): WalkTarget[] {
   const b = L.bounds;
   const nx = Math.ceil((b.maxX - b.minX) / CELL) + 1;
   const nz = Math.ceil((b.maxZ - b.minZ) / CELL) + 1;
@@ -49,6 +52,13 @@ export function unreachable(L: WorldLayout): WalkTarget[] {
     const z0 = Math.max(0, Math.ceil((c.minZ - PLAYER_RADIUS - b.minZ) / CELL));
     const z1 = Math.min(nz - 1, Math.floor((c.maxZ + PLAYER_RADIUS - b.minZ) / CELL));
     for (let i = x0; i <= x1; i++) for (let k = z0; k <= z1; k++) blocked[i * nz + k] = 1;
+  }
+  for (const d of L.doors) {
+    if (!opts.closedDoors?.has(d.def.id)) continue;
+    const ns = Math.abs(d.rotY) < 1e-6; // kuzey/güney duvarında: açıklık x boyunca
+    const [hx, hz] = ns ? [1.4, 0.4] : [0.4, 1.4];
+    for (let i = Math.max(0, ix(d.x - hx)); i <= Math.min(nx - 1, ix(d.x + hx)); i++)
+      for (let k = Math.max(0, iz(d.z - hz)); k <= Math.min(nz - 1, iz(d.z + hz)); k++) blocked[i * nz + k] = 1;
   }
   const start = L.rooms.find((r) => r.def.id === L.world.start.room)!.def.entrance;
   const seen = new Uint8Array(nx * nz);
@@ -78,5 +88,5 @@ export function unreachable(L: WorldLayout): WalkTarget[] {
     }
     return false;
   };
-  return walkTargets(L).filter((t) => !reached(t.x, t.z));
+  return (opts.targets ?? walkTargets(L)).filter((t) => !reached(t.x, t.z));
 }

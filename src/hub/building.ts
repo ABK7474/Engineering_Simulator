@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { CEILING, WALL_INNER, type Rect, type WorldLayout } from '../world/layout';
-import { instanceAll, pbrMaterial, type Assets } from './assets';
+import { batchAll, pbrMaterial, type Assets } from './assets';
 
 export interface Building {
   colliders: THREE.Box3[];
@@ -44,16 +44,12 @@ export function buildBuilding(scene: THREE.Scene, assets: Assets, L: WorldLayout
   // Lomboz camı şeffaf: dışarıdaki su altı sahnesi (hub/exterior.ts) görünür; çok hafif bir yansıma tonu.
   const oceanGlass = new THREE.MeshBasicMaterial({ color: 0xc8f2ff, transparent: true, opacity: 0.06, depthWrite: false, fog: false });
   for (const key of roomKeys) {
-    const g = instanceAll(assets.models, L.placements.filter((p) => (p.room ?? '') === key));
-    g.name = key ? `room:${key}` : 'shared';
-    g.traverse((o) => {
-      if (!(o instanceof THREE.InstancedMesh)) return;
-      if (o.name.startsWith('Platform_DarkPlates')) o.castShadow = false;
-      if ((o.material as THREE.Material).name === 'M_Glass') {
-        o.material = oceanGlass;
-        o.castShadow = false;
-      }
+    const g = batchAll(assets.models, L.placements.filter((p) => (p.room ?? '') === key), {
+      // Okyanus camı yalnız pencere modüllerinde; düz duvarın dekoratif cam şeridi saydamlaşırsa arkasındaki boşluk görünür
+      material: (m, id) => (m.name === 'M_Glass' && id.includes('Window') ? oceanGlass : m),
+      castShadow: (id, m) => !id.startsWith('Platform_DarkPlates') && m !== oceanGlass,
     });
+    g.name = key ? `room:${key}` : 'shared';
     scene.add(g);
     if (key) byRoom.set(key, g);
   }

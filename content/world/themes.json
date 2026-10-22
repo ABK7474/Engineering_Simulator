@@ -14,7 +14,7 @@
       "none": 3
     },
     "ceiling": {
-      "pipes": 0.6,
+      "pipes": 0.35,
       "fan": 0.1,
       "vent": 0.25
     },
@@ -102,12 +102,12 @@
       "none": 1
     },
     "ceiling": {
-      "pipes": 0.8,
+      "pipes": 0.55,
       "fan": 0.2,
       "vent": 0.2
     },
     "floor": {
-      "cables": 0.8,
+      "cables": 0.5,
       "floorLight": 0.3
     },
     "grime": 0.85,
@@ -176,7 +176,8 @@
       "desk",
       "desk",
       "screen",
-      "shelves"
+      "shelves",
+      "greebles"
     ],
     "wall": {
       "desk": 5,

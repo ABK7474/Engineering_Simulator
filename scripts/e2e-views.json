@@ -1,0 +1,80 @@
+[
+ {
+  "name": "koridor-b2-guney",
+  "x": 0,
+  "z": -1,
+  "yaw": 0
+ },
+ {
+  "name": "koridor-b2-kuzey",
+  "x": 0,
+  "z": -14,
+  "yaw": 3.1416
+ },
+ {
+  "name": "koridor-b2-terminal",
+  "x": 0.4,
+  "z": -8,
+  "yaw": -1.5708
+ },
+ {
+  "name": "kontrol-c1-giris",
+  "x": 0,
+  "z": -28,
+  "yaw": 0
+ },
+ {
+  "name": "kontrol-c1-kose",
+  "x": 4.5,
+  "z": -36.5,
+  "yaw": 2.356
+ },
+ {
+  "name": "guc-p1-giris",
+  "x": 3.3,
+  "z": -4,
+  "yaw": -1.5708
+ },
+ {
+  "name": "guc-p1-kose",
+  "x": 9,
+  "z": -9,
+  "yaw": 2.356
+ },
+ {
+  "name": "sensor-s1-giris",
+  "x": 7.3,
+  "z": -28,
+  "yaw": -1.5708
+ },
+ {
+  "name": "sensor-s1-pencere",
+  "x": 12,
+  "z": -32.5,
+  "yaw": 3.1416
+ },
+ {
+  "name": "cekirdek-k1-giris",
+  "x": 12,
+  "z": -35.3,
+  "yaw": 0
+ },
+ {
+  "name": "cekirdek-k1-kose",
+  "x": 15,
+  "z": -39.5,
+  "yaw": 2.356
+ },
+ {
+  "name": "hava-kilidi-a1-giris",
+  "x": 4,
+  "z": -39.3,
+  "yaw": 0
+ },
+ {
+  "name": "hava-kilidi-a1-kose",
+  "x": 8.5,
+  "z": -44.5,
+  "yaw": 2.356
+ }
+]
