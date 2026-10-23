@@ -105,7 +105,7 @@ const waterUniforms = () => ({
  * Standart malzemenin sisini, bakış yönüne göre renk değiştiren su sisiyle değiştirir; böylece uzak
  * kayalar arkalarındaki dikey renk geçişine karışarak kaybolur.
  */
-function withWaterFog<M extends THREE.Material>(m: M): M {
+export function withWaterFog<M extends THREE.Material>(m: M): M {
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, waterUniforms());
     shader.vertexShader = shader.vertexShader
@@ -202,11 +202,15 @@ function buildDish(): { group: THREE.Group; head: THREE.Group; beacon: THREE.Mes
 }
 
 export interface Exterior {
+  /** Dış nesnelerin grubu (deniz canlıları buraya eklenir; yalnız pencere görünürken çizilir). */
+  readonly group: THREE.Group;
+  /** Geçmekte olan yaratığın konumu (geçiş yoksa null); balıklar ondan kaçar. */
+  creature: () => THREE.Vector3 | null;
   update: (dt: number, time: number, camera: THREE.Camera) => void;
   /** Dış grup bu karede çizildi mi (pencere görüş alanında mı). */
   readonly visible: boolean;
-  /** Geliştirme/test: büyük gölgenin geçişini, yolun `k` (0..1) noktasından hemen başlatır. */
-  forcePass: (k: number) => void;
+  /** Geliştirme/test: büyük gölgenin geçişini, yolun `k` (0..1) noktasından hemen başlatır (isteğe bağlı pencere sırası). */
+  forcePass: (k: number, window?: number) => void;
 }
 
 export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
@@ -370,8 +374,8 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
   outside.add(shadow);
   // Geçiş: bir pencerenin önünden, duvara paralel, 18–24 m uzaktan
   const pass = { active: false, start: 0, next: 25 + rng() * 25, duration: 42, base: [0, 0] as [number, number], dir: [0, 1] as [number, number] };
-  const startPass = (time: number, k = 0) => {
-    const w = windows[Math.floor(rng() * windows.length)];
+  const startPass = (time: number, k = 0, wi?: number) => {
+    const w = windows[wi ?? Math.floor(rng() * windows.length)];
     const d = 18 + rng() * 6;
     Object.assign(pass, { active: true, start: time - k * pass.duration, base: [w.x + w.nx * d, w.z + w.nz * d], dir: [-w.nz, w.nx] });
   };
@@ -427,11 +431,13 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
 
   let now = 0;
   return {
+    group: outside,
+    creature: () => (pass.active ? shadow.position : null),
     get visible() {
       return outside.visible;
     },
-    forcePass(k) {
-      startPass(now, k);
+    forcePass(k, wi) {
+      startPass(now, k, wi);
     },
     update(dt, time, camera) {
       now = time;

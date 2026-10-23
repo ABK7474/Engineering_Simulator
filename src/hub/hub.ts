@@ -12,6 +12,7 @@ import { buildBuilding } from './building';
 import { createDoor, type Door } from './door';
 import { Effects, Tweens } from './effects';
 import { buildExterior } from './exterior';
+import { buildSeaLife } from './sealife';
 import { noiseLevel, stepProfile } from './movement';
 import { createPlayer } from './player';
 import { createSceneKit } from './scene';
@@ -90,7 +91,7 @@ export interface Hub {
   /** Tehdit sona erdi: gölge uzaklaşarak geçer. */
   creaturePass: () => void;
   /** Geliştirme/test kancaları (oyunda kullanılmaz). */
-  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number) => void; teleport: (x: number, z: number, yaw?: number) => void; doors: () => Record<string, number>; breakdown: () => Record<string, { calls: number; triangles: number }>; materials: () => Record<string, { meshes: number; materials: number; signatures: number }>; heavy: (room: string) => [string, number][]; hide: (name: string, hidden: boolean) => number; describe: (index: number) => string };
+  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number, window?: number) => void; teleport: (x: number, z: number, yaw?: number) => void; doors: () => Record<string, number>; breakdown: () => Record<string, { calls: number; triangles: number }>; materials: () => Record<string, { meshes: number; materials: number; signatures: number }>; heavy: (room: string) => [string, number][]; hide: (name: string, hidden: boolean) => number; describe: (index: number) => string; sealife: () => { fear: number[]; centroids: [number, number, number][] }; glide: (window: number, k: number) => void };
   stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean; room: string | null };
 }
 
@@ -125,6 +126,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   scene.add(ledLight);
   const terminals = new Map<string, Terminal>(layout.terminals.map((t) => [t.fault.id, createTerminal(scene, t, ledLight)]));
   const exterior = buildExterior(scene, layout);
+  const sealife = buildSeaLife(exterior, layout);
   const atmosphere = buildAtmosphere(scene, layout);
   // Güç seviyesi (sonuçlar ayarlar) ile geçici titreme düşüşü (gümbürtü) ayrı: çarpımları uygulanır
   let powerLevel = 1;
@@ -281,6 +283,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     for (const d of doors.values()) d.update();
     for (const t of terminals.values()) t.update(dt);
     exterior.update(dt, elapsed, camera);
+    sealife.update(dt, elapsed);
     building.update(dt, elapsed, camera);
     atmosphere.update(dt, elapsed, camera);
     renderer.render(scene, camera);
@@ -634,6 +637,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     },
     setThreat(on) {
       threatOn = on;
+      sealife.setNervous(on);
       if (on) rumbleIn = Math.min(rumbleIn, 6);
     },
     threatStrike() {
@@ -656,7 +660,9 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     noiseLevel: () => noiseLevel(player.mode),
     debug: {
       setYaw: (rad) => camera.rotation.set(0, rad, 0, 'YXZ'),
-      forceShadowPass: (k) => exterior.forcePass(k),
+      forceShadowPass: (k, w) => exterior.forcePass(k, w),
+      sealife: () => sealife.debug(),
+      glide: (w, k) => sealife.forceGlide(w, k),
       doors: () => Object.fromEntries([...doors.values()].map((d) => [d.id, Math.round(d.openAmount * 1000) / 1000])),
       hide(name, hidden) {
         let n = 0;

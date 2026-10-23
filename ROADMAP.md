@@ -30,6 +30,7 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] Performans: doku tekilleştirme (148 → 37 doku), oda başına statik gruplar, kapalı kapının arkası çizilmez, uzak düzlem 34 m. Başlangıç bakışı: önce 73 çağrı / 73,5 bin üçgen → sonra 104 çağrı / 86 bin üçgen
 - [x] ASSETS_NEEDED.md, CREDITS.md, DECISIONS.md güncel
 - [x] Sonraki odalarda (2c): çanak dış sahnede (sensör odası penceresinin karşısında, kodla üretilmiş, tarar, fener yanıp söner); dört yeni oda ekran görüntüsüyle kontrol edildi, konsol temiz
+- [x] Deniz canlıları `src/hub/sealife.ts`: 6 balık sürüsü (156 balık, her odanın penceresinin önünde), 18 kendinden ışıklı denizanası, kaya ve çanağa değmeyen yosun kümeleri, yanıp sönen biyolüminesan plankton, çatıların üstünden geçen uzak vatoz silüeti. Yaratık yaklaşınca sürü dağılıp kaçar, plankton parlar; tehdit sürerken sürüler tedirgin. Her tür tek çizim çağrısı; en kötü bakış 109 çağrı / 115 bin üçgen
 
 ## Adım 2 — Dersler ve oyun (değer sırasıyla)
 ### 2a. Kalan devre/elektronik, DiffEq, Müh. Mat., Olasılık
