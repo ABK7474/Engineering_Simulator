@@ -31,12 +31,13 @@ const frames = async (n) => {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const views = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/e2e-views.json'), 'utf8')).filter((v) => !process.argv[2] || v.name.includes(process.argv[2]));
 try {
-  await page.goto('http://localhost:5213/?seed=11', { waitUntil: 'domcontentloaded', timeout: 300000 });
+  await page.goto('http://localhost:5213/?seed=11&prologue=skip', { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
   await page.click('.gate');
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   await ev(() => window.__dm.solveAll());
   await sleep(300);
+  await page.$eval('.finale [data-end="left"]', (b) => b.click()).catch(() => {});
   await page.$eval('.finale [data-act="continue"]', (b) => b.click()).catch(() => {});
   await ev(() => {
     for (const id of Object.keys(window.__dm.hub.debug.doors())) window.__dm.hub.setDoorOpen(id, true, false);

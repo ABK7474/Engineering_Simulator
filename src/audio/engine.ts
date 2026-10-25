@@ -3,6 +3,7 @@
 // "Tıkla ve başla" tıklamasında start() ile açılır.
 
 import { layerGains, type VolumeSettings } from './mix';
+import { createSynth, type Synth } from './synth';
 
 export type SfxName =
   | 'door_open'
@@ -71,6 +72,8 @@ export class AudioEngine {
   private tensionEl: HTMLAudioElement;
   private started = false;
   private tension = 0;
+  /** Kodla üretilen sesler (telsiz, nefes, gıcırtı). */
+  readonly synth: Synth;
 
   constructor(private base: string) {
     this.ctx = new AudioContext();
@@ -82,6 +85,7 @@ export class AudioEngine {
     for (const k of Object.keys(LOOPS) as LoopName[]) this.loopGains[k] = this.node(this.sfxBus, 0);
     this.calmEl = this.playlist(MUSIC.calm, this.calmGain);
     this.tensionEl = this.playlist(MUSIC.tension, this.tensionGain);
+    this.synth = createSynth(this.ctx, this.sfxBus);
   }
 
   /** Kısa efektleri indirip çözer (müzik akış olduğu için burada yüklenmez). */

@@ -4,11 +4,9 @@ import { buildWorldLayout, cellCount, insideAny, neighborCell, roomRect, type Re
 import { unreachable } from './walk';
 import { WorldError, type Side, type WorldDef } from './schema';
 import { findCycle, providersOf, simulate } from './state';
+import { lineProblems, type StoryLines } from '../story/lines';
 
-export interface Story {
-  speaker: string;
-  lines: Record<string, string[]>;
-}
+export type Story = StoryLines;
 
 export interface WorldContext {
   /** Var olan arıza kartı kimlikleri. */
@@ -28,6 +26,15 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
   const all = [...w.rooms.map((r) => r.id), ...w.doors.map((d) => d.id), ...w.faults.map((f) => f.id)];
   for (const id of new Set(all.filter((id, i) => all.indexOf(id) !== i))) p.push(`kimlik '${id}' birden fazla kez kullanılmış`);
   if (!roomIds.has(w.start.room)) p.push(`başlangıç odası '${w.start.room}' yok`);
+  const startRoom = w.rooms.find((r) => r.id === w.start.room);
+  if (startRoom && w.start.hatch) {
+    const { wall, index } = w.start.hatch;
+    if (index >= cellCount(startRoom, wall)) p.push(`servis kilidi: '${wall}' duvarında ${index}. hücre yok`);
+    else if (neighborCell(w.rooms, startRoom, wall, index) || startRoom.walls[wall]?.windows?.includes(index) || w.doors.some((d) => d.at.room === startRoom.id && d.at.wall === wall && d.at.index === index))
+      p.push('servis kilidi dışa bakan, penceresiz ve kapısız bir duvar hücresinde olmalı');
+  }
+  if (w.start.wreck && insideAny(w.rooms.map((r) => { const q = roomRect(r); return { minX: q.minX - 3, maxX: q.maxX + 3, minZ: q.minZ - 3, maxZ: q.maxZ + 3 }; }), w.start.wreck.x, w.start.wreck.z))
+    p.push('enkaz istasyona 3 m’den yakın olmamalı');
 
   // 2. Odalar
   for (const r of w.rooms) {
@@ -137,6 +144,8 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
       const ok =
         (kind === 'start' || kind === 'respawn' || kind === 'finale') && id === undefined
           ? true
+          : kind === 'finale'
+            ? id === 'left' || id === 'stayed'
           : kind === 'enter'
             ? roomIds.has(id)
             : kind === 'solved'
@@ -147,7 +156,8 @@ export function validateWorld(w: WorldDef, ctx: WorldContext): string[] {
                   ? threatIds.has(id) && ['start', 'warning', 'strike', 'cleared'].includes(key.split(':')[2])
                   : false;
       if (!ok) p.push(`replik anahtarı '${key}' hiçbir oda/arıza/duruma karşılık gelmiyor`);
-      if (!ctx.story.lines[key].every((l) => typeof l === 'string' && l.trim())) p.push(`replik '${key}' boş satır içeriyor`);
+      if (!Array.isArray(ctx.story.lines[key]) || !ctx.story.lines[key].length) p.push(`replik '${key}' boş`);
+      else ctx.story.lines[key].forEach((l, i) => p.push(...lineProblems(ctx.story!, l, `replik '${key}' #${i + 1}`)));
     }
   }
   return p;

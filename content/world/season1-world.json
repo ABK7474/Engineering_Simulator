@@ -1,695 +1,726 @@
 {
-  "version": 1,
-  "start": {
-    "room": "corridor-b2"
+ "version": 1,
+ "start": {
+  "room": "corridor-b2",
+  "hatch": {
+   "wall": "north",
+   "index": 0
   },
-  "initialStates": [],
-  "rooms": [
-    {
-      "id": "corridor-b2",
-      "name": "B-2 koridoru",
-      "type": "corridor",
-      "origin": [
-        -2,
-        2
-      ],
-      "size": [
-        1,
-        7
-      ],
-      "walls": {
-        "west": {
-          "windows": [
-            1,
-            5
-          ],
-          "broken": [
-            3
-          ],
-          "hangingCables": [
-            4
-          ]
-        },
-        "east": {},
-        "north": {},
-        "south": {}
-      },
-      "entrance": {
-        "x": 0,
-        "z": -0.7,
-        "yaw": 0
-      },
-      "props": [
-        {
-          "model": "Prop_Crate",
-          "u": 1.23,
-          "v": 1.5,
-          "rotY": 0
-        },
-        {
-          "model": "Prop_Locker",
-          "u": 3.28,
-          "v": 14,
-          "rotY": -1.5708
-        },
-        {
-          "model": "Prop_Vent_Wide",
-          "u": 2,
-          "v": 6,
-          "rotY": 0
-        },
-        {
-          "model": "Prop_Cable_1",
-          "u": 1.2,
-          "v": 13.2,
-          "rotY": 0.4
-        }
-      ],
-      "difficulty": {
-        "binSize": 6,
-        "tolerance": 0.04
-      },
-      "theme": "corridor"
-    },
-    {
-      "id": "lab-c1",
-      "name": "Kontrol odası C-1",
-      "type": "room",
-      "origin": [
-        -6,
-        -26
-      ],
-      "size": [
-        3,
-        3
-      ],
-      "walls": {
-        "west": {
-          "windows": [
-            0,
-            1,
-            2
-          ]
-        },
-        "east": {},
-        "north": {},
-        "south": {}
-      },
-      "entrance": {
-        "x": 0,
-        "z": -27.6,
-        "yaw": 0
-      },
-      "props": [],
-      "difficulty": {
-        "binSize": 8,
-        "tolerance": 0.025,
-        "trace": {
-          "ops": [
-            10,
-            16
-          ],
-          "structures": [
-            "stack",
-            "queue",
-            "list"
-          ],
-          "corruptions": [
-            "order_confusion",
-            "skip_effect",
-            "off_by_one",
-            "wrong_end"
-          ],
-          "hideCounters": false
-        },
-        "thevenin": {
-          "form": "thevenin",
-          "tolerance": 0.02
-        },
-        "maxPower": {
-          "binSize": 5
-        },
-        "opamp": {
-          "variants": [
-            "gain",
-            "offset"
-          ],
-          "tolerance": 0.04
-        },
-        "rcRl": {
-          "kinds": [
-            "rc",
-            "rl"
-          ],
-          "window": 0.05
-        }
-      },
-      "theme": "control"
-    },
-    {
-      "id": "power-p1",
-      "name": "Güç odası P-1",
-      "type": "room",
-      "origin": [
-        2,
-        -2
-      ],
-      "size": [
-        2,
-        2
-      ],
-      "walls": {
-        "north": {
-          "windows": [
-            1
-          ]
-        },
-        "east": {
-          "windows": [
-            0,
-            1
-          ],
-          "broken": [
-            1
-          ]
-        },
-        "south": {},
-        "west": {}
-      },
-      "entrance": {
-        "x": 3.3,
-        "z": -4,
-        "yaw": -1.5708
-      },
-      "props": [],
-      "difficulty": {
-        "binSize": 6,
-        "tolerance": 0.03
-      },
-      "theme": "power"
-    },
-    {
-      "id": "sensor-s1",
-      "name": "Sensör odası S-1",
-      "type": "room",
-      "origin": [
-        6,
-        -26
-      ],
-      "size": [
-        2,
-        2
-      ],
-      "walls": {
-        "north": {
-          "windows": [
-            0,
-            1
-          ]
-        },
-        "east": {
-          "windows": [
-            0,
-            1
-          ]
-        },
-        "south": {},
-        "west": {}
-      },
-      "entrance": {
-        "x": 7.3,
-        "z": -28,
-        "yaw": -1.5708
-      },
-      "props": [],
-      "difficulty": {
-        "binSize": 6,
-        "phasor": {
-          "ampTol": 0.03,
-          "phaseTol": 3
-        }
-      },
-      "theme": "sensor"
-    },
-    {
-      "id": "core-k1",
-      "name": "AI çekirdeği K-1",
-      "type": "room",
-      "origin": [
-        10,
-        -34
-      ],
-      "size": [
-        2,
-        2
-      ],
-      "walls": {
-        "north": {},
-        "east": {
-          "windows": [
-            0,
-            1
-          ]
-        },
-        "south": {
-          "windows": [
-            0,
-            1
-          ]
-        },
-        "west": {}
-      },
-      "entrance": {
-        "x": 12,
-        "z": -35.3,
-        "yaw": 0
-      },
-      "props": [],
-      "difficulty": {
-        "algo": {
-          "nodes": [
-            8,
-            9
-          ],
-          "length": [
-            8,
-            9
-          ],
-          "keys": [
-            9,
-            10
-          ]
-        }
-      },
-      "theme": "core"
-    },
-    {
-      "id": "airlock-a1",
-      "name": "Hava kilidi A-1",
-      "type": "room",
-      "origin": [
-        2,
-        -38
-      ],
-      "size": [
-        2,
-        2
-      ],
-      "walls": {
-        "north": {},
-        "east": {},
-        "south": {
-          "windows": [
-            0,
-            1
-          ],
-          "broken": [
-            0
-          ]
-        },
-        "west": {
-          "windows": [
-            0,
-            1
-          ]
-        }
-      },
-      "entrance": {
-        "x": 4,
-        "z": -39.3,
-        "yaw": 0
-      },
-      "props": [],
-      "difficulty": {
-        "binSize": 6,
-        "tolerance": 0.03
-      },
-      "theme": "airlock"
-    }
-  ],
-  "doors": [
-    {
-      "id": "b2-c1",
-      "rooms": [
-        "corridor-b2",
-        "lab-c1"
-      ],
-      "at": {
-        "room": "corridor-b2",
-        "wall": "south",
-        "index": 0
-      },
-      "opensWhen": [
-        "door.b2c1.unlocked"
-      ]
-    },
-    {
-      "id": "b2-p1",
-      "rooms": [
-        "corridor-b2",
-        "power-p1"
-      ],
-      "at": {
-        "room": "corridor-b2",
-        "wall": "east",
-        "index": 1
-      },
-      "opensWhen": [
-        "power.backup"
-      ]
-    },
-    {
-      "id": "c1-s1",
-      "rooms": [
-        "lab-c1",
-        "sensor-s1"
-      ],
-      "at": {
-        "room": "lab-c1",
-        "wall": "east",
-        "index": 0
-      },
-      "opensWhen": [
-        "power.main"
-      ]
-    },
-    {
-      "id": "s1-k1",
-      "rooms": [
-        "sensor-s1",
-        "core-k1"
-      ],
-      "at": {
-        "room": "sensor-s1",
-        "wall": "south",
-        "index": 1
-      },
-      "opensWhen": [
-        "sensor.calibrated"
-      ]
-    },
-    {
-      "id": "c1-a1",
-      "rooms": [
-        "lab-c1",
-        "airlock-a1"
-      ],
-      "at": {
-        "room": "lab-c1",
-        "wall": "south",
-        "index": 2
-      },
-      "opensWhen": [
-        "airlock.ready"
-      ]
-    }
-  ],
-  "faults": [
-    {
-      "id": "backup-power",
-      "card": "backup-power-01",
-      "room": "corridor-b2",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "east",
-        "index": 2,
-        "along": 0.5
-      },
-      "requires": [],
-      "provides": [
-        "power.backup"
-      ],
-      "screen": {
-        "fault": "YEDEK HAT\nARIZALI",
-        "solved": "YEDEK GÜÇ\nAÇIK"
-      }
-    },
-    {
-      "id": "door-lock",
-      "card": "door-power-01",
-      "room": "corridor-b2",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "west",
-        "index": 6,
-        "along": 0.45
-      },
-      "requires": [],
-      "provides": [
-        "door.b2c1.unlocked"
-      ],
-      "allowTopicTemplates": true,
-      "screen": {
-        "fault": "KİLİT ARIZASI\nPANELİ ONAR",
-        "solved": "KİLİT AÇIK"
-      }
-    },
-    {
-      "id": "core-terminal",
-      "card": "computer-core-01",
-      "room": "lab-c1",
-      "model": "Prop_Computer",
-      "anchor": {
-        "wall": "south",
-        "index": 1,
-        "along": 0.5
-      },
-      "requires": [
-        "power.backup"
-      ],
-      "provides": [
-        "core.online"
-      ],
-      "screen": {
-        "fault": "ÇEKİRDEK\nÇEVRİMDIŞI",
-        "blocked": "GÜÇ YOK",
-        "solved": "ÇEKİRDEK\nÇEVRİMİÇİ"
-      },
-      "blockedHint": "E: Güç yok — haritaya bak"
-    },
-    {
-      "id": "power-bus",
-      "card": "power-bus-01",
-      "room": "lab-c1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "east",
-        "index": 2,
-        "along": 0.5
-      },
-      "requires": [
-        "core.online"
-      ],
-      "provides": [
-        "power.main"
-      ],
-      "screen": {
-        "fault": "ANA BARA\nKESİK",
-        "blocked": "ÇEKİRDEK\nBEKLENİYOR",
-        "solved": "ANA BARA\nBESLENİYOR"
-      },
-      "blockedHint": "E: Çekirdek çevrimdışı — haritaya bak"
-    },
-    {
-      "id": "airlock-valve",
-      "card": "airlock-valve-01",
-      "room": "lab-c1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "north",
-        "index": 0,
-        "along": 0.5
-      },
-      "requires": [
-        "power.main"
-      ],
-      "provides": [
-        "airlock.ready"
-      ],
-      "screen": {
-        "fault": "HAVA KİLİDİ\nKİLİTLİ",
-        "blocked": "ANA BARA\nBEKLENİYOR",
-        "solved": "HAVA KİLİDİ\nHAZIR"
-      },
-      "blockedHint": "E: Ana bara kesik — haritaya bak"
-    },
-    {
-      "id": "generator-sync",
-      "card": "generator-sync-01",
-      "room": "power-p1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "south",
-        "index": 0,
-        "along": 0.5
-      },
-      "requires": [
-        "power.backup"
-      ],
-      "provides": [
-        "power.generator"
-      ],
-      "screen": {
-        "fault": "JENERATÖR\nSENKRON DIŞI",
-        "solved": "JENERATÖR\nSENKRON"
-      }
-    },
-    {
-      "id": "sonar-frontend",
-      "card": "sonar-frontend-01",
-      "room": "sensor-s1",
-      "model": "Prop_Computer",
-      "anchor": {
-        "wall": "south",
-        "index": 0,
-        "along": 0.5
-      },
-      "requires": [
-        "power.main",
-        "power.generator"
-      ],
-      "provides": [
-        "sensor.calibrated"
-      ],
-      "screen": {
-        "fault": "SONAR\nGÜRÜLTÜLÜ",
-        "blocked": "JENERATÖR\nBEKLENİYOR",
-        "solved": "SONAR\nKALİBRE"
-      },
-      "blockedHint": "E: Jeneratör senkron dışı — haritaya bak"
-    },
-    {
-      "id": "core-index",
-      "card": "ai-core-index-01",
-      "room": "core-k1",
-      "model": "Prop_Computer",
-      "anchor": {
-        "wall": "north",
-        "index": 1,
-        "along": 0.5
-      },
-      "requires": [
-        "core.online",
-        "sensor.calibrated"
-      ],
-      "provides": [
-        "core.index"
-      ],
-      "screen": {
-        "fault": "DİZİN\nBOZUK",
-        "solved": "DİZİN\nYENİDEN KURULDU",
-        "blocked": "SONAR ONAYI\nBEKLENİYOR"
-      },
-      "blockedHint": "E: Çekirdek odası sonar onayını bekliyor — haritaya bak"
-    },
-    {
-      "id": "core-runtime",
-      "card": "ai-core-runtime-01",
-      "room": "core-k1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "west",
-        "index": 0,
-        "along": 0.5
-      },
-      "requires": [
-        "core.index"
-      ],
-      "provides": [
-        "core.restored"
-      ],
-      "screen": {
-        "fault": "MODÜLLER\nYÜKLENEMİYOR",
-        "blocked": "DİZİN\nBEKLENİYOR",
-        "solved": "ÇEKİRDEK\nTAM"
-      },
-      "blockedHint": "E: Önce çekirdek dizini — yandaki terminal"
-    },
-    {
-      "id": "bilge-pumps",
-      "card": "bilge-pumps-01",
-      "room": "airlock-a1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "east",
-        "index": 1,
-        "along": 0.5
-      },
-      "requires": [
-        "airlock.ready"
-      ],
-      "provides": [
-        "bilge.dry"
-      ],
-      "screen": {
-        "fault": "SİNTİNE\nSU ALIYOR",
-        "solved": "SİNTİNE\nKURU"
-      }
-    },
-    {
-      "id": "outer-door",
-      "card": "outer-door-01",
-      "room": "airlock-a1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "north",
-        "index": 1,
-        "along": 0.5
-      },
-      "requires": [
-        "bilge.dry"
-      ],
-      "provides": [
-        "airlock.sealed"
-      ],
-      "screen": {
-        "fault": "DIŞ KAPI\nSIZDIRIYOR",
-        "blocked": "SİNTİNE\nBEKLENİYOR",
-        "solved": "DIŞ KAPI\nSIZDIRMAZ"
-      },
-      "blockedHint": "E: Önce sintineyi boşalt — yandaki pano"
-    },
-    {
-      "id": "blackout",
-      "card": "blackout-01",
-      "room": "sensor-s1",
-      "model": "Prop_AccessPoint",
-      "anchor": {
-        "wall": "west",
-        "index": 1,
-        "along": 0.5
-      },
-      "requires": [
-        "sensor.calibrated"
-      ],
-      "provides": [
-        "threat.cleared"
-      ],
-      "event": "creature-1",
-      "screen": {
-        "fault": "KARARTMA\nHAZIR",
-        "blocked": "BEKLEMEDE",
-        "solved": "KARARTMA\nTAMAM"
-      },
-      "blockedHint": "E: Pano beklemede — sonar izleniyor"
-    }
-  ],
-  "threats": [
-    {
-      "id": "creature-1",
-      "after": [
-        "sensor.calibrated"
-      ],
-      "delaySec": 25,
-      "timeLimitSec": 240,
-      "retrySec": 120,
-      "activeState": "threat.active",
-      "clearedBy": "threat.cleared",
-      "noise": [
-        1,
-        1,
-        2.5
-      ]
-    }
+  "wreck": {
+   "x": -10.5,
+   "z": -6.5,
+   "yaw": -1.5708
+  },
+  "path": [
+   [
+    -8.2,
+    -4.6
+   ],
+   [
+    -5.6,
+    0.6
+   ],
+   [
+    -4.2,
+    4.4
+   ],
+   [
+    -1.6,
+    4.9
+   ],
+   [
+    0,
+    3.7
+   ]
   ]
+ },
+ "initialStates": [],
+ "rooms": [
+  {
+   "id": "corridor-b2",
+   "name": "B-2 koridoru",
+   "type": "corridor",
+   "origin": [
+    -2,
+    2
+   ],
+   "size": [
+    1,
+    7
+   ],
+   "walls": {
+    "west": {
+     "windows": [
+      1,
+      5
+     ],
+     "broken": [
+      3
+     ],
+     "hangingCables": [
+      4
+     ]
+    },
+    "east": {},
+    "north": {},
+    "south": {}
+   },
+   "entrance": {
+    "x": 0,
+    "z": -0.7,
+    "yaw": 0
+   },
+   "props": [
+    {
+     "model": "Prop_Crate",
+     "u": 1.23,
+     "v": 1.5,
+     "rotY": 0
+    },
+    {
+     "model": "Prop_Locker",
+     "u": 3.28,
+     "v": 14,
+     "rotY": -1.5708
+    },
+    {
+     "model": "Prop_Vent_Wide",
+     "u": 2,
+     "v": 6,
+     "rotY": 0
+    },
+    {
+     "model": "Prop_Cable_1",
+     "u": 1.2,
+     "v": 13.2,
+     "rotY": 0.4
+    }
+   ],
+   "difficulty": {
+    "binSize": 6,
+    "tolerance": 0.04
+   },
+   "theme": "corridor"
+  },
+  {
+   "id": "lab-c1",
+   "name": "Kontrol odası C-1",
+   "type": "room",
+   "origin": [
+    -6,
+    -26
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "walls": {
+    "west": {
+     "windows": [
+      0,
+      1,
+      2
+     ]
+    },
+    "east": {},
+    "north": {},
+    "south": {}
+   },
+   "entrance": {
+    "x": 0,
+    "z": -27.6,
+    "yaw": 0
+   },
+   "props": [],
+   "difficulty": {
+    "binSize": 8,
+    "tolerance": 0.025,
+    "trace": {
+     "ops": [
+      10,
+      16
+     ],
+     "structures": [
+      "stack",
+      "queue",
+      "list"
+     ],
+     "corruptions": [
+      "order_confusion",
+      "skip_effect",
+      "off_by_one",
+      "wrong_end"
+     ],
+     "hideCounters": false
+    },
+    "thevenin": {
+     "form": "thevenin",
+     "tolerance": 0.02
+    },
+    "maxPower": {
+     "binSize": 5
+    },
+    "opamp": {
+     "variants": [
+      "gain",
+      "offset"
+     ],
+     "tolerance": 0.04
+    },
+    "rcRl": {
+     "kinds": [
+      "rc",
+      "rl"
+     ],
+     "window": 0.05
+    }
+   },
+   "theme": "control"
+  },
+  {
+   "id": "power-p1",
+   "name": "Güç odası P-1",
+   "type": "room",
+   "origin": [
+    2,
+    -2
+   ],
+   "size": [
+    2,
+    2
+   ],
+   "walls": {
+    "north": {
+     "windows": [
+      1
+     ]
+    },
+    "east": {
+     "windows": [
+      0,
+      1
+     ],
+     "broken": [
+      1
+     ]
+    },
+    "south": {},
+    "west": {}
+   },
+   "entrance": {
+    "x": 3.3,
+    "z": -4,
+    "yaw": -1.5708
+   },
+   "props": [],
+   "difficulty": {
+    "binSize": 6,
+    "tolerance": 0.03
+   },
+   "theme": "power"
+  },
+  {
+   "id": "sensor-s1",
+   "name": "Sensör odası S-1",
+   "type": "room",
+   "origin": [
+    6,
+    -26
+   ],
+   "size": [
+    2,
+    2
+   ],
+   "walls": {
+    "north": {
+     "windows": [
+      0,
+      1
+     ]
+    },
+    "east": {
+     "windows": [
+      0,
+      1
+     ]
+    },
+    "south": {},
+    "west": {}
+   },
+   "entrance": {
+    "x": 7.3,
+    "z": -28,
+    "yaw": -1.5708
+   },
+   "props": [],
+   "difficulty": {
+    "binSize": 6,
+    "phasor": {
+     "ampTol": 0.03,
+     "phaseTol": 3
+    }
+   },
+   "theme": "sensor"
+  },
+  {
+   "id": "core-k1",
+   "name": "AI çekirdeği K-1",
+   "type": "room",
+   "origin": [
+    10,
+    -34
+   ],
+   "size": [
+    2,
+    2
+   ],
+   "walls": {
+    "north": {},
+    "east": {
+     "windows": [
+      0,
+      1
+     ]
+    },
+    "south": {
+     "windows": [
+      0,
+      1
+     ]
+    },
+    "west": {}
+   },
+   "entrance": {
+    "x": 12,
+    "z": -35.3,
+    "yaw": 0
+   },
+   "props": [],
+   "difficulty": {
+    "algo": {
+     "nodes": [
+      8,
+      9
+     ],
+     "length": [
+      8,
+      9
+     ],
+     "keys": [
+      9,
+      10
+     ]
+    }
+   },
+   "theme": "core"
+  },
+  {
+   "id": "airlock-a1",
+   "name": "Hava kilidi A-1",
+   "type": "room",
+   "origin": [
+    2,
+    -38
+   ],
+   "size": [
+    2,
+    2
+   ],
+   "walls": {
+    "north": {},
+    "east": {},
+    "south": {
+     "windows": [
+      0,
+      1
+     ],
+     "broken": [
+      0
+     ]
+    },
+    "west": {
+     "windows": [
+      0,
+      1
+     ]
+    }
+   },
+   "entrance": {
+    "x": 4,
+    "z": -39.3,
+    "yaw": 0
+   },
+   "props": [],
+   "difficulty": {
+    "binSize": 6,
+    "tolerance": 0.03
+   },
+   "theme": "airlock"
+  }
+ ],
+ "doors": [
+  {
+   "id": "b2-c1",
+   "rooms": [
+    "corridor-b2",
+    "lab-c1"
+   ],
+   "at": {
+    "room": "corridor-b2",
+    "wall": "south",
+    "index": 0
+   },
+   "opensWhen": [
+    "door.b2c1.unlocked"
+   ]
+  },
+  {
+   "id": "b2-p1",
+   "rooms": [
+    "corridor-b2",
+    "power-p1"
+   ],
+   "at": {
+    "room": "corridor-b2",
+    "wall": "east",
+    "index": 1
+   },
+   "opensWhen": [
+    "power.backup"
+   ]
+  },
+  {
+   "id": "c1-s1",
+   "rooms": [
+    "lab-c1",
+    "sensor-s1"
+   ],
+   "at": {
+    "room": "lab-c1",
+    "wall": "east",
+    "index": 0
+   },
+   "opensWhen": [
+    "power.main"
+   ]
+  },
+  {
+   "id": "s1-k1",
+   "rooms": [
+    "sensor-s1",
+    "core-k1"
+   ],
+   "at": {
+    "room": "sensor-s1",
+    "wall": "south",
+    "index": 1
+   },
+   "opensWhen": [
+    "sensor.calibrated"
+   ]
+  },
+  {
+   "id": "c1-a1",
+   "rooms": [
+    "lab-c1",
+    "airlock-a1"
+   ],
+   "at": {
+    "room": "lab-c1",
+    "wall": "south",
+    "index": 2
+   },
+   "opensWhen": [
+    "airlock.ready"
+   ]
+  }
+ ],
+ "faults": [
+  {
+   "id": "backup-power",
+   "card": "backup-power-01",
+   "room": "corridor-b2",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "east",
+    "index": 2,
+    "along": 0.5
+   },
+   "requires": [],
+   "provides": [
+    "power.backup"
+   ],
+   "screen": {
+    "fault": "YEDEK HAT\nARIZALI",
+    "solved": "YEDEK GÜÇ\nAÇIK"
+   }
+  },
+  {
+   "id": "door-lock",
+   "card": "door-power-01",
+   "room": "corridor-b2",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "west",
+    "index": 6,
+    "along": 0.45
+   },
+   "requires": [],
+   "provides": [
+    "door.b2c1.unlocked"
+   ],
+   "allowTopicTemplates": true,
+   "screen": {
+    "fault": "KİLİT ARIZASI\nPANELİ ONAR",
+    "solved": "KİLİT AÇIK"
+   }
+  },
+  {
+   "id": "core-terminal",
+   "card": "computer-core-01",
+   "room": "lab-c1",
+   "model": "Prop_Computer",
+   "anchor": {
+    "wall": "south",
+    "index": 1,
+    "along": 0.5
+   },
+   "requires": [
+    "power.backup"
+   ],
+   "provides": [
+    "core.online"
+   ],
+   "screen": {
+    "fault": "ÇEKİRDEK\nÇEVRİMDIŞI",
+    "blocked": "GÜÇ YOK",
+    "solved": "ÇEKİRDEK\nÇEVRİMİÇİ"
+   },
+   "blockedHint": "E: Güç yok — haritaya bak"
+  },
+  {
+   "id": "power-bus",
+   "card": "power-bus-01",
+   "room": "lab-c1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "east",
+    "index": 2,
+    "along": 0.5
+   },
+   "requires": [
+    "core.online"
+   ],
+   "provides": [
+    "power.main"
+   ],
+   "screen": {
+    "fault": "ANA BARA\nKESİK",
+    "blocked": "ÇEKİRDEK\nBEKLENİYOR",
+    "solved": "ANA BARA\nBESLENİYOR"
+   },
+   "blockedHint": "E: Çekirdek çevrimdışı — haritaya bak"
+  },
+  {
+   "id": "airlock-valve",
+   "card": "airlock-valve-01",
+   "room": "lab-c1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "north",
+    "index": 0,
+    "along": 0.5
+   },
+   "requires": [
+    "power.main"
+   ],
+   "provides": [
+    "airlock.ready"
+   ],
+   "screen": {
+    "fault": "HAVA KİLİDİ\nKİLİTLİ",
+    "blocked": "ANA BARA\nBEKLENİYOR",
+    "solved": "HAVA KİLİDİ\nHAZIR"
+   },
+   "blockedHint": "E: Ana bara kesik — haritaya bak"
+  },
+  {
+   "id": "generator-sync",
+   "card": "generator-sync-01",
+   "room": "power-p1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "south",
+    "index": 0,
+    "along": 0.5
+   },
+   "requires": [
+    "power.backup"
+   ],
+   "provides": [
+    "power.generator"
+   ],
+   "screen": {
+    "fault": "JENERATÖR\nSENKRON DIŞI",
+    "solved": "JENERATÖR\nSENKRON"
+   }
+  },
+  {
+   "id": "sonar-frontend",
+   "card": "sonar-frontend-01",
+   "room": "sensor-s1",
+   "model": "Prop_Computer",
+   "anchor": {
+    "wall": "south",
+    "index": 0,
+    "along": 0.5
+   },
+   "requires": [
+    "power.main",
+    "power.generator"
+   ],
+   "provides": [
+    "sensor.calibrated"
+   ],
+   "screen": {
+    "fault": "SONAR\nGÜRÜLTÜLÜ",
+    "blocked": "JENERATÖR\nBEKLENİYOR",
+    "solved": "SONAR\nKALİBRE"
+   },
+   "blockedHint": "E: Jeneratör senkron dışı — haritaya bak"
+  },
+  {
+   "id": "core-index",
+   "card": "ai-core-index-01",
+   "room": "core-k1",
+   "model": "Prop_Computer",
+   "anchor": {
+    "wall": "north",
+    "index": 1,
+    "along": 0.5
+   },
+   "requires": [
+    "core.online",
+    "sensor.calibrated"
+   ],
+   "provides": [
+    "core.index"
+   ],
+   "screen": {
+    "fault": "DİZİN\nBOZUK",
+    "solved": "DİZİN\nYENİDEN KURULDU",
+    "blocked": "SONAR ONAYI\nBEKLENİYOR"
+   },
+   "blockedHint": "E: Çekirdek odası sonar onayını bekliyor — haritaya bak"
+  },
+  {
+   "id": "core-runtime",
+   "card": "ai-core-runtime-01",
+   "room": "core-k1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "west",
+    "index": 0,
+    "along": 0.5
+   },
+   "requires": [
+    "core.index"
+   ],
+   "provides": [
+    "core.restored"
+   ],
+   "screen": {
+    "fault": "MODÜLLER\nYÜKLENEMİYOR",
+    "blocked": "DİZİN\nBEKLENİYOR",
+    "solved": "ÇEKİRDEK\nTAM"
+   },
+   "blockedHint": "E: Önce çekirdek dizini — yandaki terminal"
+  },
+  {
+   "id": "bilge-pumps",
+   "card": "bilge-pumps-01",
+   "room": "airlock-a1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "east",
+    "index": 1,
+    "along": 0.5
+   },
+   "requires": [
+    "airlock.ready"
+   ],
+   "provides": [
+    "bilge.dry"
+   ],
+   "screen": {
+    "fault": "SİNTİNE\nSU ALIYOR",
+    "solved": "SİNTİNE\nKURU"
+   }
+  },
+  {
+   "id": "outer-door",
+   "card": "outer-door-01",
+   "room": "airlock-a1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "north",
+    "index": 1,
+    "along": 0.5
+   },
+   "requires": [
+    "bilge.dry"
+   ],
+   "provides": [
+    "airlock.sealed"
+   ],
+   "screen": {
+    "fault": "DIŞ KAPI\nSIZDIRIYOR",
+    "blocked": "SİNTİNE\nBEKLENİYOR",
+    "solved": "DIŞ KAPI\nSIZDIRMAZ"
+   },
+   "blockedHint": "E: Önce sintineyi boşalt — yandaki pano"
+  },
+  {
+   "id": "blackout",
+   "card": "blackout-01",
+   "room": "sensor-s1",
+   "model": "Prop_AccessPoint",
+   "anchor": {
+    "wall": "west",
+    "index": 1,
+    "along": 0.5
+   },
+   "requires": [
+    "sensor.calibrated"
+   ],
+   "provides": [
+    "threat.cleared"
+   ],
+   "event": "creature-1",
+   "screen": {
+    "fault": "KARARTMA\nHAZIR",
+    "blocked": "BEKLEMEDE",
+    "solved": "KARARTMA\nTAMAM"
+   },
+   "blockedHint": "E: Pano beklemede — sonar izleniyor"
+  }
+ ],
+ "threats": [
+  {
+   "id": "creature-1",
+   "after": [
+    "sensor.calibrated"
+   ],
+   "delaySec": 25,
+   "timeLimitSec": 240,
+   "retrySec": 120,
+   "activeState": "threat.active",
+   "clearedBy": "threat.cleared",
+   "noise": [
+    1,
+    1,
+    2.5
+   ]
+  }
+ ]
 }

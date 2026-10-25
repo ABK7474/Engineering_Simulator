@@ -12,7 +12,8 @@ const LOGS = parseLogs(logsJson);
 
 describe('defter', () => {
   it('her kayıt dünyada sağlanabilen durumlarla açılır', () => {
-    const states = new Set([...worldJson.faults.flatMap((f) => f.provides), ...worldJson.threats.map((t) => t.activeState)]);
+    // prologue.done: prolog bitince (ya da atlanınca) eklenir
+    const states = new Set([...worldJson.faults.flatMap((f) => f.provides), ...worldJson.threats.map((t) => t.activeState), 'prologue.done']);
     for (const l of LOGS) for (const s of l.after) expect(states.has(s), `${l.id}: ${s}`).toBe(true);
   });
 

@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import worldJson from '../../content/world/season1-world.json';
 import { buildWorldLayout } from '../world/layout';
 import { parseWorld } from '../world/schema';
-import { dishSpots, distanceToRects, expand, rockLayout, seabedHeight, WALL_OUT } from './exterior';
+import { clearZones, dishSpots, distanceToRects, expand, seabedHeight, stationRocks, WALL_OUT } from './exterior';
 import { FishSim, jellyLayout, kelpLayout, obstacleFloor, pushOutside, schoolCenter, schoolPaths } from './sealife';
 
 const L = buildWorldLayout(parseWorld(worldJson));
 const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
-const rocks = rockLayout(L.windows, interiors);
+const rocks = stationRocks(L);
+const zones = clearZones(L);
 const dishes = dishSpots(L);
 const bed = (x: number, z: number) => seabedHeight(x, z, distanceToRects(interiors, x, z));
 const floor = (x: number, z: number) => obstacleFloor(rocks, dishes, x, z, bed(x, z));
@@ -32,7 +33,7 @@ describe('deniz canlıları: yerleşim', () => {
   });
 
   it('yosun kökleri tabana gömülü, kayalara, çanağa ve iç hacimlere değmiyor', () => {
-    const kelp = kelpLayout(L.windows, interiors, rocks, dishes);
+    const kelp = kelpLayout(L.windows, interiors, rocks, dishes, undefined, zones);
     expect(kelp.length).toBeGreaterThan(40);
     for (const k of kelp) {
       expect(k.y).toBeLessThan(bed(k.x, k.z));
@@ -43,7 +44,7 @@ describe('deniz canlıları: yerleşim', () => {
   });
 
   it('denizanaları dokunaçlarıyla birlikte tabanın üstünde, kayalardan ve iç hacimlerden uzak', () => {
-    const jellies = jellyLayout(L.windows, interiors, rocks, dishes);
+    const jellies = jellyLayout(L.windows, interiors, rocks, dishes, undefined, undefined, zones);
     expect(jellies.length).toBe(18);
     for (const j of jellies) {
       // En alçak an: salınım −0,5, dokunaç 0,9·ölçek
@@ -56,8 +57,8 @@ describe('deniz canlıları: yerleşim', () => {
   });
 
   it('deterministik', () => {
-    expect(kelpLayout(L.windows, interiors, rocks, dishes)).toEqual(kelpLayout(L.windows, interiors, rocks, dishes));
-    expect(jellyLayout(L.windows, interiors, rocks, dishes)).toEqual(jellyLayout(L.windows, interiors, rocks, dishes));
+    expect(kelpLayout(L.windows, interiors, rocks, dishes, undefined, zones)).toEqual(kelpLayout(L.windows, interiors, rocks, dishes, undefined, zones));
+    expect(jellyLayout(L.windows, interiors, rocks, dishes, undefined, undefined, zones)).toEqual(jellyLayout(L.windows, interiors, rocks, dishes, undefined, undefined, zones));
   });
 });
 

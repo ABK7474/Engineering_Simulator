@@ -7,6 +7,7 @@ import { openKv, type Kv } from './kv';
 import { createResources } from './resources';
 import { validReviewState, type ReviewState } from './review';
 import { validThreatState, type ThreatState } from './threat';
+import { cleanName, DEFAULT_NAME } from '../story/lines';
 
 export const PROGRESS_VERSION = 3;
 
@@ -45,6 +46,12 @@ export interface ProgressData {
   threats: Record<string, ThreatState>;
   /** Aralıklı tekrar: ders/konu → Leitner kutusu (core/review.ts); eski kayıtlarda yok, boş sayılır. */
   review: ReviewState;
+  /** Oyuncunun adı (replikler {ad}); eski kayıtlarda yok, varsayılan. */
+  profile: { name: string };
+  /** Bu oynayışta prolog bitti mi (eski kayıtlarda: ilerleme varsa bitmiş sayılır). */
+  prologueDone: boolean;
+  /** Sezon finalindeki seçim. */
+  ending: 'left' | 'stayed' | null;
   savedAt: string;
 }
 
@@ -59,6 +66,9 @@ export function defaultProgress(b: Balance, startRoom = ''): ProgressData {
     world: { room: startRoom, discovered: startRoom ? [startRoom] : [], states: [], seenLines: [], scorched: [] },
     threats: {},
     review: {},
+    profile: { name: DEFAULT_NAME },
+    prologueDone: false,
+    ending: null,
     savedAt: new Date(0).toISOString(),
   };
 }
@@ -167,6 +177,10 @@ export function validateProgress(raw: unknown, b: Balance, ctx?: MigrationContex
     world: { room: wp.room, discovered: [...wp.discovered], states: [...wp.states], seenLines: [...wp.seenLines], scorched: [...wp.scorched] },
     threats: isObj(raw.threats) ? Object.fromEntries(Object.entries(raw.threats).filter(([, t]) => validThreatState(t)).map(([k, t]) => [k, { ...(t as ThreatState) }])) : {},
     review: validReviewState(raw.review) ? structuredClone(raw.review) : {},
+    profile: { name: cleanName(isObj(raw.profile) && typeof raw.profile.name === 'string' ? raw.profile.name : undefined) },
+    // Prolog alanı yoksa (önceki sürüm): dünyada ilerleme varsa prolog görülmüş sayılır
+    prologueDone: typeof raw.prologueDone === 'boolean' ? raw.prologueDone : wp.states.length > 0 || Object.keys(raw.faults).length > 0,
+    ending: raw.ending === 'left' || raw.ending === 'stayed' ? raw.ending : null,
     savedAt: raw.savedAt,
   };
 }

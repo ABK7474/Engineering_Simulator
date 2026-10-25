@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createRng } from '../core/rng';
 import type { Rect, WindowLayout, WorldLayout } from '../world/layout';
-import { dishSpots, distanceToRects, expand, rockLayout, seabedHeight, WALL_OUT, withWaterFog, type Exterior, type RockSpot } from './exterior';
+import { clearZones, dishSpots, distanceToRects, expand, stationRocks, seabedHeight, WALL_OUT, withWaterFog, type Exterior, type RockSpot } from './exterior';
 
 type V3 = [number, number, number];
 
@@ -264,14 +264,15 @@ function clearPoint(rng: () => number, windows: readonly WindowLayout[], interio
 }
 
 /** Yosun kümeleri: deniz tabanına gömülü kök, kayalara ve çanağa değmez (deterministik). */
-export function kelpLayout(windows: readonly WindowLayout[], interiors: readonly Rect[], rocks: readonly RockSpot[], dishes: readonly { x: number; z: number }[], seed = 515): Spot[] {
+export function kelpLayout(windows: readonly WindowLayout[], interiors: readonly Rect[], rocks: readonly RockSpot[], dishes: readonly { x: number; z: number }[], seed = 515, avoid: readonly Rect[] = []): Spot[] {
+  const blockers = [...interiors, ...avoid];
   const rng = createRng(seed);
   const out: Spot[] = [];
   const rooms = [...new Set(windows.map((w) => w.roomId))];
   for (const roomId of rooms) {
     const ws = windows.filter((w) => w.roomId === roomId);
     for (let c = 0; c < 2; c++) {
-      const center = clearPoint(rng, ws, interiors, rocks, dishes, [3.5, 13], 2.5, 1);
+      const center = clearPoint(rng, ws, blockers, rocks, dishes, [3.5, 13], 2.5, 1);
       if (!center) continue;
       const n = 7 + Math.floor(rng() * 8);
       for (let k = 0; k < n; k++) {
@@ -279,7 +280,7 @@ export function kelpLayout(windows: readonly WindowLayout[], interiors: readonly
         const r = Math.sqrt(rng()) * 1.6;
         const x = center[0] + Math.cos(a) * r;
         const z = center[1] + Math.sin(a) * r;
-        if (distanceToRects(interiors, x, z) < 1.4) continue;
+        if (distanceToRects(blockers, x, z) < 1.4) continue;
         if (rocks.some((q) => Math.hypot(x - q.x, z - q.z) < q.scale * 1.1 * 1.25 + 0.3)) continue;
         // Kök tabanın 0,6 m altında: taban ağı fonksiyonu köşeler arasında doğrusal yaklaştırır
         out.push({ x, z, y: seabedHeight(x, z, distanceToRects(interiors, x, z)) - 0.6, scale: 1.8 + rng() * 3, phase: rng() * Math.PI * 2 });
@@ -290,12 +291,13 @@ export function kelpLayout(windows: readonly WindowLayout[], interiors: readonly
 }
 
 /** Denizanaları: suda asılı, kayaların ve çanağın üstüne binmeyen yerlerde (deterministik). */
-export function jellyLayout(windows: readonly WindowLayout[], interiors: readonly Rect[], rocks: readonly RockSpot[], dishes: readonly { x: number; z: number }[], count = 18, seed = 808): Spot[] {
+export function jellyLayout(windows: readonly WindowLayout[], interiors: readonly Rect[], rocks: readonly RockSpot[], dishes: readonly { x: number; z: number }[], count = 18, seed = 808, avoid: readonly Rect[] = []): Spot[] {
+  const blockers = [...interiors, ...avoid];
   const rng = createRng(seed);
   const out: Spot[] = [];
   for (let k = 0; k < count * 3 && out.length < count; k++) {
     // Sürüklenme yarıçapı ≤ 1,7 m: kayalardan o kadar fazladan uzak
-    const p = clearPoint(rng, windows, interiors, rocks, dishes, [3, 15], 2.5, 1.9);
+    const p = clearPoint(rng, windows, blockers, rocks, dishes, [3, 15], 2.5, 1.9);
     if (!p) continue;
     out.push({ x: p[0], z: p[1], y: 1.8 + rng() * 6, scale: 0.6 + rng() * 0.9, phase: rng() * Math.PI * 2 });
   }
@@ -389,9 +391,15 @@ export function buildSeaLife(exterior: Exterior, L: WorldLayout): SeaLife {
   const outside = exterior.group;
   const windows = L.windows;
   const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
-  const rocks = rockLayout(windows, interiors);
+  const rocks = stationRocks(L);
   const dishes = dishSpots(L);
-  const floor = (x: number, z: number) => obstacleFloor(rocks, dishes, x, z, seabedHeight(x, z, distanceToRects(interiors, x, z)));
+  const zones = clearZones(L);
+  const wreck = L.entry?.wreck;
+  // Enkazın üstünden geçerler (içinden değil)
+  const floor = (x: number, z: number) => {
+    const f = obstacleFloor(rocks, dishes, x, z, seabedHeight(x, z, distanceToRects(interiors, x, z)));
+    return wreck && Math.hypot(x - wreck.x, z - wreck.z) < 4.2 ? Math.max(f, seabedHeight(wreck.x, wreck.z, distanceToRects(interiors, wreck.x, wreck.z)) + 3.6) : f;
+  };
   const uTime = { value: 0 };
   const rng = createRng(123);
   const m4 = new THREE.Matrix4();
@@ -427,7 +435,7 @@ export function buildSeaLife(exterior: Exterior, L: WorldLayout): SeaLife {
   outside.add(fish);
 
   // Yosun: tabana kökü gömülü, salınım yükseklikle artar
-  const kelpSpots = kelpLayout(windows, interiors, rocks, dishes);
+  const kelpSpots = kelpLayout(windows, interiors, rocks, dishes, undefined, zones);
   const kelpGeo = kelpGeometry();
   kelpGeo.setAttribute('aSway', new THREE.InstancedBufferAttribute(Float32Array.from(kelpSpots, (k) => k.phase), 1));
   const kelpMat = withVertex(
@@ -447,7 +455,7 @@ export function buildSeaLife(exterior: Exterior, L: WorldLayout): SeaLife {
   outside.add(kelp);
 
   // Denizanaları: kendinden ışıklı (toplamsal), çan atımı ve dokunaç salınımı gölgelendiricide
-  const jellySpots = jellyLayout(windows, interiors, rocks, dishes);
+  const jellySpots = jellyLayout(windows, interiors, rocks, dishes, undefined, undefined, zones);
   const jellyGeo = jellyGeometry();
   const jellyTints = [0x60e8ff, 0xb070ff, 0xff70c8, 0x70ffc0];
   jellyGeo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(Float32Array.from(jellySpots, (j) => j.phase), 1));

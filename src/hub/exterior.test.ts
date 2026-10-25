@@ -3,7 +3,7 @@ import worldJson from '../../content/world/season1-world.json';
 import { createRng } from '../core/rng';
 import { buildWorldLayout, insideAny } from '../world/layout';
 import { parseWorld } from '../world/schema';
-import { dishSpots, distanceToRects, expand, outsidePoint, rockLayout, seabedHeight, WALL_OUT } from './exterior';
+import { clearZones, dishSpots, distanceToRects, expand, outsidePoint, rockLayout, seabedHeight, stationRocks, WALL_OUT } from './exterior';
 
 const L = buildWorldLayout(parseWorld(worldJson));
 const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
@@ -47,5 +47,45 @@ describe('çanak', () => {
     expect(spots).toHaveLength(1);
     const interiors = L.rooms.map((r) => expand(r.rect, WALL_OUT));
     expect(distanceToRects(interiors, spots[0].x, spots[0].z)).toBeGreaterThan(5);
+  });
+});
+
+describe('prolog: enkaz ve yürüyüş yolu', () => {
+  const e = L.entry!;
+  const rocks = stationRocks(L);
+  const reach = (r: (typeof rocks)[number]) => r.scale * 1.1 * 1.25;
+  const sample = () => {
+    const pts: [number, number][] = [];
+    for (let i = 1; i < e.path.length; i++)
+      for (let k = 0; k <= 20; k++) {
+        const [a, b] = [e.path[i - 1], e.path[i]];
+        pts.push([a[0] + ((b[0] - a[0]) * k) / 20, a[1] + ((b[1] - a[1]) * k) / 20]);
+      }
+    return pts;
+  };
+
+  it('yol enkazın yanından başlar, servis kilidinin önünde biter', () => {
+    expect(Math.hypot(e.path[0][0] - e.wreck!.x, e.path[0][1] - e.wreck!.z)).toBeLessThan(4);
+    const end = e.path.at(-1)!;
+    expect(Math.hypot(end[0] - (e.hatch.x + e.hatch.nx * 1.7), end[1] - (e.hatch.z + e.hatch.nz * 1.7))).toBeLessThan(0.3);
+  });
+
+  it('yol istasyona girmez; hiçbir kaya yola ya da enkaza değmez', () => {
+    for (const [x, z] of sample().slice(0, -8)) expect(distanceToRects(interiors, x, z), `${x}, ${z}`).toBeGreaterThan(0.5);
+    for (const r of rocks) {
+      for (const [x, z] of sample()) expect(Math.hypot(x - r.x, z - r.z)).toBeGreaterThan(reach(r) + 0.4);
+      expect(Math.hypot(e.wreck!.x - r.x, e.wreck!.z - r.z)).toBeGreaterThan(reach(r) + 3.5);
+    }
+  });
+
+  it('enkaz istasyondan uzak ve pencereden görünür mesafede', () => {
+    const d = distanceToRects(interiors, e.wreck!.x, e.wreck!.z);
+    expect(d).toBeGreaterThan(4);
+    expect(Math.min(...L.windows.map((w) => Math.hypot(w.x - e.wreck!.x, w.z - e.wreck!.z)))).toBeLessThan(12);
+  });
+
+  it('açık bölgeler kaya yerleşimini yalnız yolda değiştirir (diğerleri belirlenimci)', () => {
+    expect(stationRocks(L)).toEqual(stationRocks(L));
+    expect(clearZones(L).length).toBe(e.path.length);
   });
 });

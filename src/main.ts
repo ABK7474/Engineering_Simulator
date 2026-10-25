@@ -46,6 +46,9 @@ import { initialThreat, tickThreat, type ThreatDef, type ThreatEvent } from './c
 import { dueLabel, dueTopics, recordReview, topicKey } from './core/review';
 import { formulaPages, parseLogs, unlockedLogs } from './core/notebook';
 import logsJson from '../content/story/logs.json';
+import objectivesJson from '../content/story/objectives.json';
+import { objectiveLine, objectiveView, parseObjectives } from './story/objectives';
+import { cleanName, resolveLines, type Line } from './story/lines';
 import topicsJson from '../content/topics.json';
 import { openNotebook } from './ui/notebook';
 import { showFinale } from './ui/finale';
@@ -60,7 +63,10 @@ import { mountBackupMenu } from './ui/backup';
 import { showEpisodeClosed } from './ui/episode-closed';
 import { mountMap, type MapView } from './ui/map';
 import { mountSubtitles } from './ui/subtitle';
-import { loadWorld } from './world/content';
+import { loadPrologue, loadWorld } from './world/content';
+import { createPrologueFlow, type PrologueFlow } from './prologue-flow';
+import { loadMeta, saveMeta } from './core/meta';
+import type { ResourceState } from './core/resources';
 import { respawnInRoom } from './world/respawn';
 import { doorOpen, missingFor, nextGoal, withProvided } from './world/state';
 import { mountHud } from './ui/hud';
@@ -80,6 +86,12 @@ const MIGRATION = {
   faults: W.faults.map((f) => ({ id: f.id, card: f.card, provides: f.provides, stageCount: stagesOf(f.id).length })),
 };
 const balance = parseBalance(balanceJson);
+const OBJECTIVES = parseObjectives(objectivesJson);
+/** Bir durumu sağlayan arızanın kart adı (hedef satırı için). */
+const stateName = (state: string) => {
+  const f = W.faults.find((x) => x.provides.includes(state));
+  return f ? content.cards[f.card].title : null;
+};
 const ASSETS = `${import.meta.env.BASE_URL}assets/`;
 /** Onarımdan sonra müziğin kaynak seviyesine dönüş süresi (s). */
 const CALM_DOWN_SECONDS = 8;
@@ -98,6 +110,8 @@ const ui = document.getElementById('ui')!;
 const kv = await openKv();
 const store = progressStore(kv);
 let progress = await loadProgress(store, balance, MIGRATION);
+/** Oynayışlar arası (sıfırlamada kalır): prolog görüldü mü. */
+const meta = await loadMeta(kv);
 if (!W.rooms.some((r) => r.id === progress.world.room)) progress.world.room = W.start.room;
 let lastSave = 0;
 const persist = async () => {
@@ -120,21 +134,25 @@ const uiSound = (s: 'click' | 'switch') => audio.play(s, { volume: 0.7 });
 
 // --- HUD ve yedek menüsü ---
 const hud = mountHud(ui);
+/** Prologda HUD Müren'in kaynaklarını gösterir. */
+let hudResources: ResourceState | null = null;
 const renderHud = () => {
-  const drain = drainPerMinute(progress.resources, balance);
+  const res = hudResources ?? progress.resources;
+  const drain = drainPerMinute(res, balance);
   hud.render({
     rows: Object.entries(balance.resources).map(([id, def]) => ({
       id,
       label: def.label,
-      value: progress.resources.values[id],
+      value: res.values[id],
       max: def.max,
-      level: level(balance, progress.resources.values[id]),
+      level: level(balance, res.values[id]),
       drainPerMinute: drain[id],
     })),
-    damages: [...new Set(progress.resources.damages.map((d) => d.label))],
+    damages: hudResources ? [] : [...new Set(progress.resources.damages.map((d) => d.label))],
     episode: progress.episode,
     threat: activeThreatView(),
     reviewDue: dueTopics(progress.review, Date.now()).length,
+    goal: progress.prologueDone ? objectiveLine(OBJECTIVES, progress.world.states, stateName) : undefined,
   });
 };
 setInterval(() => renderHud(), 30_000);
@@ -255,6 +273,11 @@ mountBackupMenu(ui, {
             clearKey: clearApiKey,
             model: () => getModel(LLM_DEFAULTS.model),
             saveModel: setModel,
+            playerName: () => progress.profile.name,
+            savePlayerName: (n) => {
+              progress.profile.name = cleanName(n);
+              void persist();
+            },
             testConnection: async () => {
               try {
                 return await getProvider(llmSettings()).testConnection();
@@ -289,6 +312,11 @@ mountBackupMenu(ui, {
 });
 
 const spawnRoom = W.rooms.find((r) => r.id === progress.world.room)!;
+// Prolog akışı hub kurulduktan sonra bağlanır; hub'ın ilk kareleri bunlara erişebilir.
+let prologue: PrologueFlow | null = null;
+const prologueActive = () => prologue?.active === true;
+// ?prologue=skip: betikler (e2e, ekran görüntüleri) prologu atlar
+let skipPrologue = new URLSearchParams(location.search).get('prologue') === 'skip';
 const hub = await createHub(app, {
   assetBase: ASSETS,
   sounds: audio,
@@ -300,11 +328,20 @@ const hub = await createHub(app, {
   onStart: () => {
     void audioReady.then(() => audio.start());
     if (started) return;
-    // Replikler oyuncu başlayınca: önce açılış, sonra bulunulan odanın girişi (giriş ekranının arkasında kalmasın).
     started = true;
+    // Giriş ekranındaki ad alanı odakta kalırsa boşluk/E tuşları ona gider
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    hub.gateBox.querySelector('.gate-extra')?.remove();
+    if (prologue && !progress.prologueDone) {
+      if (skipPrologue) prologue.skip();
+      else prologue.start();
+      return;
+    }
+    // Replikler oyuncu başlayınca: önce açılış, sonra bulunulan odanın girişi (giriş ekranının arkasında kalmasın).
     say('start');
     say(`enter:${progress.world.room}`);
   },
+  onPrologueTarget: (t) => prologue?.debug.interact(t),
 });
 
 // --- Ortam: ana bara beslenince sonar yayında, düzenli ping (uzak, kısık) ---
@@ -313,7 +350,67 @@ setInterval(() => {
 }, 21_000);
 
 // --- Replikler ve harita ---
-const subtitles = mountSubtitles(ui, content.story.speaker);
+const subtitles = mountSubtitles(ui);
+
+// --- Prolog: Müren, iniş, iki kolay bulmaca, düşüş, deniz tabanı, servis kilidi ---
+const PROLOGUE = loadPrologue(undefined, undefined, undefined, { verifySeeds: 1 });
+prologue = hub.prologue
+  ? createPrologueFlow({
+      hub,
+      stage: hub.prologue,
+      def: PROLOGUE.def,
+      stages: PROLOGUE.stages,
+      ui,
+      subtitles,
+      spoken: (lines) => spoken(lines),
+      audio,
+      balance,
+      seed: baseSeed,
+      uiSound,
+      attachHints: (h) => attachHints(h, false),
+      showResources: (r) => {
+        hudResources = r;
+        renderHud();
+      },
+      onDone: (skipped) => {
+        progress.prologueDone = true;
+        if (!progress.world.states.includes('prologue.done')) progress.world.states.push('prologue.done');
+        progress.world.room = W.start.room;
+        if (skipped) {
+          const e = spawnRoom.entrance;
+          hub.teleport(e.x, e.z, e.yaw);
+        }
+        meta.prologueSeen = true;
+        void saveMeta(kv, meta);
+        void persist();
+        renderHud();
+        say('start');
+        say(`enter:${progress.world.room}`);
+      },
+    })
+  : null;
+if (prologue && !progress.prologueDone) {
+  prologue.prepare();
+  // Giriş ekranı: ad ve (prolog daha önce görüldüyse) atlama
+  const box = document.createElement('div');
+  box.className = 'gate-extra';
+  box.innerHTML = `<label class="gate-name">Adın <input name="pname" maxlength="20" spellcheck="false" autocomplete="off"></label>
+    ${meta.prologueSeen ? '<button class="ghost small gate-skip" data-act="skip">Prologu atla ve başla</button>' : ''}`;
+  const nameIn = box.querySelector<HTMLInputElement>('input')!;
+  nameIn.value = progress.profile.name;
+  nameIn.addEventListener('click', (e) => e.stopPropagation());
+  nameIn.addEventListener('keydown', (e) => e.stopPropagation());
+  nameIn.addEventListener('change', () => {
+    progress.profile.name = cleanName(nameIn.value);
+    void persist();
+  });
+  box.querySelector('[data-act="skip"]')?.addEventListener('click', () => {
+    skipPrologue = true;
+  });
+  hub.gateBox.querySelector('.gate-action')!.before(box);
+}
+/** Replikleri oyuncunun adıyla çözer. */
+const spoken = (lines: readonly Line[] | undefined) => resolveLines(content.story, lines, progress.profile.name);
 /** Oyuncu "Tıkla ve başla"ya bastı mı (öncesinde söylenen replik görünmezdi). */
 let started = false;
 /** Yapay zekâ repliği; `once` ise oturumlar boyunca bir kez (seenLines). */
@@ -325,12 +422,12 @@ function say(key: string, once = true): void {
     progress.world.seenLines.push(key);
     void persist();
   } else if (subtitles.busy()) return;
-  subtitles.say(lines);
+  subtitles.say(spoken(lines));
 }
 const map = mountMap(ui);
 let mapTarget: string | null = null;
 window.addEventListener('keydown', (e) => {
-  if (e.code !== 'KeyM' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  if (e.code !== 'KeyM' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || prologueActive()) return;
   map.toggle();
   renderMap();
 });
@@ -392,6 +489,7 @@ function hintFor(fid: string): string | null {
 }
 
 function onRoomChange(roomId: string): void {
+  if (prologueActive()) return; // kilitten içeri alınırken; replikler prolog bitince
   progress.world.room = roomId;
   if (!progress.world.discovered.includes(roomId)) progress.world.discovered.push(roomId);
   if (started) say(`enter:${roomId}`);
@@ -408,6 +506,7 @@ function buildMapView(): MapView {
     faults: W.faults.map((f) => ({
       id: f.id,
       label: content.cards[f.card].title,
+      why: OBJECTIVES.why[f.id],
       ...hub.terminalPosition(f.id),
       status: isSolved(f.id) ? 'solved' : blockedNow(f.id) ? 'blocked' : 'open',
       visible: disc.includes(f.room) || f.id === mapTarget,
@@ -564,7 +663,7 @@ setInterval(() => {
   const now = performance.now();
   const dt = Math.min(1, (now - lastTick) / 1000);
   lastTick = now;
-  if (closing || !hub.isRoaming()) return;
+  if (closing || !hub.isRoaming() || prologueActive()) return;
   const step = tick(progress.resources, balance, dt);
   if (step.state === progress.resources) return;
   progress.resources = step.state;
@@ -607,6 +706,15 @@ if (import.meta.env.DEV) {
         const st = progress.threats[id] ?? initialThreat();
         if (timer !== undefined) progress.threats[id] = { ...st, phase: st.phase === 'cleared' ? 'cleared' : 'pending', timer };
         return structuredClone(progress.threats[id] ?? st);
+      },
+      /** Prolog: sahne, atlama, açık bulmacayı kodun cevabıyla çözme, hedefe dokunma. */
+      prologue: prologue && {
+        beat: () => prologue.debug.beat(),
+        skipTo: (id: string) => prologue.debug.skipTo(id),
+        solve: () => prologue.debug.solve(),
+        interact: (t: string) => prologue.debug.interact(t),
+        skip: () => prologue.skip(),
+        active: () => prologue.active,
       },
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
@@ -680,12 +788,40 @@ function attachHints(hints: string[], paid: boolean): void {
   (panel.querySelector('.briefing') ?? head).after(box);
 }
 
+/** Bulmaca panelinde onarımın hedefe bağlantısı ("Neden"). */
+function attachWhy(why: string | undefined): void {
+  const overlays = ui.querySelectorAll<HTMLElement>('.overlay');
+  const panel = overlays[overlays.length - 1]?.querySelector<HTMLElement>('.panel');
+  const head = panel?.querySelector('.panel-head');
+  if (!panel || !head || !why) return;
+  const p = document.createElement('p');
+  p.className = 'why';
+  p.textContent = `Neden: ${why}`;
+  head.after(p);
+}
+
 // --- Defter (N): tekrar, formüller, istasyon kayıtları ---
 const allStages = () => Object.values(content.stages).flat();
 function notebookView() {
   const now = Date.now();
   const due = new Set(dueTopics(progress.review, now));
+  const st = states();
   return {
+    goals: {
+      title: OBJECTIVES.title,
+      objectives: objectiveView(OBJECTIVES, st).map((o) => {
+        const def = OBJECTIVES.objectives.find((x) => x.id === o.id)!;
+        return {
+          title: o.title,
+          summary: o.summary,
+          done: o.done,
+          steps: def.steps.map((s) => {
+            const f = W.faults.find((x) => x.provides.includes(s));
+            return { label: stateName(s) ?? s, why: (f && OBJECTIVES.why[f.id]) ?? '', done: st.includes(s) };
+          }),
+        };
+      }),
+    },
     review: Object.entries(progress.review)
       .sort((a, b) => a[1].due - b[1].due)
       .map(([key, it]) => {
@@ -707,7 +843,7 @@ function notebookView() {
 }
 let notebookOpen = false;
 function toggleNotebook(): void {
-  if (notebookOpen || closing || !started) return;
+  if (notebookOpen || closing || !started || prologueActive()) return;
   notebookOpen = true;
   withHubPaused((onClose) =>
     openNotebook(ui, notebookView(), {
@@ -765,8 +901,13 @@ function maybeFinale(): boolean {
   hub.suspend();
   const reviewed = Object.values(progress.review);
   showFinale(ui, {
-    speaker: content.story.speaker,
-    lines: content.story.lines.finale ?? [],
+    lines: spoken(content.story.lines.finale),
+    after: { left: spoken(content.story.lines['finale:left']), stayed: spoken(content.story.lines['finale:stayed']) },
+    onChoose: (end) => {
+      progress.ending = end;
+      if (!progress.world.states.includes(`ending.${end}`)) progress.world.states.push(`ending.${end}`);
+      void persist();
+    },
     stats: [
       { label: 'Onarılan arıza', value: `${W.faults.length}/${W.faults.length}` },
       { label: 'Bölüm', value: String(progress.episode) },
@@ -806,6 +947,7 @@ function openPuzzle(fid: string): void {
     onCancel: () => hub.resume(),
     onSubmit: (answer) => void runAttempt(fid, answer),
   });
+  attachWhy(OBJECTIVES.why[fid]);
   attachHints(run.hints, true);
 }
 

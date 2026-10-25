@@ -13,6 +13,9 @@ export interface SettingsDeps {
   model: () => string;
   saveModel: (m: string) => void;
   testConnection: () => Promise<{ ok: boolean; message: string }>;
+  /** Oyuncunun adı (replikler). */
+  playerName: () => string;
+  savePlayerName: (n: string) => void;
   onClose: () => void;
 }
 
@@ -22,6 +25,11 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
   el.innerHTML = `
     <div class="panel settings" role="dialog" aria-label="Ayarlar">
       <header class="panel-head"><span class="tag ok">AYAR</span><h2>Ayarlar</h2><button class="ghost" data-act="close">Kapat ✕</button></header>
+      <section>
+        <h4>Mühendis adı</h4>
+        <p class="muted">Ece ve NEREUS sana bu adla seslenir.</p>
+        <div class="row"><input name="pname" maxlength="20" spellcheck="false"><button class="ghost" data-act="save-name">Kaydet</button></div>
+      </section>
       ${d.mock ? '<p class="error-box">Sahte istemci etkin (<code>?llm=mock</code>): gerçek API çağrısı yapılmaz.</p>' : ''}
       <section>
         <h4>${esc(d.providerLabel)} API anahtarı</h4>
@@ -45,7 +53,13 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
   const keyIn = q<HTMLInputElement>('[name="key"]');
   const modelIn = q<HTMLInputElement>('[name="model"]');
   const result = q<HTMLSpanElement>('.test-result');
+  const nameIn = q<HTMLInputElement>('[name="pname"]');
+  q('[data-act="save-name"]').addEventListener('click', () => {
+    d.savePlayerName(nameIn.value);
+    render();
+  });
   const render = () => {
+    nameIn.value = d.playerName();
     q('.masked').textContent = d.maskedKey();
     modelIn.value = d.model();
   };

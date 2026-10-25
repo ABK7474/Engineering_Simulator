@@ -116,6 +116,8 @@ export interface WorldLayout {
   /** Oda köşelerinin arkasındaki opak dolgu blokları (tabandan tavana). */
   cornerFills: Rect[];
   bounds: Rect;
+  /** Prolog girişi: başlangıç odasının servis kilidi (dışa bakan normal) ve Müren'in enkazı. */
+  entry?: { hatch: DoorLayout & { nx: number; nz: number }; wreck?: { x: number; z: number; yaw: number }; path: [number, number][] };
 }
 
 // ---------------------------------------------------------------- geometri yardımcıları
@@ -267,6 +269,22 @@ export function buildWorldLayout(world: WorldDef, opts: { trace?: string[] } = {
     add('Door_Frame_Square', x, 0, z, ns ? 0 : PI / 2);
     return { def: d, x, z, rotY: ns ? 0 : PI / 2, collider: ns ? rect(x, z, 2, 0.15) : rect(x, z, 0.15, 2) };
   });
+
+  // Servis kilidi (prolog girişi): başlangıç odasının dışa bakan duvar hücresinde kapı çerçevesi; kanatlar hub'da
+  let entry: WorldLayout['entry'];
+  const h = world.start.hatch;
+  if (h) {
+    const a = world.rooms.find((r) => r.id === world.start.room)!;
+    const [x, z] = edgeMid(a, h.wall, h.index);
+    doorCells.add(`${a.id}/${h.wall}/${h.index}`);
+    const ns = h.wall === 'north' || h.wall === 'south';
+    add('Door_Frame_Square', x, 0, z, ns ? 0 : PI / 2);
+    const [ix, iz] = INWARD[h.wall];
+    const collider = ns ? rect(x, z, 2, 0.15) : rect(x, z, 0.15, 2);
+    colliders.push({ ...collider, tag: 'wall' });
+    const def = { id: 'entry-hatch', rooms: [a.id, a.id], at: { room: a.id, wall: h.wall, index: h.index }, opensWhen: [] } as unknown as DoorDef;
+    entry = { hatch: { def, x, z, rotY: ns ? 0 : PI / 2, collider, nx: -ix || 0, nz: -iz || 0 }, wreck: world.start.wreck, path: world.start.path ?? [] };
+  }
 
   // Terminaller
   const terminals: TerminalLayout[] = world.faults.map((f) => {
@@ -446,5 +464,11 @@ export function buildWorldLayout(world: WorldDef, opts: { trace?: string[] } = {
     { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity },
   );
 
-  return { world, rooms, placements: P, colliders, doors, terminals, windows, lampFixtures, lampLights, leaks, decor, flicker, cornerFills, bounds };
+  // Servis kilidinin üstünde içeriden tabela
+  if (entry) {
+    const [ix, iz] = [-entry.hatch.nx, -entry.hatch.nz];
+    decor.find((x) => x.room === world.start.room)!.signs.push({ x: entry.hatch.x + ix * 0.32, y: 4.5, z: entry.hatch.z + iz * 0.32, rotY: Math.atan2(ix, iz), w: 1.7, h: 0.5, title: 'SERVİS KİLİDİ', sub: '→ DIŞARI', kind: 'room' });
+  }
+
+  return { world, rooms, placements: P, colliders, doors, terminals, windows, lampFixtures, lampLights, leaks, decor, flicker, cornerFills, bounds, entry };
 }

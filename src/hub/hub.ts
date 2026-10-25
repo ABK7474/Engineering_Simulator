@@ -11,7 +11,8 @@ import { buildAtmosphere } from './atmosphere';
 import { buildBuilding } from './building';
 import { createDoor, type Door } from './door';
 import { Effects, Tweens } from './effects';
-import { buildExterior } from './exterior';
+import { buildExterior, distanceToRects, interiorsOf, seabedHeight, stationRocks } from './exterior';
+import { buildMuren, type MurenPhase, type MurenStatus, type MurenTarget } from './cockpit';
 import { buildSeaLife } from './sealife';
 import { noiseLevel, stepProfile } from './movement';
 import { createPlayer } from './player';
@@ -44,6 +45,31 @@ export interface HubOptions {
   onRoomChange: (roomId: string) => void;
   /** "Tıkla ve başla" tıklaması: kullanıcı etkileşimi (ses burada başlatılabilir). */
   onStart: () => void;
+  /** Prolog: istemi gösterilen hedefe (röle, pompa, dolap, kilit) E ile dokunuldu. */
+  onPrologueTarget?: (target: string) => void;
+}
+
+/** Kamera düzeni: istasyonda yürüme, denizaltı koltuğu, dalış kıyafetiyle deniz tabanı. */
+export type Rig = 'station' | 'cockpit' | 'seabed';
+
+/** Prolog sahnesinin hub'daki karşılığı (dünya: Müren, kabuk, kılavuz lambaları, kask lambası). */
+export interface PrologueStage {
+  setRig: (rig: Rig) => void;
+  readonly rig: Rig;
+  /** E istemi: hedef ve metin (null = yok). */
+  setPrompt: (target: string | null, text?: string) => void;
+  setMurenPhase: (p: MurenPhase) => void;
+  /** Müren'in ekranlarında görünen durum (prolog akışı yazar). */
+  status: MurenStatus;
+  /** Düşüş tabana vurunca bir kez. */
+  onImpact: (fn: () => void) => void;
+  shake: (seconds: number, amp: number) => void;
+  /** Kabin ışığı: normal, titreme (dalga), alarm (kırmızı yanıp sönme), kapalı. */
+  setCabinLight: (mode: 'normal' | 'flicker' | 'alarm' | 'off') => void;
+  /** Yaratık gölgesi denizaltının önünden geçer. */
+  creaturePass: () => void;
+  /** Kilit: kapı açılır, oyuncu içeri alınır, kapı kapanır; bitince çözülür. */
+  enterStation: () => Promise<void>;
 }
 
 export interface OutcomeOptions {
@@ -90,8 +116,12 @@ export interface Hub {
   threatStrike: () => void;
   /** Tehdit sona erdi: gölge uzaklaşarak geçer. */
   creaturePass: () => void;
+  /** Prolog sahnesi (dünyada servis kilidi ve enkaz yoksa null). */
+  prologue: PrologueStage | null;
+  /** Giriş ekranının içerik kutusu (ad alanı, "Prologu atla" buraya eklenir). */
+  gateBox: HTMLElement;
   /** Geliştirme/test kancaları (oyunda kullanılmaz). */
-  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number, window?: number) => void; teleport: (x: number, z: number, yaw?: number) => void; doors: () => Record<string, number>; breakdown: () => Record<string, { calls: number; triangles: number }>; materials: () => Record<string, { meshes: number; materials: number; signatures: number }>; heavy: (room: string) => [string, number][]; hide: (name: string, hidden: boolean) => number; describe: (index: number) => string; sealife: () => { fear: number[]; centroids: [number, number, number][] }; glide: (window: number, k: number) => void };
+  debug: { setYaw: (rad: number) => void; forceShadowPass: (k: number, window?: number) => void; teleport: (x: number, z: number, yaw?: number) => void; doors: () => Record<string, number>; breakdown: () => Record<string, { calls: number; triangles: number }>; materials: () => Record<string, { meshes: number; materials: number; signatures: number }>; heavy: (room: string) => [string, number][]; hide: (name: string, hidden: boolean) => number; describe: (index: number) => string; sealife: () => { fear: number[]; centroids: [number, number, number][] }; glide: (window: number, k: number) => void; lookAt: (x: number, y: number, z: number) => void; prologueTarget: (t: string) => { x: number; y: number; z: number } | null; rig: () => Rig };
   stats: () => { calls: number; triangles: number; geometries: number; textures: number; x: number; z: number; y: number; mode: string; exterior: boolean; room: string | null };
 }
 
@@ -128,6 +158,18 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const exterior = buildExterior(scene, layout);
   const sealife = buildSeaLife(exterior, layout);
   const atmosphere = buildAtmosphere(scene, layout);
+  // İstasyonun iç kısmı (dışarıdayken gizlenir): oda grupları dışında kalan sahne kökleri (kapı kanatları,
+  // terminaller, atmosfer). Işıklar gizlenmez (ışık sayısı değişirse gölgelendiriciler yeniden derlenir).
+  const stationRoots = scene.children.filter((o) => o !== exterior.group && o.name !== 'shared' && !(o instanceof THREE.Light) && !building.roomGroups.includes(o));
+  // Prolog: Müren (enkaz ya da iniş), servis kilidi kanatları, kask lambası
+  const entry = layout.entry;
+  const interiors = interiorsOf(layout);
+  const bedAt = (x: number, z: number) => seabedHeight(x, z, distanceToRects(interiors, x, z));
+  const muren = entry?.wreck ? buildMuren(exterior.group, { ...entry.wreck, y: bedAt(entry.wreck.x, entry.wreck.z) + 1.45 }) : null;
+  if (muren) muren.interior.visible = false;
+  const hatchDoor = entry ? createDoor(scene, assets, entry.hatch) : null;
+  const helmet = new THREE.SpotLight(0xdff0ff, 0, 20, 0.6, 0.55, 1.3);
+  scene.add(helmet, helmet.target);
   // Güç seviyesi (sonuçlar ayarlar) ile geçici titreme düşüşü (gümbürtü) ayrı: çarpımları uygulanır
   let powerLevel = 1;
   let powerDip = 1;
@@ -190,6 +232,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   gate.addEventListener('click', () => {
     opts.onStart();
     player.controls.lock();
+    gateAction.textContent = 'Tıkla ve devam et';
   });
 
   const hint = document.createElement('div');
@@ -216,8 +259,198 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
 
   let nearest: string | null = null;
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyE' && active && nearest && locked) opts.onInteract(nearest);
+    if (e.code !== 'KeyE' || !active || !locked) return;
+    if (rig !== 'station') {
+      if (promptOn && promptTarget) opts.onPrologueTarget?.(promptTarget);
+    } else if (nearest) opts.onInteract(nearest);
   });
+
+  // --- Prolog düzenleri ---
+  let rig: Rig = 'station';
+  let promptTarget: string | null = null;
+  let promptText = '';
+  let promptOn = false;
+  let shakeLeft = 0;
+  let shakeAmp = 0;
+  let cabinMode: 'normal' | 'flicker' | 'alarm' | 'off' = 'normal';
+  const impactFns: (() => void)[] = [];
+  const seat = new THREE.Vector3();
+  const tgt = new THREE.Vector3();
+  const look = new THREE.Vector3();
+  const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+  const outdoorColliders: THREE.Box3[] = [
+    ...interiors.map((r) => new THREE.Box3(new THREE.Vector3(r.minX, 0, r.minZ), new THREE.Vector3(r.maxX, 5, r.maxZ))),
+    ...stationRocks(layout).map((r) => {
+      const h = r.scale * 1.1 * 0.8;
+      return new THREE.Box3(new THREE.Vector3(r.x - h, 0, r.z - h), new THREE.Vector3(r.x + h, 5, r.z + h));
+    }),
+  ];
+  if (entry?.wreck) {
+    // Enkaz: gövde boyunca uzun kutu (yön fark etmeksizin yeterince geniş)
+    const { x, z, yaw } = entry.wreck;
+    const [dx, dz] = [-Math.sin(yaw), -Math.cos(yaw)];
+    const pts = [-2.4, 0, 2.4, 4.6].map((t) => [x - dx * t, z - dz * t]);
+    for (const [px, pz] of pts) outdoorColliders.push(new THREE.Box3(new THREE.Vector3(px - 1.35, 0, pz - 1.35), new THREE.Vector3(px + 1.35, 5, pz + 1.35)));
+  }
+  // Sınır: enkazın ve yolun çevresinde 22 m
+  const homeX = entry?.wreck?.x ?? 0;
+  const homeZ = entry?.wreck?.z ?? 0;
+  /** Taban + kilidin önünde zemine çıkan rampa. */
+  const outdoorGround = (x: number, z: number) => {
+    const bed = bedAt(x, z);
+    if (!entry) return bed;
+    const d = Math.hypot(x - (entry.hatch.x + entry.hatch.nx * 1.5), z - (entry.hatch.z + entry.hatch.nz * 1.5));
+    return THREE.MathUtils.lerp(bed, 0, 1 - THREE.MathUtils.smoothstep(d, 0.8, 3.5));
+  };
+  const setStationVisible = (on: boolean) => {
+    for (const o of stationRoots) o.visible = on;
+    // Dışarıdayken istasyon karanlık: lamba havuzu söner (ışık duvarların ardından tabanı aydınlatmasın)
+    powerLevel = on ? 1 : 0;
+    applyPower();
+    for (const d of doors.values()) d.update();
+    if (on) visKey = '';
+    else building.setVisibleRooms(new Set());
+  };
+  const updatePrologue = (dt: number) => {
+    if (!muren || !entry) return;
+    if (rig === 'cockpit') {
+      muren.seat(seat);
+      camera.position.copy(seat);
+      // Bakış koltukta sınırlı: burnun ±115°, yukarı/aşağı makul
+      euler.setFromQuaternion(camera.quaternion, 'YXZ');
+      let rel = euler.y - muren.heading();
+      rel = Math.atan2(Math.sin(rel), Math.cos(rel));
+      euler.y = muren.heading() + THREE.MathUtils.clamp(rel, -2.0, 2.0);
+      euler.x = THREE.MathUtils.clamp(euler.x, -0.85, 0.65);
+      euler.z = 0;
+      camera.quaternion.setFromEuler(euler);
+      // Bakılan hedef: kabin içinde 2 m'ye kadar, bakış ekseninden ≤ 22°
+      promptOn = false;
+      if (promptTarget && ['relay', 'pump', 'locker'].includes(promptTarget)) {
+        muren.target(promptTarget as MurenTarget, tgt);
+        camera.getWorldDirection(look);
+        const to = tgt.clone().sub(camera.position);
+        promptOn = to.length() < 2.6 && to.normalize().dot(look) > Math.cos(0.42);
+      }
+      // Kabin ışığı (LED ışığı ödünç alınır)
+      ledLight.position.copy(seat).add(new THREE.Vector3(0, 0.6, 0));
+      ledLight.distance = 5;
+      const t = elapsed;
+      ledLight.color.setHex(cabinMode === 'alarm' ? 0xff3020 : 0xffe6c0);
+      ledLight.intensity =
+        cabinMode === 'off' ? 0 : cabinMode === 'alarm' ? (Math.sin(t * 7) > 0 ? 9 : 1.5) : cabinMode === 'flicker' ? (Math.random() < 0.3 ? 0.8 : 7) : 7;
+    } else if (rig === 'seabed') {
+      // Sınırın dışına çıkılmaz
+      const dx = camera.position.x - homeX;
+      const dz = camera.position.z - homeZ;
+      const d = Math.hypot(dx, dz);
+      if (d > 22) camera.position.set(homeX + (dx / d) * 22, camera.position.y, homeZ + (dz / d) * 22);
+      // Kılavuz lambaları: oyuncuya 7 m'den yakın olanlar ve öncekilerin hepsi yanar
+      const pts = exterior.guidePoints;
+      let lit = 0;
+      for (let i = 0; i < pts.length; i++) if (Math.hypot(pts[i].x - camera.position.x, pts[i].z - camera.position.z) < 7) lit = i + 1;
+      exterior.setGuideLit(Math.max(lit, litGuide));
+      litGuide = Math.max(lit, litGuide);
+      const hx = entry.hatch.x + entry.hatch.nx * 1.7;
+      const hz = entry.hatch.z + entry.hatch.nz * 1.7;
+      promptOn = promptTarget === 'hatch' && Math.hypot(camera.position.x - hx, camera.position.z - hz) < 2.6;
+    }
+    if (shakeLeft > 0) {
+      shakeLeft -= dt;
+      const a = shakeAmp * Math.min(1, shakeLeft);
+      camera.position.add(new THREE.Vector3((Math.random() - 0.5) * a, (Math.random() - 0.5) * a, (Math.random() - 0.5) * a));
+    }
+    // Kask lambası (yalnız tabanda)
+    camera.getWorldDirection(look);
+    helmet.position.copy(camera.position).addScaledVector(look, 0.2);
+    helmet.target.position.copy(camera.position).addScaledVector(look, 6);
+    if (muren.takeImpact()) impactFns.forEach((f) => f());
+  };
+  let litGuide = 0;
+  const prologueStage: PrologueStage | null =
+    muren && entry && hatchDoor
+      ? {
+          get rig() {
+            return rig;
+          },
+          setRig(r) {
+            rig = r;
+            const outside = r !== 'station';
+            setStationVisible(!outside);
+            exterior.setOutdoor(outside);
+            muren.interior.visible = r === 'cockpit';
+            helmet.intensity = r === 'seabed' ? 70 : 0;
+            player.enabled = r !== 'cockpit';
+            player.speedScale = r === 'seabed' ? 0.55 : 1;
+            player.ground = r === 'seabed' ? outdoorGround : () => 0;
+            if (r === 'station') {
+              ledLight.intensity = 0;
+              ledLight.distance = 3;
+              ledLight.color.setHex(0xffffff);
+              promptOn = false;
+            }
+            if (r === 'seabed') {
+              // Enkazın yanında, kilide doğru bakarak
+              const [p0, p1] = [entry.path[0], entry.path[1]];
+              camera.position.set(p0[0], outdoorGround(p0[0], p0[1]) + 1.6, p0[1]);
+              camera.rotation.set(0, Math.atan2(-(p1[0] - p0[0]), -(p1[1] - p0[1])), 0, 'YXZ');
+              litGuide = 0;
+              exterior.setGuideLit(0);
+            }
+            if (r === 'cockpit') {
+              muren.seat(seat);
+              camera.position.copy(seat);
+              camera.rotation.set(-0.12, muren.heading(), 0, 'YXZ');
+            }
+          },
+          setPrompt(target, text) {
+            promptTarget = target;
+            promptText = text ?? '';
+            promptOn = false;
+          },
+          setMurenPhase: (p) => muren.setPhase(p),
+          status: muren.status,
+          onImpact: (fn) => impactFns.push(fn),
+          shake(seconds, amp) {
+            shakeLeft = seconds;
+            shakeAmp = amp;
+          },
+          setCabinLight(m) {
+            cabinMode = m;
+          },
+          creaturePass() {
+            // Denizaltının 22 m önünden, burna dik doğrultuda
+            const h = muren.heading();
+            const [fx, fz] = [-Math.sin(h), -Math.cos(h)];
+            muren.seat(seat);
+            exterior.forcePassAt(seat.x + fx * 22, seat.z + fz * 22, fz, -fx, 0.3);
+          },
+          enterStation() {
+            return new Promise<void>((done) => {
+              sounds.play('door_open');
+              const from = hatchDoor.openAmount;
+              doorTweens.add((_dt, el) => {
+                const k = Math.min(1, el / 1.4);
+                hatchDoor.openAmount = THREE.MathUtils.lerp(from, 1, ease(k));
+                if (k < 1) return true;
+                // İçeride, kilidin önünde, koridora bakarak
+                prologueStage!.setRig('station');
+                const [ix, iz] = [-entry.hatch.nx, -entry.hatch.nz];
+                teleport(entry.hatch.x + ix * 1.6, entry.hatch.z + iz * 1.6, Math.atan2(-ix, -iz));
+                camera.position.y = 1.6;
+                sounds.play('door_close');
+                doorTweens.add((_d, el2) => {
+                  const k2 = Math.min(1, el2 / 1.4);
+                  hatchDoor.openAmount = 1 - ease(k2);
+                  if (k2 >= 1) done();
+                  return k2 < 1;
+                });
+                return false;
+              });
+            });
+          },
+        }
+      : null;
 
   // --- Döngü ---
   const timer = new THREE.Timer();
@@ -228,8 +461,9 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     timer.update(now);
     const dt = Math.min(timer.getDelta(), 0.05);
     elapsed += dt;
-    const colliders = [...building.colliders, ...[...doors.values()].filter((d) => d.openAmount < 0.95).map((d) => d.collider)];
+    const colliders = rig === 'seabed' ? outdoorColliders : [...building.colliders, ...[...doors.values()].filter((d) => d.openAmount < 0.95).map((d) => d.collider)];
     const { distance, mode } = player.update(dt, colliders);
+    if (rig !== 'station') updatePrologue(dt);
     const prof = stepProfile(mode);
     strides.setStride(prof.stride);
     for (let k = strides.add(distance); k > 0; k--) sounds.play('step', { volume: prof.volume, pitchJitter: 0.08 });
@@ -246,25 +480,25 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     // En yakın, etkileşime açık terminal
     nearest = null;
     let best = INTERACT_RANGE;
-    for (const t of terminals.values()) {
+    if (rig === 'station') for (const t of terminals.values()) {
       const d = flat.set(camera.position.x - t.panelPosition.x, camera.position.z - t.panelPosition.z).length();
       if (d < best && opts.hintFor(t.id) !== null) {
         best = d;
         nearest = t.id;
       }
     }
-    const hintText = nearest ? opts.hintFor(nearest) : null;
+    const hintText = rig !== 'station' ? (promptOn ? promptText : null) : nearest ? opts.hintFor(nearest) : null;
     hint.style.display = active && hintText && locked ? 'block' : 'none';
     if (hintText && hint.textContent !== hintText) hint.textContent = hintText;
 
     // Oda geçişi (kesintisiz; bütün odalar zaten kurulu)
-    const r = roomAt(layout, camera.position.x, camera.position.z);
+    const r = rig === 'station' ? roomAt(layout, camera.position.x, camera.position.z) : null;
     if (r && r !== room) {
       room = r;
       opts.onRoomChange(r);
     }
     frames++;
-    refreshVisibility();
+    if (rig === 'station') refreshVisibility();
     if (locked) rumbleIn -= dt;
     if (rumbleIn <= 0) {
       rumbleIn = threatOn ? 14 + Math.random() * 14 : 75 + Math.random() * 90;
@@ -280,7 +514,9 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     tweens.update(dt);
     doorTweens.update(dt);
     effects.update(dt);
-    for (const d of doors.values()) d.update();
+    if (rig === 'station') for (const d of doors.values()) d.update();
+    hatchDoor?.update();
+    muren?.update(dt, elapsed);
     for (const t of terminals.values()) t.update(dt);
     exterior.update(dt, elapsed, camera);
     sealife.update(dt, elapsed);
@@ -632,6 +868,8 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       for (const id of ids) get(id).replaceLed();
     },
     teleport,
+    prologue: prologueStage,
+    gateBox: gate.firstElementChild as HTMLElement,
     setWarningLight(on) {
       effects.setAlarm(on);
     },
@@ -663,6 +901,14 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       forceShadowPass: (k, w) => exterior.forcePass(k, w),
       sealife: () => sealife.debug(),
       glide: (w, k) => sealife.forceGlide(w, k),
+      lookAt: (x, y, z) => camera.lookAt(x, y, z),
+      prologueTarget(t) {
+        if (t === 'hatch' && entry) return { x: entry.hatch.x + entry.hatch.nx * 1.7, y: 1.6, z: entry.hatch.z + entry.hatch.nz * 1.7 };
+        if (!muren || !['relay', 'pump', 'locker'].includes(t)) return null;
+        const v = muren.target(t as MurenTarget, new THREE.Vector3());
+        return { x: v.x, y: v.y, z: v.z };
+      },
+      rig: () => rig,
       doors: () => Object.fromEntries([...doors.values()].map((d) => [d.id, Math.round(d.openAmount * 1000) / 1000])),
       hide(name, hidden) {
         let n = 0;

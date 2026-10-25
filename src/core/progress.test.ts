@@ -147,3 +147,32 @@ describe('loadProgress', () => {
     expect((await loadProgress(store, B)).episode).toBe(3);
   });
 });
+
+describe('ad, prolog ve final seçimi', () => {
+  it('yeni oyunda ad Deniz, prolog oynanmamış, seçim yok', () => {
+    const p = defaultProgress(B, 'corridor-b2');
+    expect(p.profile.name).toBe('Deniz');
+    expect(p.prologueDone).toBe(false);
+    expect(p.ending).toBeNull();
+  });
+
+  it('alanları olmayan eski kayıt: ad varsayılan; ilerlemesi varsa prolog görülmüş sayılır', () => {
+    const base = defaultProgress(B, 'corridor-b2') as unknown as Record<string, unknown>;
+    const { profile: _p, prologueDone: _d, ending: _e, ...old } = base;
+    expect(validateProgress(old, B)!.prologueDone).toBe(false);
+    const played = { ...old, world: { ...(old.world as object), states: ['power.backup'] } };
+    const v = validateProgress(played, B)!;
+    expect(v.prologueDone).toBe(true);
+    expect(v.profile.name).toBe('Deniz');
+    expect(v.ending).toBeNull();
+  });
+
+  it('ad sadeleşir; geçersiz seçim yok sayılır; yedekte korunur', () => {
+    const p = { ...defaultProgress(B, 'corridor-b2'), profile: { name: '  Ayşe   Nur ' }, prologueDone: true, ending: 'stayed' as const };
+    const v = validateProgress(structuredClone(p), B)!;
+    expect(v.profile.name).toBe('Ayşe Nur');
+    expect(v.ending).toBe('stayed');
+    expect(validateProgress({ ...p, ending: 'kaçtı' }, B)!.ending).toBeNull();
+    expect(fromExportJson(toExportJson(v), B).profile.name).toBe('Ayşe Nur');
+  });
+});

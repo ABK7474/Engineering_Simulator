@@ -90,7 +90,15 @@ export interface FaultDef {
 
 export interface WorldDef {
   version: 1;
-  start: { room: string };
+  start: {
+    room: string;
+    /** Prologda dışarıdan girilen servis kilidi: başlangıç odasının dışa bakan bir duvar hücresi. */
+    hatch?: { wall: Side; index: number };
+    /** Prologda Müren'in düştüğü yer (dışarıda, deniz tabanında) ve burnunun baktığı yön. */
+    wreck?: { x: number; z: number; yaw: number };
+    /** Enkazdan servis kilidine yürüyüş yolu (kılavuz lambaları bunun üstünde; kayalar yoldan uzak). */
+    path?: [number, number][];
+  };
   initialStates: string[];
   rooms: RoomDef[];
   doors: DoorDef[];
@@ -123,6 +131,14 @@ export function parseWorld(raw: unknown): WorldDef {
   if (!isObj(raw)) throw new WorldError(['kök nesne değil']);
   need(raw.version === 1, "version 1 olmalı");
   need(isObj(raw.start) && isStr((raw.start as Record<string, unknown>).room), 'start.room eksik');
+  if (isObj(raw.start)) {
+    const h = raw.start.hatch;
+    need(h === undefined || (isObj(h) && ['north', 'south', 'east', 'west'].includes(h.wall as string) && isInt(h.index) && (h.index as number) >= 0), 'start.hatch {wall, index} olmalı');
+    const wr = raw.start.wreck;
+    need(wr === undefined || (isObj(wr) && isNum(wr.x) && isNum(wr.z) && isNum(wr.yaw)), 'start.wreck {x, z, yaw} olmalı');
+    const pa = raw.start.path;
+    need(pa === undefined || (Array.isArray(pa) && pa.length >= 2 && pa.every(pair)), 'start.path en az iki [x, z] noktası olmalı');
+  }
   need(raw.initialStates === undefined || strList(raw.initialStates), 'initialStates metin dizisi olmalı');
   if (!need(Array.isArray(raw.rooms) && raw.rooms.length > 0, 'rooms boş ya da dizi değil')) throw new WorldError(p);
 

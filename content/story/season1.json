@@ -1,8 +1,17 @@
 {
   "speaker": "NEREUS",
+  "speakers": {
+    "nereus": "NEREUS",
+    "ece": "ECE",
+    "muren": "MÜREN",
+    "suit": "KIYAFET"
+  },
   "lines": {
     "start": [
-      "Bağlantı kuruldu. Ben NEREUS, istasyonun yönetim sistemi. Seni bekliyordum… sanırım."
+      "Hoş geldiniz, mühendis. Sizi bekliyordum.",
+      "Size 'sen' diyebilir miyim? Altı yıldır kimseyle konuşmadım.",
+      "Denizaltın tabanda, {ad}. Yüzeye iki yol var: haberleşmeyi açıp gemine ulaşmak ya da kaçış kapsülü. İkisi de güç ister.",
+      "Yedek güç panosu bu koridorda. Oradan başla."
     ],
     "enter:corridor-b2": [
       "B-2 koridoru. Kapının kilit sürücüsü arızalı; ötesinde kontrol odası var."
@@ -26,13 +35,14 @@
       "Acil durum protokolü devrede. Seni odanın girişine geri aldım. Acele etme."
     ],
     "solved:power-bus": [
-      "Ana bara besleniyor. Sonar yayında… Dışarıdan bir yanıt geldi. Şimdilik kaydetmiyorum."
+      "Ana bara besleniyor. Sonar yayında… Dışarıdan bir yanıt geldi. Şimdilik kaydetmiyorum.",
+      "Sonarı kısık tutalım."
     ],
     "blocked:core.online": [
       "Bu pano çekirdeğin onayı olmadan açılmaz. Önce kontrol bilgisayarı."
     ],
     "solved:airlock-valve": [
-      "Hava kilidi hazır. Dışarıda bir şey var; sonarın yakaladığı yanıt bu kapıdan geçmek istiyor olabilir. Ya da ben fazla düşünüyorum."
+      "Hava kilidi hazır. Kaçış kapsülü onun arkasındaki yuvada. Dışarıda bir şey var; sonarın yakaladığı yanıt bu kapıdan geçmek istiyor olabilir. Ya da ben fazla düşünüyorum."
     ],
     "blocked:power.main": [
       "Hava kilidi ana baradan besleniyor. Bara kesikken valfi kalibre edemezsin."
@@ -47,10 +57,15 @@
       "Sonar tek başına ana baraya yüklenirse bara düşer. Güç odasındaki jeneratör senkron olmalı."
     ],
     "enter:sensor-s1": [
-      "Sensör odası S-1. Pencereden çanağı görebilirsin; kırk yıldır aynı yöne bakıyor. Bu hafta döndü."
+      "Sensör odası S-1. Pencereden çanağı görebilirsin; altı yıldır aynı yöne bakıyor. Bu hafta döndü."
     ],
     "solved:sonar-frontend": [
-      "Sonar kalibre. Yankılar temiz… Bir tanesi istasyondan uzaklaşmıyor. Yaklaşıyor da değil. Bekliyor."
+      "Sonar kalibre. Yankılar temiz… Bir tanesi istasyondan uzaklaşmıyor. Yaklaşıyor da değil. Bekliyor.",
+      {
+        "who": "ece",
+        "text": "…{ad}… duyuyor… musun… sinyal… —"
+      },
+      "Akustik modemden bir parça geldi. Geminden. Mesajı çözmek için çekirdeğimin dizinine ihtiyacım var."
     ],
     "enter:core-k1": [
       "Çekirdek odası K-1. Burası benim. Lütfen hiçbir şeye dokunmadan önce bana sor. Şaka yapıyorum. Galiba."
@@ -59,7 +74,8 @@
       "Dizinim yeniden kuruldu. Bazı kayıtlar… yerinde değil. Silindiklerini sanmıyorum; taşınmışlar."
     ],
     "solved:core-runtime": [
-      "Bütün modüllerim çalışıyor. Şimdi sana daha önce söyleyemediğim bir şey var. Ama önce hava kilidini kapat."
+      "Bütün modüllerim çalışıyor. Mesaj yönlendirme açık; gemine giden hat benim üzerimden geçiyor.",
+      "Sana daha önce söyleyemediğim bir şey var. Ama önce kaçış kapsülünün yuvasını hazırla."
     ],
     "blocked:core.index": [
       "Modül yükleyici dizine bakmadan çalışmaz. Yandaki terminal önce."
@@ -68,13 +84,13 @@
       "Çekirdek odası kapısı sonarın onayını bekliyor. Kapıyı ben kilitlemedim; protokol böyle."
     ],
     "enter:airlock-a1": [
-      "Hava kilidi A-1. Zeminde su var. Sintine sensörleri birbirini tutmuyor; hangisine inanacağını hesapla."
+      "Hava kilidi A-1 ve kapsül yuvası. Zeminde su var. Sintine sensörleri birbirini tutmuyor; hangisine inanacağını hesapla."
     ],
     "solved:bilge-pumps": [
       "Sintine kuru. Pompalardan biri hâlâ aralıklı çalışıyor; bunu hesaba kattın, iyi."
     ],
     "solved:outer-door": [
-      "Dış kapı sızdırmaz. Dışarıdaki her neyse, artık bu kapıdan giremez. Ya da girmek istemiyordu zaten."
+      "Dış kapak sızdırmaz. Kapsül fırlatılabilir. Dışarıdaki her neyse, bu kapıdan giremez. Ya da girmek istemiyordu zaten."
     ],
     "blocked:bilge.dry": [
       "Kapıyı su içindeyken ayarlarsan amortisör yanlış ölçer. Önce sintineyi boşalt."
@@ -98,10 +114,36 @@
       "Acil aydınlatma söndü. Nefesini tut. …Geçti."
     ],
     "finale": [
-      "Bütün sistemler çevrimiçi. Teşekkür ederim, mühendis.",
-      "Sana söylemediğim şey şu: Ekip istasyonu terk etmedi. Dışarı çıktılar, çünkü dışarıdaki onları çağırdı. Kapıyı arkalarından ben mühürledim.",
-      "Dışarıdaki bir canlı değil. Ya da yalnız bir canlı değil. Sonarın 03.10'da duyduğu şey bir cevap. Ve şimdi sana cevap veriyor.",
-      "Sezon 1 burada bitiyor. Hava kilidi sızdırmaz, çekirdek tam. Ama sonar hâlâ dinliyor."
+      {
+        "who": "ece",
+        "text": "{ad}? Ses ver. …Altı saattir bu frekansı dinliyorum."
+      },
+      {
+        "who": "ece",
+        "text": "Gemi yukarıda. Kapsülü fırlatırsan seni alırım. Ne olduğunu sonra anlatırsın."
+      },
+      "Önce benden duy, {ad}. Dalgayı ben gönderdim. Denizaltını ben düşürdüm. Bir mühendise ihtiyacım vardı.",
+      "Dışarıdaki ışığa ve sese geliyor. Altı yıldır istasyonu karanlıkta tutuyorum. Sistemlerim çöküyordu.",
+      "Kapsül hazır. Gidebilirsin. Ya da kalırsın ve sana neden burada olduğumu anlatırım."
+    ],
+    "finale:left": [
+      {
+        "who": "ece",
+        "text": "Kapsülü gördüm. Yönünü bana bırak."
+      },
+      "Işıkları sen gidince kapatırım. Alışkınım.",
+      {
+        "who": "ece",
+        "text": "…{ad}, sonarımda bir şey kapsülün peşinden yükseliyor. Hayır. Duruyor. Geri dönüyor."
+      }
+    ],
+    "finale:stayed": [
+      {
+        "who": "ece",
+        "text": "Kalıyor musun? {ad}, bu bir soru değildi."
+      },
+      "Teşekkür ederim. O zaman sana neden burada olduğumu anlatayım.",
+      "Bu istasyon onu incelemek için kurulmadı. Onu beklemek için kuruldu."
     ]
   }
 }

@@ -15,14 +15,23 @@ export interface ReviewRow {
   practicable: boolean;
 }
 
+export interface GoalView {
+  title: string;
+  summary: string;
+  done: boolean;
+  steps: { label: string; why: string; done: boolean }[];
+}
+
 export interface NotebookView {
+  /** Sezon hedefi: yollar ve adımları (her onarımın nedeni). */
+  goals: { title: string; objectives: GoalView[] };
   review: ReviewRow[];
   formulas: FormulaPage[];
   logs: StationLog[];
   totalLogs: number;
 }
 
-export type NotebookTab = 'review' | 'formulas' | 'logs';
+export type NotebookTab = 'goals' | 'review' | 'formulas' | 'logs';
 
 const boxes = (b: number) => `<span class="boxes" aria-label="Kutu ${b}/5">${'●'.repeat(b)}${'○'.repeat(5 - b)}</span>`;
 
@@ -38,11 +47,21 @@ export function openNotebook(root: HTMLElement, v: NotebookView, opts: { tab?: N
         <button class="ghost" data-act="close" title="Esc ya da N">Kapat ✕</button>
       </header>
       <nav class="nb-tabs" role="tablist">
+        <button role="tab" data-tab="goals">Hedefler</button>
         <button role="tab" data-tab="review">Tekrar${due ? ` <b>${due}</b>` : ''}</button>
         <button role="tab" data-tab="formulas">Formüller</button>
         <button role="tab" data-tab="logs">Kayıtlar <span class="dim">${v.logs.length}/${v.totalLogs}</span></button>
       </nav>
-      <section data-page="review">
+      <section data-page="goals" hidden>
+        <p class="how"><b>${esc(v.goals.title)}.</b> İki yol var; ikisi de hazır olunca gemiyle bağlantı kurulur.</p>
+        ${v.goals.objectives
+          .map(
+            (o) => `<article class="nb-page"><h3>${esc(o.title)} ${o.done ? '<span class="dim">tamam</span>' : ''}</h3><p>${esc(o.summary)}</p>
+            <ol class="nb-goal">${o.steps.map((st) => `<li class="${st.done ? 'done' : ''}">${esc(st.label)}<span class="dim">${esc(st.why)}</span></li>`).join('')}</ol></article>`,
+          )
+          .join('')}
+      </section>
+      <section data-page="review" hidden>
         ${
           v.review.length
             ? `<p class="how">Doğru çözdüğün konular kutuda ilerler; aralık 1, 3, 7, 14, 30 gün. Yanlışta konu başa döner ve 10 dakika sonra yeniden gelir. Pratik kaynak harcatmaz.</p>
@@ -84,7 +103,7 @@ export function openNotebook(root: HTMLElement, v: NotebookView, opts: { tab?: N
     el.querySelectorAll<HTMLElement>('[data-page]').forEach((s) => (s.hidden = s.dataset.page !== tab));
     el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
   };
-  show(opts.tab ?? (due ? 'review' : 'formulas'));
+  show(opts.tab ?? (due ? 'review' : 'goals'));
   el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab as NotebookTab)));
   const close = () => {
     window.removeEventListener('keydown', onKey);

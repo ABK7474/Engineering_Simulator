@@ -20,6 +20,10 @@ export interface Player {
   readonly mode: MoveMode;
   readonly crouched: boolean;
   position: THREE.Vector3;
+  /** Zemin yüksekliği (istasyonda 0; deniz tabanında engebeli). */
+  ground: (x: number, z: number) => number;
+  /** Hız çarpanı (dalış kıyafetiyle tabanda yavaş). */
+  speedScale: number;
 }
 
 export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, start: THREE.Vector3): Player {
@@ -62,6 +66,8 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
     controls,
     enabled: true,
     position: camera.position,
+    ground: () => 0,
+    speedScale: 1,
     get mode() {
       return mode;
     },
@@ -71,7 +77,7 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
     update(dt, colliders) {
       lastColliders = colliders;
       // Göz yüksekliği eğilme durumuna yumuşakça gelir
-      const eye = crouched ? EYE.crouch : EYE.stand;
+      const eye = (crouched ? EYE.crouch : EYE.stand) + player.ground(camera.position.x, camera.position.z);
       camera.position.y += (eye - camera.position.y) * Math.min(1, EYE_RATE * dt);
 
       if (!player.enabled || !controls.isLocked) {
@@ -88,7 +94,7 @@ export function createPlayer(camera: THREE.PerspectiveCamera, dom: HTMLElement, 
       forward.y = 0;
       forward.normalize();
       right.crossVectors(forward, camera.up).normalize();
-      move.copy(forward).multiplyScalar(f).addScaledVector(right, s).normalize().multiplyScalar(speedFor(mode) * dt);
+      move.copy(forward).multiplyScalar(f).addScaledVector(right, s).normalize().multiplyScalar(speedFor(mode) * player.speedScale * dt);
 
       // Eksen eksen ilerle: duvara çapraz yürürken kayarak devam eder.
       const body = crouched ? BODY.crouch : BODY.stand;

@@ -15,6 +15,8 @@ export interface Building {
   update: (dt: number, elapsed: number, camera: THREE.Camera) => void;
   /** Yalnız bu odaların statik modelleri çizilir. */
   setVisibleRooms: (rooms: ReadonlySet<string>) => void;
+  /** Oda başına statik model grupları (görünürlüğü setVisibleRooms yönetir). */
+  roomGroups: THREE.Object3D[];
 }
 
 /** Havuzdaki soğuk (lamba) ve sıcak (ekran) ışık sayısı. */
@@ -174,6 +176,7 @@ export function buildBuilding(scene: THREE.Scene, assets: Assets, L: WorldLayout
 
   return {
     colliders: L.colliders.map(toBox),
+    roomGroups: [...byRoom.values()],
     setPower,
     setVisibleRooms(rooms) {
       visible = rooms;

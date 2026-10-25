@@ -15,10 +15,14 @@ export class Tweens {
     this.items = [];
   }
   update(dt: number): void {
-    this.items = this.items.filter((it) => {
+    // Çalışırken eklenenler (ör. kapı açılınca başlayan kapanma) kaybolmasın
+    const running = this.items;
+    this.items = [];
+    const kept = running.filter((it) => {
       it.t += dt;
       return it.fn(dt, it.t);
     });
+    this.items = kept.concat(this.items);
   }
 }
 

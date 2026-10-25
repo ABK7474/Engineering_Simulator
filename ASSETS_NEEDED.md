@@ -21,3 +21,6 @@ için kullanılmayan) varlıkları listeler. Geçici çözüm sütunu, o arada o
 | Elektrik vızıltısı (sürekli hum döngüsü) | Güç dağıtımı | Yok (sessiz) |
 | Sürekli buhar tıslaması döngüsü | Güç, AI çekirdeği | Kısa buhar püskürmeleri (`steam_1–3`) aralıklı |
 | Kanallarda akan su döngüsü (uzun) | Hava kilidi | `drip_loop` (7 s) |
+| Küçük denizaltı (Müren) dış ve iç modeli, CC0 | Prolog, koridor penceresinden enkaz | Kodla kurulan gövde, cam kubbe, kızaklar; kabin düz plakalar (`hub/cockpit.ts`) |
+| Telsiz cızırtısı, dalış kıyafeti nefesi, gövde gıcırtısı (kayıt), CC0 | Prolog | Kodla üretilen sesler (`audio/synth.ts`): filtrelenmiş beyaz gürültü, testere dişi |
+| Dalış kıyafeti başlığı kenarı / cam çizik dokusu | Prolog (taban) | CSS katmanı (radyal geçiş + buğu animasyonu) |

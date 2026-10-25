@@ -350,6 +350,42 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .finale dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-top: 14px; }
 .finale dt { color: var(--muted); }
 .finale dd { margin: 0; }
-.finale footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+.finale footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.finale .finale-lines p.ece b { color: var(--warn); }
+.finale-choice, .finale-tail { opacity: 0; animation: finale-in 1s ease forwards; }
+.finale-end { color: var(--muted); font-style: italic; margin: 14px 0 0; }
+.subtitle.radio .speaker { color: var(--warn); }
+.subtitle.radio .text { animation: radio-crackle 2.4s steps(1) infinite; }
+@keyframes radio-crackle { 0%, 100% { opacity: 1; } 47% { opacity: 0.55; } 49% { opacity: 1; } 83% { opacity: 0.75; } 84% { opacity: 1; } }
+.subtitle.system .speaker { color: #8aa0a4; }
+.subtitle.system .text { font-family: ui-monospace, monospace; font-size: 14px; }
+.subtitle .skip { margin-left: 12px; color: var(--muted); font-size: 11px; opacity: 0.7; }
+@media (prefers-reduced-motion: reduce) { .subtitle.radio .text { animation: none; } }
+.hud-goal { margin-top: 6px; font-size: 12px; color: var(--text, #d8eef0); max-width: 260px; }
+.hud-goal b { color: var(--accent); font-weight: 600; }
+.why { margin: 0 0 10px; font-size: 13px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 8px; }
+.nb-goal li { margin: 4px 0; line-height: 1.45; font-size: 14px; }
+.nb-goal li.done { color: var(--muted); text-decoration: line-through; }
+.nb-goal li .dim { display: block; text-decoration: none; }
+.gate-name { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 10px 0; }
+.gate-name input { width: 180px; }
+.gate-skip { margin-top: 6px; }
 .tag.ok { background: var(--ok, #30c070); }
 .tag.note { background: var(--accent); color: #061a1f; }
+
+/* Prolog: karartma ve dalış kıyafeti başlığı */
+#ui > .fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 6; transition: opacity 0.6s ease; }
+#ui > .fade.on { opacity: 1; }
+#ui > .helmet { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+#ui > .helmet[hidden] { display: none; }
+.helmet-glass {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 78% 72% at 50% 52%, transparent 70%, rgba(10, 30, 36, 0.3) 80%, rgba(2, 8, 10, 0.85) 92%, #000 99%),
+    linear-gradient(115deg, transparent 30%, rgba(200, 240, 255, 0.05) 34%, transparent 38%);
+  animation: helmet-fog 4.2s ease-in-out infinite;
+}
+@keyframes helmet-fog { 0%, 100% { box-shadow: inset 0 0 60px rgba(180, 220, 230, 0.04); } 30% { box-shadow: inset 0 0 140px rgba(180, 220, 230, 0.12); } }
+.helmet-gauge { position: absolute; right: 9%; bottom: 13%; font: bold 13px ui-monospace, monospace; color: #7fe8d8; text-shadow: 0 0 6px rgba(60, 220, 200, 0.6); }
+.helmet-gauge span { margin-right: 6px; color: #8aa0a4; }
+@media (prefers-reduced-motion: reduce) { .helmet-glass { animation: none; } }

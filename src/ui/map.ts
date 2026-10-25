@@ -15,7 +15,7 @@ export interface MapView {
   rooms: { id: string; name: string; rect: MapRect; discovered: boolean; current: boolean }[];
   /** horizontal: kuzey/güney duvarındaki kapı (x boyunca çizilir). */
   doors: { id: string; x: number; z: number; horizontal: boolean; open: boolean; visible: boolean }[];
-  faults: { id: string; label: string; x: number; z: number; status: 'open' | 'blocked' | 'solved'; visible: boolean }[];
+  faults: { id: string; label: string; why?: string; x: number; z: number; status: 'open' | 'blocked' | 'solved'; visible: boolean }[];
   player: { x: number; z: number; yaw: number } | null;
   /** Gidilmesi gereken arıza (koşul eksikken gösterilir). */
   target: string | null;
@@ -68,7 +68,7 @@ export function mountMap(root: HTMLElement): { toggle: (open?: boolean) => void;
           (f) => `<g class="map-fault ${f.status}${f.id === v.target ? ' target' : ''}" transform="translate(${f.x} ${f.z})">
             ${f.id === v.target ? '<circle class="pulse" r="2.2"/>' : ''}
             <circle r="1.05"/><text y="0.42" text-anchor="middle">${ICON[f.status]}</text>
-            <title>${esc(f.label)}</title></g>`,
+            <title>${esc(f.label)}${f.why ? ` — ${esc(f.why)}` : ''}</title></g>`,
         )
         .join('');
       const p = v.player;
@@ -80,7 +80,7 @@ export function mountMap(root: HTMLElement): { toggle: (open?: boolean) => void;
       el.innerHTML = `
         <header>${esc(v.title)} <span class="muted">M ile kapat</span></header>
         <svg viewBox="${vb.join(' ')}" class="map-svg" aria-hidden="true">${rooms}${doors}${faults}${player}</svg>
-        ${target ? `<p class="map-goal">Hedef: <b>${esc(target.label)}</b></p>` : ''}
+        ${target ? `<p class="map-goal">Hedef: <b>${esc(target.label)}</b>${target.why ? `<br><span class="dim">${esc(target.why)}</span>` : ''}</p>` : ''}
         <ul class="map-legend">
           <li><span class="sw open">!</span> çözülmemiş</li><li><span class="sw blocked">⚡</span> koşul eksik</li>
           <li><span class="sw solved">✓</span> çözüldü</li><li><span class="door locked"></span> kilitli</li><li><span class="door open"></span> açık</li>

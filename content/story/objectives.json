@@ -1,0 +1,31 @@
+{
+  "title": "Yüzeye ulaş",
+  "objectives": [
+    {
+      "id": "comms",
+      "title": "Ece'ye ulaş",
+      "summary": "Haberleşmeyi aç: sonar akustik modem olarak çalışır, mesajı NEREUS'un çekirdeği yönlendirir.",
+      "steps": ["power.backup", "door.b2c1.unlocked", "core.online", "power.main", "power.generator", "sensor.calibrated", "core.index", "core.restored"]
+    },
+    {
+      "id": "pod",
+      "title": "Kaçış kapsülü",
+      "summary": "A-1'deki kapsül yuvasını hazırla: valf, sintine, sızdırmaz dış kapak.",
+      "steps": ["power.main", "airlock.ready", "bilge.dry", "airlock.sealed"]
+    }
+  ],
+  "why": {
+    "backup-power": "İstasyonun her sistemi önce yedek hattan uyanır; haberleşme de kapsül de.",
+    "door-lock": "Kontrol odası C-1 bu kapının ardında; çekirdek terminali orada.",
+    "core-terminal": "NEREUS'un çekirdeği olmadan hiçbir pano açılmaz; mesaj yönlendirme de onda.",
+    "power-bus": "Ana bara: sonar vericisi ve kapsül yuvası buradan beslenir.",
+    "airlock-valve": "Hava kilidi valfi kapsül yuvasına geçişi açar.",
+    "generator-sync": "Sonar vericisi tek başına barayı düşürür; jeneratör ikinci kaynak.",
+    "sonar-frontend": "Sonar = akustik modem. Ece'ye ancak bununla ulaşırsın.",
+    "core-index": "Gelen mesajı çözmek için çekirdeğin dizini gerekiyor.",
+    "core-runtime": "Mesaj yönlendirme modülü: gemiye giden hat çekirdekten geçer.",
+    "bilge-pumps": "Kapsül yuvası su altında; pompalar boşaltmazsa kapsül fırlatılamaz.",
+    "outer-door": "Dış kapak sızdırmazsa kapsül fırlatılabilir.",
+    "blackout": "Temas ışığa ve sese geliyor. Karanlıkta bekleyemezsen ne Ece'ye ne kapsüle ulaşırsın."
+  }
+}

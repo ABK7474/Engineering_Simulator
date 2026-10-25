@@ -68,6 +68,7 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - 2026-10-22 · 2c bitti (6 oda, 402 test). Sıradaki: 2d tehdit olayı.
 - 2026-10-22 · 2d bitti (416 test). Sıradaki: 2e (aralıklı tekrar, kayıtlar/formül defteri, ipucu, Sezon 1 finali).
 - 2026-10-22 · 2e bitti (425 test). Adım 2'nin tamamı bitti. Kalan: kullanıcının isteyeceği tarayıcı e2e turu ve `npm run verify:cs` / `verify:algo` (yavaş testler).
+- 2026-10-25 · Adım 3 (hikâye + prolog) bitti, push edildi. Sıradaki: Adım 4 (kollar/eller, bilek cihazı, blob gölge, yansıma), sonunda tam `npm run e2e`.
 
 ## Doğrulama turu (2026-10-22)
 - [x] `npm run verify:cs` 100/100; yeni `npm run e2e` (başsız Chrome): koridordan finale 12 arıza, W ile kapıdan yürüme, tehdit olayı, konsol temiz
@@ -82,3 +83,22 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - [x] Kullanıcının bildirdiği iç içe geçme/havada durma: duvar dekoru gerçek (yatık) duvar yüzeyine, pilaster ve ortak duvar kuralları, zemin/tavan çakışmaları, elle konmuş kablolar; GLB kutularıyla genel tarama testi (`intersect.test.ts`) sıfır çakışma
 - [x] `npm run screens` (hızlı görsel kontrol, ~10 dk) eklendi
 
+
+## Adım 3 — Hikâye ve prolog (Parça 1)
+Plan: Müren denizaltısında atlanabilir prolog, "yüzeye ulaş" hedefi, gizemin kayıtlarla açılması, seçimli final.
+- [x] 3.1 İçerik: replik biçimi (konuşmacılı satır, `{ad}`), season1.json uyarlaması, kayıtlar (3 yeniden yazım + 3 yeni), objectives.json, prologue.json, iki prolog kartı (seri LED, seri-paralel; kolay)
+- [x] 3.2 Saf mantık + testler: src/story/lines.ts, objectives.ts, prologue.ts (sahne durum makinesi, atlama)
+- [x] 3.3 İlerleme: profile.name (varsayılan Deniz), ending, meta.prologueSeen; eski kayıt göçü
+- [x] 3.4 Arayüz: konuşmacılı ve tuşla geçilebilen altyazı, giriş ekranında ad + "Prologu atla", ayarlarda ad, hedef satırı (HUD), Defter "Hedefler" sekmesi, seçimli final
+- [x] 3.5 Hub: kokpit + Müren enkazı (cockpit.ts), istasyon dış kabuğu + servis kilidi + kılavuz lambaları (shell.ts), rig kipleri (kokpit/taban/istasyon), tabanda yürüme, kask lambası, yaratığı kokpit önünden geçirme
+- [x] 3.6 Ses: kodla üretilen cızırtı, nefes, alarm, gövde gıcırtısı (synth.ts)
+- [x] 3.7 Bağlama: src/prologue-flow.ts (sahneler, iki bulmaca, Müren kaynakları, kıyafet katmanı, kilit → koridor)
+- [x] 3.8 Betikler: e2e/screens prologu atlar; `npm run e2e:prologue`; görsel bakışlar (kokpit, taban, enkaz)
+- [x] 3.9 Doğrulama: 491 test, tsc, build; `npm run e2e:prologue` temiz (6 dk; prolog bakışları en fazla 92 çağrı / 79 bin üçgen); istasyon bakışları en fazla 111 çağrı / 125 bin üçgen → commit + push
+
+## Adım 4 — Karakterin varlığı (Parça 2)
+- [ ] 4.1 Kollar ve eller (viewmodel.ts, ayrı geçiş): yürüme salınımı, panele uzanma, kask/el lambası
+- [ ] 4.2 Bilek cihazı: tuval ekran (O₂, Güç, hedef, temas, tekrar), Q bakış, M harita (tuvalde); N kolu kaldırır, defter normal 2D panel açılır
+- [ ] 4.3 "Klasik HUD" ayarı (eski HUD ve harita paneli)
+- [ ] 4.4 Ayak altında blob gölge; cam ve karanlık ekranlarda statik küp yansıma
+- [ ] 4.5 Doğrulama: testler, tsc, build, görsel bütçe tablosu, tam `npm run e2e` bir kez → commit + push

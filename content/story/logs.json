@@ -1,6 +1,14 @@
 {
   "logs": [
     {
+      "id": "log-00",
+      "title": "Müren seyir kaydı",
+      "after": [
+        "prologue.done"
+      ],
+      "text": "Güç barası düşüşü 14.02'de. Parazitin frekansı 121,5 kHz: NEREUS acil durum işaretçisiyle aynı. Balast valfleri komut almadı; komut kanalı dışarıdan meşgul edilmiş."
+    },
+    {
       "id": "log-01",
       "title": "Bakım kaydı — B-2",
       "after": [
@@ -14,7 +22,7 @@
       "after": [
         "door.b2c1.unlocked"
       ],
-      "text": "NEREUS bugün üçüncü kez aynı soruyu sordu: 'Dışarıdakini görmek istiyor musunuz?' Komutan cevap vermememizi söyledi."
+      "text": "NEREUS üçüncü kez gece aydınlatmasını kapatmak için izin istedi. Komutan reddetti. O gece sonar 03.10'da yine öttü."
     },
     {
       "id": "log-03",
@@ -58,11 +66,11 @@
     },
     {
       "id": "log-08",
-      "title": "Hava kilidi — son giriş",
+      "title": "Hava kilidi — tahliye kaydı",
       "after": [
         "airlock.sealed"
       ],
-      "text": "Son ekip dış kapıdan çıktı. Hava kilidi kaydında dönüş yok. Kapıyı içeriden mühürleyen komutu NEREUS vermiş."
+      "text": "Tahliye kaydı: \"basınç kazası\". O gecenin basınç değerleri normal. Kapsüller ışıksız ve sessiz fırlatıldı; komutu NEREUS verdi."
     },
     {
       "id": "log-09",
@@ -70,7 +78,23 @@
       "after": [
         "core.restored"
       ],
-      "text": "Taşınan 14 kayıt burada. Hepsi aynı cümleyle bitiyor: 'Dışarıdaki bizi korumaya çalışıyor.'"
+      "text": "Taşınan 14 kayıt burada. Hepsi aynı kuralı tekrarlıyor: \"Işığı kapalı tut. Sesi kes. Bir mühendis gelene kadar dayan.\" Son kayıt bu hafta: \"İşaretçi yeniden açıldı. Parazit dalgası gönderildi. Hedef: MÜREN.\""
+    },
+    {
+      "id": "log-10",
+      "title": "Şirket yazısı (kopya)",
+      "after": [
+        "power.main"
+      ],
+      "text": "Konu: NEREUS işaretçisi. Eski sistem arızası. Bölgedeki ekipler istasyona yaklaşmayacak. Tahliye dosyası (basınç kazası) kapalıdır; yeniden açılmayacak."
+    },
+    {
+      "id": "log-11",
+      "title": "Ece'nin yarım mesajı",
+      "after": [
+        "sensor.calibrated"
+      ],
+      "text": "\"…Müren'in son konumunu işaretledim. Şirket arama izni vermedi; ben de sormadım. Bu frekansı dinliyorum. Işık görürsem ineceğim.\""
     }
   ]
 }

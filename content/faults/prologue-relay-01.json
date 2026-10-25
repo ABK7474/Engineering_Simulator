@@ -1,0 +1,36 @@
+{
+  "id": "prologue-relay-01",
+  "title": "Müren — kablo rölesi",
+  "briefing": "Bozuk röle kutusu test devresini görmeden hattı bağlamıyor. Önce test LED'ini doğru akımda yak.",
+  "stages": [
+    {
+      "id": "relay-test-led",
+      "type": "series-led",
+      "course": "devre-teorisi-1",
+      "topic": "seri-devre-ohm",
+      "title": "Röle test LED'i",
+      "briefing": "Kablo rölesinin test LED'i yanmazsa röle kendini sağlam saymaz. Seri devrede tek akım vardır: kaynak gerilimi direnç ve LED arasında paylaşılır. LED'in üstündeki gerilim (Vf) sabit sayılır; akımı direnç belirler: R = (Vs − Vf) / I.",
+      "config": {
+        "supplyVoltages": [
+          5
+        ],
+        "leds": [
+          {
+            "color": "kırmızı",
+            "vf": 2.0
+          },
+          {
+            "color": "yeşil",
+            "vf": 2.2
+          }
+        ],
+        "targetMin_mA": 10,
+        "targetMax_mA": 20,
+        "absMax_mA": 30,
+        "visibleMin_mA": 1,
+        "fuse_mA": 200,
+        "resistorRating_W": 0.25
+      }
+    }
+  ]
+}

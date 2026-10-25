@@ -13,7 +13,8 @@
     "verify:algo": "node scripts/verify-algo.mjs",
     "gen:cs": "node scripts/gen-cs-output.mjs",
     "e2e": "node scripts/e2e.mjs",
-    "screens": "node scripts/screens.mjs"
+    "screens": "node scripts/screens.mjs",
+    "e2e:prologue": "node scripts/e2e-prologue.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"

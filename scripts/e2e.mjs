@@ -95,7 +95,7 @@ async function solveFault(fid) {
 
 try {
   const t0 = Date.now();
-  await page.goto(`http://localhost:${PORT}/?seed=11`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+  await page.goto(`http://localhost:${PORT}/?seed=11&prologue=skip`, { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
   await page.click('.gate');
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
@@ -151,6 +151,11 @@ try {
   else {
     log('final:', await ev(() => document.querySelector('.finale h2')?.textContent));
     await page.screenshot({ path: path.join(OUT, 'finale.png') });
+    // Seçim: kapsülle ayrıl (kayda ending.left düşer)
+    await page.click('.finale [data-end="left"]');
+    await page.waitForSelector('.finale [data-act="continue"]', { timeout: 10000 });
+    const ending = await ev(() => window.__dm.progress().ending);
+    if (ending !== 'left') fail(`final seçimi kaydedilmedi (${ending})`);
     await page.click('.finale [data-act="continue"]');
     await sleep(500);
     await resumeRoaming();

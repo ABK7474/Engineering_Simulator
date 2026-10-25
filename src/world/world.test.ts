@@ -169,8 +169,9 @@ describe('yerleşim', () => {
   });
 
   it('oda köşeleri kapalı: kapısız her köşede kolon ve duvar içinde kalan dolgu bloğu', () => {
-    // altı oda × 4 köşe; kapı hücresine değen köşeler atlanır (koridorun güney ucu, P-1/S-1/K-1/A-1 kapıları)
-    expect(L.cornerFills.length).toBe(15);
+    // altı oda × 4 köşe; kapı hücresine değen köşeler atlanır (koridorun güney ucu, kuzey ucundaki servis kilidi,
+    // P-1/S-1/K-1/A-1 kapıları)
+    expect(L.cornerFills.length).toBe(13);
     for (const { rect: r } of L.rooms) {
       for (const [x, z] of [[r.minX, r.maxZ], [r.maxX, r.maxZ], [r.minX, r.minZ], [r.maxX, r.minZ]]) {
         const f = L.cornerFills.find((c) => c.minX < x && x < c.maxX && c.minZ < z && z < c.maxZ);
@@ -296,5 +297,23 @@ describe('temalar', () => {
     const L = buildWorldLayout(W);
     const titles = L.decor.flatMap((d) => d.signs.filter((s) => s.kind === 'room').map((s) => `${d.room}:${s.title}`));
     expect(titles).toEqual(expect.arrayContaining(['corridor-b2:KONTROL ODASI C-1', 'lab-c1:B-2 KORİDORU']));
+  });
+});
+
+describe('prolog girişi', () => {
+  const L2 = buildWorldLayout(parseWorld(worldJson));
+  it('servis kilidi koridorun kuzey ucunda, dışa bakıyor; hücrede duvar yok, çerçeve ve kapalı geçiş var', () => {
+    const e = L2.entry!;
+    expect(e.hatch).toMatchObject({ x: 0, z: 2, nx: 0, nz: 1, rotY: 0 });
+    expect(L2.placements.some((p) => p.model === 'Door_Frame_Square' && p.x === 0 && p.z === 2)).toBe(true);
+    expect(L2.placements.some((p) => p.model.startsWith('WallAstra') && Math.abs(p.x) < 0.5 && Math.abs(p.z - 2) < 0.5)).toBe(false);
+    expect(L2.colliders.some((c) => c.minX <= 0 && c.maxX >= 0 && c.minZ <= 2 && c.maxZ >= 2)).toBe(true);
+    expect(L2.decor.find((d) => d.room === 'corridor-b2')!.signs.some((s) => s.title === 'SERVİS KİLİDİ')).toBe(true);
+  });
+
+  it('servis kilidi iç duvar hücresine konamaz', () => {
+    const w = structuredClone(worldJson) as typeof worldJson;
+    (w.start as { hatch: unknown }).hatch = { wall: 'west', index: 1 }; // pencere hücresi
+    expect(() => loadWorld(w, undefined, undefined, { verifySeeds: 0 })).toThrow(/servis kilidi/);
   });
 });

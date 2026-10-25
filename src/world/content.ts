@@ -1,6 +1,7 @@
 // Dünya içeriğini yükler ve baştan sona doğrular: şema → anlamsal kurallar → oda zorluğuyla aşamalar.
 // Kartlar content/faults/ altındaki bütün JSON'lardır; yeni arıza = yeni dosya.
 
+import prologueJson from '../../content/story/prologue.json';
 import storyJson from '../../content/story/season1.json';
 import worldJson from '../../content/world/season1-world.json';
 import type { FaultCard, StageDef } from '../core/types';
@@ -9,6 +10,9 @@ import { faultStages, verifyFaultStages } from './difficulty';
 import { buildWorldLayout, type WorldLayout } from './layout';
 import { parseWorld, WorldError, type WorldDef } from './schema';
 import { validateWorld, type Story } from './validate';
+import { parsePrologue, type PrologueDef } from '../story/prologue';
+import { lineProblems } from '../story/lines';
+import type { Difficulty } from './schema';
 
 const cardModules = import.meta.glob<{ default: FaultCard }>('../../content/faults/*.json', { eager: true });
 export const CARDS: Record<string, FaultCard> = Object.fromEntries(Object.values(cardModules).map((m) => [m.default.id, m.default]));
@@ -37,4 +41,31 @@ export function loadWorld(raw: unknown = worldJson, story: Story = storyJson as 
   }
   if (problems.length) throw new WorldError(problems);
   return { world, layout: buildWorldLayout(world), story, stages, cards };
+}
+
+export interface PrologueContent {
+  def: PrologueDef;
+  /** Kart kimliği → kolay zorluk uygulanmış aşamalar. */
+  stages: Record<string, StageDef[]>;
+}
+
+/** Prolog: sahneler, replik denetimi, bulmaca kartları (prolog zorluğu uygulanmış, tohumlarla doğrulanmış). */
+export function loadPrologue(raw: unknown = prologueJson, story: Story = storyJson as Story, cards = CARDS, opts: { verifySeeds?: number } = {}): PrologueContent {
+  const def = parsePrologue(raw);
+  const problems: string[] = [];
+  const stages: Record<string, StageDef[]> = {};
+  (def.reserve ?? []).forEach((l, i) => problems.push(...lineProblems(story, l, `prolog yedek #${i + 1}`)));
+  for (const b of def.beats) {
+    [...b.lines, ...(b.onFail ?? []), ...(b.onSuccess ?? [])].forEach((l, i) => problems.push(...lineProblems(story, l, `prolog '${b.id}' #${i + 1}`)));
+    if (b.until.type !== 'puzzle') continue;
+    const card = cards[b.until.card];
+    if (!card) {
+      problems.push(`prolog '${b.id}': kart yok (${b.until.card})`);
+      continue;
+    }
+    stages[card.id] = faultStages(card, def.difficulty as Difficulty);
+    if (opts.verifySeeds !== 0) problems.push(...verifyFaultStages(card.id, stages[card.id], opts.verifySeeds));
+  }
+  if (problems.length) throw new WorldError(problems);
+  return { def, stages };
 }

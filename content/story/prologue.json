@@ -1,0 +1,226 @@
+{
+  "difficulty": {
+    "ledWindow_mA": [
+      8,
+      22
+    ],
+    "binSize": 4,
+    "tolerance": 0.08
+  },
+  "reserve": [
+    {
+      "who": "ece",
+      "text": "Hücreler kritik. Yedeğe geçtim; bir daha yakma, {ad}."
+    }
+  ],
+  "beats": [
+    {
+      "id": "relay",
+      "cues": [
+        "cockpit",
+        "descent"
+      ],
+      "lines": [
+        {
+          "who": "ece",
+          "text": "Müren, derinlik iki yüz. {ad}, kahveni dökmediysen röleye bakalım."
+        },
+        {
+          "who": "ece",
+          "text": "Röle kutusu solunda. Test LED'i yanmadan hat bağlanmaz."
+        }
+      ],
+      "target": "relay",
+      "prompt": "E: Röle kutusunu aç",
+      "until": {
+        "type": "puzzle",
+        "card": "prologue-relay-01"
+      },
+      "onFail": [
+        {
+          "who": "ece",
+          "text": "Sigorta mı attı? Sorun değil. İlk günümde ben de iki tane yakmıştım. Üç."
+        }
+      ],
+      "onSuccess": [
+        {
+          "who": "ece",
+          "text": "Hat bağlandı. Gördün mü, kolaydı."
+        }
+      ]
+    },
+    {
+      "id": "contact",
+      "cues": [
+        "sonarContact",
+        "creaturePass"
+      ],
+      "lines": [
+        {
+          "who": "muren",
+          "text": "Sonar teması. Boyut: belirsiz."
+        },
+        {
+          "who": "ece",
+          "text": "Balina olmalı. …Çok büyük bir balina."
+        }
+      ],
+      "until": {
+        "type": "lines"
+      }
+    },
+    {
+      "id": "beacon",
+      "cues": [
+        "static",
+        "beacon"
+      ],
+      "lines": [
+        {
+          "who": "muren",
+          "text": "Telsizde parazit. Kaynak: NEREUS acil durum işaretçisi."
+        },
+        {
+          "who": "ece",
+          "text": "O işaretçi altı yıldır susuyordu. Şirket 'eski sistem arızası' diyor."
+        },
+        {
+          "who": "ece",
+          "text": "Uzak dur dediler. Duruyoruz. Röleyi bitir, yukarı çık."
+        }
+      ],
+      "until": {
+        "type": "lines"
+      }
+    },
+    {
+      "id": "wave",
+      "cues": [
+        "wave"
+      ],
+      "lines": [
+        {
+          "who": "muren",
+          "text": "Güç barası düştü. Balast pompası: yanıt yok."
+        },
+        {
+          "who": "ece",
+          "text": "{ad}, pompayı yedek hücreden besle. Şimdi."
+        }
+      ],
+      "target": "pump",
+      "prompt": "E: Balast pompası sürücüsü",
+      "until": {
+        "type": "puzzle",
+        "card": "prologue-bus-01"
+      },
+      "onFail": [
+        {
+          "who": "ece",
+          "text": "Sakin. Önce motorun direncini bul, gerisi kendiliğinden gelir."
+        }
+      ],
+      "onSuccess": [
+        {
+          "who": "muren",
+          "text": "Pompa dönüyor. Balast valfleri: komut reddedildi."
+        }
+      ]
+    },
+    {
+      "id": "fall",
+      "cues": [
+        "radioCut",
+        "sink"
+      ],
+      "lines": [
+        {
+          "who": "ece",
+          "text": "…{ad}… balastı elle… —"
+        },
+        {
+          "who": "muren",
+          "text": "Telsiz bağlantısı yok. Tasarım derinliği aşıldı."
+        },
+        {
+          "who": "muren",
+          "text": "Çarpışmaya hazırlan."
+        }
+      ],
+      "until": {
+        "type": "event",
+        "name": "impact"
+      }
+    },
+    {
+      "id": "crash",
+      "cues": [
+        "crash",
+        "o2drain"
+      ],
+      "lines": [
+        {
+          "who": "muren",
+          "text": "Gövde bütünlüğü kısmi. Kabin oksijeni azalıyor."
+        },
+        {
+          "who": "muren",
+          "text": "Dalış kıyafeti arka bölmede."
+        }
+      ],
+      "target": "locker",
+      "prompt": "E: Dalış kıyafetini giy",
+      "until": {
+        "type": "interact"
+      }
+    },
+    {
+      "id": "suit",
+      "cues": [
+        "suitUp"
+      ],
+      "lines": [
+        {
+          "who": "suit",
+          "text": "Tüp dolu. Kask lambası açık."
+        }
+      ],
+      "until": {
+        "type": "time",
+        "sec": 2.5
+      }
+    },
+    {
+      "id": "seabed",
+      "cues": [
+        "seabed"
+      ],
+      "lines": [
+        {
+          "who": "suit",
+          "text": "En yakın basınçlı yapı: on beş metre. Enerji izi yok."
+        },
+        {
+          "who": "suit",
+          "text": "WASD: yürü."
+        }
+      ],
+      "target": "hatch",
+      "prompt": "E: Servis kilidini çalıştır",
+      "until": {
+        "type": "interact"
+      }
+    },
+    {
+      "id": "airlock",
+      "cues": [
+        "enterStation"
+      ],
+      "lines": [],
+      "until": {
+        "type": "event",
+        "name": "inside"
+      }
+    }
+  ]
+}
