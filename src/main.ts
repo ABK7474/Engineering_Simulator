@@ -69,7 +69,7 @@ import { loadMeta, saveMeta } from './core/meta';
 import type { ResourceState } from './core/resources';
 import { respawnInRoom } from './world/respawn';
 import { doorOpen, missingFor, nextGoal, withProvided } from './world/state';
-import { mountHud } from './ui/hud';
+import { mountHud, type HudView } from './ui/hud';
 import { openLibraryView } from './ui/library-view';
 import { openSettings } from './ui/settings';
 import { openTopicFlow } from './ui/topic-flow';
@@ -136,10 +136,22 @@ const uiSound = (s: 'click' | 'switch') => audio.play(s, { volume: 0.7 });
 const hud = mountHud(ui);
 /** Prologda HUD Müren'in kaynaklarını gösterir. */
 let hudResources: ResourceState | null = null;
+/** Bilek cihazı (hub kurulunca bağlanır); klasik HUD kapalıyken bilgiler yalnız bilekte. */
+let wristSink: ((v: HudView) => void) | null = null;
+const CLASSIC_KEY = 'derin-muhendis.ui.classicHud';
+const classicHud = () => {
+  try {
+    return localStorage.getItem(CLASSIC_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const applyHudMode = () => document.body.classList.toggle('wrist-hud', !classicHud());
+applyHudMode();
 const renderHud = () => {
   const res = hudResources ?? progress.resources;
   const drain = drainPerMinute(res, balance);
-  hud.render({
+  const view: HudView = {
     rows: Object.entries(balance.resources).map(([id, def]) => ({
       id,
       label: def.label,
@@ -153,8 +165,15 @@ const renderHud = () => {
     threat: activeThreatView(),
     reviewDue: dueTopics(progress.review, Date.now()).length,
     goal: progress.prologueDone ? objectiveLine(OBJECTIVES, progress.world.states, stateName) : undefined,
-  });
+  };
+  hud.render(view);
+  wristSink?.(view);
+  // Bilek cihazı uyarısı: kaynak düşükken ya da temas başlayınca bir kez bip (durum düzelince yeniden kurulur)
+  const alert = view.rows.some((r) => r.level !== 'ok') || Boolean(view.threat);
+  if (alert && !wristAlerted) audio.synth.beep(); // ses başlamadıysa (giriş ekranı) sessizce yok sayılır
+  wristAlerted = alert;
 };
+let wristAlerted = false;
 setInterval(() => renderHud(), 30_000);
 /** HUD için süren tehdit (varsa): saldırıya kalan süre, oyuncunun gürültüsü. */
 let threatNoise: 0 | 1 | 2 = 0;
@@ -273,6 +292,16 @@ mountBackupMenu(ui, {
             clearKey: clearApiKey,
             model: () => getModel(LLM_DEFAULTS.model),
             saveModel: setModel,
+            classicHud,
+            saveClassicHud: (on: boolean) => {
+              try {
+                localStorage.setItem(CLASSIC_KEY, on ? '1' : '0');
+              } catch {
+                /* depolama kapalıysa yalnız bu oturum */
+              }
+              applyHudMode();
+              if (!on) map.toggle(false);
+            },
             playerName: () => progress.profile.name,
             savePlayerName: (n) => {
               progress.profile.name = cleanName(n);
@@ -343,6 +372,10 @@ const hub = await createHub(app, {
   },
   onPrologueTarget: (t) => prologue?.debug.interact(t),
 });
+
+// Bilek cihazı: HUD'un gösterdiği her şey bilekte de
+wristSink = (v) => hub.arms.setInfo({ rows: v.rows, goal: v.goal, threat: v.threat, reviewDue: v.reviewDue, damages: v.damages });
+renderHud();
 
 // --- Ortam: ana bara beslenince sonar yayında, düzenli ping (uzak, kısık) ---
 setInterval(() => {
@@ -426,10 +459,26 @@ function say(key: string, once = true): void {
 }
 const map = mountMap(ui);
 let mapTarget: string | null = null;
-window.addEventListener('keydown', (e) => {
-  if (e.code !== 'KeyM' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || prologueActive()) return;
-  map.toggle();
+/** Harita: klasik HUD'da köşe paneli, değilse bilek cihazında (kol kalkar). */
+function openMap(open?: boolean): void {
+  if (classicHud()) {
+    map.toggle(open);
+    renderMap();
+    return;
+  }
+  const want = open ?? hub.arms.mode !== 'map';
+  void hub.arms.raise(want ? 'map' : 'rest');
   renderMap();
+}
+const typing = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyM' || typing(e) || prologueActive()) return;
+  openMap();
+});
+// Q: bilek cihazına bak (kolu kaldır / indir)
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyQ' || typing(e) || e.repeat || !hub.isRoaming()) return;
+  void hub.arms.raise(hub.arms.mode === 'glance' ? 'rest' : 'glance');
 });
 
 // --- Arızalar: ardışık aşamalar, koşullar (requires) ve sağladıkları durumlar (provides) ---
@@ -518,6 +567,17 @@ function buildMapView(): MapView {
 }
 function renderMap(): void {
   if (map.isOpen()) map.render(buildMapView());
+  if (hub.arms.mode === 'map') {
+    const v = buildMapView();
+    hub.arms.setMap({
+      bounds: v.bounds,
+      rooms: v.rooms.filter((r) => r.discovered).map((r) => ({ name: r.name, rect: r.rect, current: r.current })),
+      doors: v.doors.filter((d) => d.visible).map((d) => ({ x: d.x, z: d.z, horizontal: d.horizontal, open: d.open })),
+      faults: v.faults.filter((f) => f.visible).map((f) => ({ x: f.x, z: f.z, status: f.status, target: f.id === v.target })),
+      player: v.player,
+      targetLabel: v.faults.find((f) => f.id === v.target)?.label,
+    });
+  }
 }
 setInterval(renderMap, 200);
 
@@ -707,6 +767,16 @@ if (import.meta.env.DEV) {
         if (timer !== undefined) progress.threats[id] = { ...st, phase: st.phase === 'cleared' ? 'cleared' : 'pending', timer };
         return structuredClone(progress.threats[id] ?? st);
       },
+      /** Klasik HUD aç/kapa (Ayarlar'daki kutuyla aynı yol). */
+      setClassicHud: (on: boolean) => {
+        try {
+          localStorage.setItem(CLASSIC_KEY, on ? '1' : '0');
+        } catch {
+          /* yok say */
+        }
+        applyHudMode();
+        if (!on) map.toggle(false);
+      },
       /** Prolog: sahne, atlama, açık bulmacayı kodun cevabıyla çözme, hedefe dokunma. */
       prologue: prologue && {
         beat: () => prologue.debug.beat(),
@@ -738,8 +808,7 @@ function interact(fid: string): void {
   const missing = missingFor(f, states());
   if (missing.length) {
     mapTarget = nextGoal(W, states(), solvedSet(), f)?.id ?? null;
-    map.toggle(true);
-    renderMap();
+    openMap(true);
     refreshTerminal(fid);
     uiSound('switch');
     say(`blocked:${missing[0]}`, false);
@@ -845,15 +914,22 @@ let notebookOpen = false;
 function toggleNotebook(): void {
   if (notebookOpen || closing || !started || prologueActive()) return;
   notebookOpen = true;
+  // Kol kaldırılır (bilek cihazı), sonra defter normal panel olarak açılır; kapanınca kol iner
+  if (!classicHud()) void hub.arms.raise('notebook').then(openNotebookPanel);
+  else openNotebookPanel();
+}
+function openNotebookPanel(): void {
   withHubPaused((onClose) =>
     openNotebook(ui, notebookView(), {
       onPractice: (key) => {
         notebookOpen = false;
+        void hub.arms.raise('rest');
         onClose();
         openPractice(key);
       },
       onClose: () => {
         notebookOpen = false;
+        void hub.arms.raise('rest');
         onClose();
       },
     }),

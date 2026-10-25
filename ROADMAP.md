@@ -68,7 +68,8 @@ Durum işaretleri: `[x]` bitti · `[~]` sürüyor/kısmen · `[ ]` başlanmadı
 - 2026-10-22 · 2c bitti (6 oda, 402 test). Sıradaki: 2d tehdit olayı.
 - 2026-10-22 · 2d bitti (416 test). Sıradaki: 2e (aralıklı tekrar, kayıtlar/formül defteri, ipucu, Sezon 1 finali).
 - 2026-10-22 · 2e bitti (425 test). Adım 2'nin tamamı bitti. Kalan: kullanıcının isteyeceği tarayıcı e2e turu ve `npm run verify:cs` / `verify:algo` (yavaş testler).
-- 2026-10-25 · Adım 3 (hikâye + prolog) bitti, push edildi. Sıradaki: Adım 4 (kollar/eller, bilek cihazı, blob gölge, yansıma), sonunda tam `npm run e2e`.
+- 2026-10-25 · Adım 3 (hikâye + prolog) bitti, push edildi.
+- 2026-10-25 · Adım 4 (kollar/eller, bilek cihazı, blob gölge, yansıma) bitti, tam e2e temiz, push edildi.
 
 ## Doğrulama turu (2026-10-22)
 - [x] `npm run verify:cs` 100/100; yeni `npm run e2e` (başsız Chrome): koridordan finale 12 arıza, W ile kapıdan yürüme, tehdit olayı, konsol temiz
@@ -97,8 +98,8 @@ Plan: Müren denizaltısında atlanabilir prolog, "yüzeye ulaş" hedefi, gizemi
 - [x] 3.9 Doğrulama: 491 test, tsc, build; `npm run e2e:prologue` temiz (6 dk; prolog bakışları en fazla 92 çağrı / 79 bin üçgen); istasyon bakışları en fazla 111 çağrı / 125 bin üçgen → commit + push
 
 ## Adım 4 — Karakterin varlığı (Parça 2)
-- [ ] 4.1 Kollar ve eller (viewmodel.ts, ayrı geçiş): yürüme salınımı, panele uzanma, kask/el lambası
-- [ ] 4.2 Bilek cihazı: tuval ekran (O₂, Güç, hedef, temas, tekrar), Q bakış, M harita (tuvalde); N kolu kaldırır, defter normal 2D panel açılır
-- [ ] 4.3 "Klasik HUD" ayarı (eski HUD ve harita paneli)
-- [ ] 4.4 Ayak altında blob gölge; cam ve karanlık ekranlarda statik küp yansıma
-- [ ] 4.5 Doğrulama: testler, tsc, build, görsel bütçe tablosu, tam `npm run e2e` bir kez → commit + push
+- [x] 4.1 Kollar ve eller (viewmodel.ts, ayrı geçiş): yürüme salınımı, panele uzanma, kask/el lambası
+- [x] 4.2 Bilek cihazı: tuval ekran (O₂, Güç, hedef, temas, tekrar), Q bakış, M harita (tuvalde); N kolu kaldırır, defter normal 2D panel açılır
+- [x] 4.3 "Klasik HUD" ayarı (eski HUD ve harita paneli)
+- [x] 4.4 Ayak altında blob gölge; cam ve karanlık ekranlarda statik küp yansıma
+- [x] 4.5 Doğrulama: 494 test, tsc, build; tam `npm run e2e` temiz (34 dk: 12 arıza → seçimli final, Q/M/N ve klasik HUD, konsol temiz; en kötü bakış 116 çağrı / 125 bin üçgen) → commit + push

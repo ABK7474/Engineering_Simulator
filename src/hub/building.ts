@@ -45,6 +45,7 @@ export function buildBuilding(scene: THREE.Scene, assets: Assets, L: WorldLayout
   const roomKeys = [...new Set(L.placements.map((p) => p.room ?? ''))];
   // Lomboz camı şeffaf: dışarıdaki su altı sahnesi (hub/exterior.ts) görünür; çok hafif bir yansıma tonu.
   const oceanGlass = new THREE.MeshBasicMaterial({ color: 0xc8f2ff, transparent: true, opacity: 0.06, depthWrite: false, fog: false });
+  oceanGlass.name = 'ocean-glass';
   for (const key of roomKeys) {
     const g = batchAll(assets.models, L.placements.filter((p) => (p.room ?? '') === key), {
       // Okyanus camı yalnız pencere modüllerinde; düz duvarın dekoratif cam şeridi saydamlaşırsa arkasındaki boşluk görünür

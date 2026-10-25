@@ -101,6 +101,43 @@ try {
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   log(`yüklendi (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 
+  // Bilek cihazı: Q bakış, M harita (bilekte), N defter (kol kalkar, panel açılır); klasik HUD'da köşe paneli
+  const armMode = () => ev(() => window.__dm.hub.arms.mode);
+  const waitArm = async (want, what) => {
+    for (let k = 0; k < 60 && (await armMode()) !== want; k++) await frames(2);
+    if ((await armMode()) !== want) fail(`${what}: kol '${want}' olmadı (${await armMode()})`);
+  };
+  await page.keyboard.press('KeyQ');
+  await waitArm('glance', 'Q');
+  await page.keyboard.press('KeyQ');
+  await waitArm('rest', 'Q tekrar');
+  await page.keyboard.press('KeyM');
+  await waitArm('map', 'M');
+  if (await ev(() => !document.querySelector('.map-panel').hidden)) fail('bilek kipinde köşe haritası açıldı');
+  await page.keyboard.press('KeyM');
+  await waitArm('rest', 'M tekrar');
+  await page.keyboard.press('KeyN');
+  try {
+    await page.waitForSelector('.notebook', { timeout: 30000 });
+    if ((await armMode()) !== 'notebook') fail('defter açıkken kol kalkık değil');
+  } catch {
+    fail('N ile defter açılmadı');
+  }
+  await page.keyboard.press('Escape');
+  await waitArm('rest', 'defter kapandı');
+  await ev(() => window.__dm.setClassicHud(true));
+  if (await ev(() => getComputedStyle(document.querySelector('.hud')).display === 'none')) fail('klasik HUD görünmüyor');
+  await page.mouse.click(640, 400);
+  await sleep(300);
+  await page.keyboard.press('KeyM');
+  await sleep(300);
+  if (await ev(() => document.querySelector('.map-panel').hidden)) fail('klasik HUD: M köşe haritasını açmadı');
+  await page.keyboard.press('KeyM');
+  await ev(() => window.__dm.setClassicHud(false));
+  if (await ev(() => getComputedStyle(document.querySelector('.hud')).display !== 'none')) fail('bilek kipinde HUD hâlâ ekranda');
+  log('bilek cihazı: Q/M/N ve klasik HUD tamam');
+  await page.mouse.click(640, 400);
+
   const order = [];
   let walked = false;
   for (let step = 0; step < 40; step++) {

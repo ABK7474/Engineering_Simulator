@@ -13,6 +13,8 @@ import { createDoor, type Door } from './door';
 import { Effects, Tweens } from './effects';
 import { buildExterior, distanceToRects, interiorsOf, seabedHeight, stationRocks } from './exterior';
 import { buildMuren, type MurenPhase, type MurenStatus, type MurenTarget } from './cockpit';
+import { ArmState, type ArmMode } from './arm-state';
+import { buildViewmodel, type WristInfo, type WristMap } from './viewmodel';
 import { buildSeaLife } from './sealife';
 import { noiseLevel, stepProfile } from './movement';
 import { createPlayer } from './player';
@@ -116,6 +118,14 @@ export interface Hub {
   threatStrike: () => void;
   /** Tehdit sona erdi: gölge uzaklaşarak geçer. */
   creaturePass: () => void;
+  /** Kollar ve bilek cihazı. */
+  arms: {
+    /** Sol kolu kaldır (bakış, harita, defter) ya da indir; kol yerine oturunca çözülür. */
+    raise: (mode: ArmMode) => Promise<void>;
+    readonly mode: ArmMode;
+    setInfo: (i: WristInfo) => void;
+    setMap: (m: WristMap | null) => void;
+  };
   /** Prolog sahnesi (dünyada servis kilidi ve enkaz yoksa null). */
   prologue: PrologueStage | null;
   /** Giriş ekranının içerik kutusu (ad alanı, "Prologu atla" buraya eklenir). */
@@ -136,7 +146,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const gate = document.createElement('div');
   gate.className = 'gate';
   gate.innerHTML = `<div><h1>Derin Mühendis</h1><p class="gate-action">Yükleniyor…</p>
-    <p class="keys">WASD / oklar: yürü · W W (çift dokun): koş · C: eğil (aç/kapa) · Fare: bak · E: etkileşim · M: harita · N: sessiz · Esc: imleci bırak</p></div>`;
+    <p class="keys">WASD / oklar: yürü · W W (çift dokun): koş · C: eğil (aç/kapa) · Fare: bak · E: etkileşim · Q: bilek cihazı · M: harita · N: defter · K: sessiz · Esc: imleci bırak</p></div>`;
   container.appendChild(gate);
   const gateAction = gate.querySelector<HTMLParagraphElement>('.gate-action')!;
 
@@ -170,6 +180,63 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const hatchDoor = entry ? createDoor(scene, assets, entry.hatch) : null;
   const helmet = new THREE.SpotLight(0xdff0ff, 0, 20, 0.6, 0.55, 1.3);
   scene.add(helmet, helmet.target);
+  // Kollar: ayrı sahnede, derinlik temizlenerek ikinci geçişte (duvara girmez)
+  const vm = buildViewmodel(camera.aspect);
+  const arms = new ArmState();
+  window.addEventListener('resize', () => {
+    vm.camera.aspect = camera.aspect;
+    vm.camera.updateProjectionMatrix();
+  });
+  // Ayak altında yumuşak (sahte) gölge: hareketli nesnelere blob gölge kuralı
+  const blobTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d')!;
+    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(0.6, 'rgba(0,0,0,0.25)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  })();
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, fog: false }));
+  blob.name = 'player-blob';
+  blob.renderOrder = 1;
+  scene.add(blob);
+  renderer.info.autoReset = false;
+  /** Ana sahne + kollar; çizim sayaçları ikisinin toplamı. */
+  const renderFrame = () => {
+    renderer.info.reset();
+    renderer.render(scene, camera);
+    const auto = renderer.autoClear;
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(vm.scene, vm.camera);
+    renderer.autoClear = auto;
+  };
+  // Cam ve terminal ekranlarına yüklemede bir kez çekilen küp yansıma (kare başına maliyet yok)
+  let envCaptured = false;
+  let stationFrames = 0;
+  const captureEnv = () => {
+    envCaptured = true;
+    const rt = new THREE.WebGLCubeRenderTarget(128, { type: THREE.HalfFloatType });
+    const cube = new THREE.CubeCamera(0.1, 30, rt);
+    const spawnPos = new THREE.Vector3(opts.spawn.x, 1.6, opts.spawn.z);
+    cube.position.copy(spawnPos);
+    const hidden = [blob, exterior.group].filter((o) => o.visible);
+    hidden.forEach((o) => (o.visible = false));
+    cube.update(renderer, scene);
+    hidden.forEach((o) => (o.visible = true));
+    scene.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (!(m instanceof THREE.MeshBasicMaterial) || m.envMap) continue;
+        if (m.name === 'ocean-glass') Object.assign(m, { envMap: rt.texture, combine: THREE.MixOperation, reflectivity: 0.35, opacity: 0.14, needsUpdate: true });
+        else if (m.name === 'terminal-screen') Object.assign(m, { envMap: rt.texture, combine: THREE.MixOperation, reflectivity: 0.07, needsUpdate: true });
+      }
+    });
+  };
   // Güç seviyesi (sonuçlar ayarlar) ile geçici titreme düşüşü (gümbürtü) ayrı: çarpımları uygulanır
   let powerLevel = 1;
   let powerDip = 1;
@@ -260,9 +327,17 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   let nearest: string | null = null;
   window.addEventListener('keydown', (e) => {
     if (e.code !== 'KeyE' || !active || !locked) return;
+    if (arms.reaching) return;
+    // Sağ el panele uzanır; panel uzanmanın tepesinde açılır
     if (rig !== 'station') {
-      if (promptOn && promptTarget) opts.onPrologueTarget?.(promptTarget);
-    } else if (nearest) opts.onInteract(nearest);
+      if (promptOn && promptTarget) {
+        const t = promptTarget;
+        arms.reach(() => opts.onPrologueTarget?.(t));
+      }
+    } else if (nearest) {
+      const id = nearest;
+      arms.reach(() => opts.onInteract(id));
+    }
   });
 
   // --- Prolog düzenleri ---
@@ -380,6 +455,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
             exterior.setOutdoor(outside);
             muren.interior.visible = r === 'cockpit';
             helmet.intensity = r === 'seabed' ? 70 : 0;
+            vm.setTorch(r === 'seabed');
             player.enabled = r !== 'cockpit';
             player.speedScale = r === 'seabed' ? 0.55 : 1;
             player.ground = r === 'seabed' ? outdoorGround : () => 0;
@@ -463,6 +539,9 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     elapsed += dt;
     const colliders = rig === 'seabed' ? outdoorColliders : [...building.colliders, ...[...doors.values()].filter((d) => d.openAmount < 0.95).map((d) => d.collider)];
     const { distance, mode } = player.update(dt, colliders);
+    vm.update(arms.update(dt, dt > 0 ? distance / dt : 0), elapsed);
+    blob.visible = rig !== 'cockpit';
+    blob.position.set(camera.position.x, player.ground(camera.position.x, camera.position.z) + 0.02, camera.position.z);
     if (rig !== 'station') updatePrologue(dt);
     const prof = stepProfile(mode);
     strides.setStride(prof.stride);
@@ -522,7 +601,9 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     sealife.update(dt, elapsed);
     building.update(dt, elapsed, camera);
     atmosphere.update(dt, elapsed, camera);
-    renderer.render(scene, camera);
+    if (rig === 'station') stationFrames++;
+    if (!envCaptured && stationFrames > 40) captureEnv();
+    renderFrame();
   });
   refreshGate();
 
@@ -869,6 +950,22 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     },
     teleport,
     prologue: prologueStage,
+    arms: {
+      raise(mode) {
+        arms.setMode(mode);
+        if (mode === 'map') vm.setPage('map');
+        else vm.setPage('status');
+        return new Promise<void>((done) => {
+          const check = () => (arms.settled ? done() : requestAnimationFrame(check));
+          check();
+        });
+      },
+      get mode() {
+        return arms.mode;
+      },
+      setInfo: (i) => vm.setInfo(i),
+      setMap: (m) => vm.setMap(m),
+    },
     gateBox: gate.firstElementChild as HTMLElement,
     setWarningLight(on) {
       effects.setAlarm(on);
@@ -960,7 +1057,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
       breakdown() {
         // Her görünür üst düzey nesneyi sırayla gizleyip çizer; farkı o nesnenin payıdır.
         const draw = () => {
-          renderer.render(scene, camera);
+          renderFrame();
           return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
         };
         const base = draw();

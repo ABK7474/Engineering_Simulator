@@ -24,3 +24,4 @@ için kullanılmayan) varlıkları listeler. Geçici çözüm sütunu, o arada o
 | Küçük denizaltı (Müren) dış ve iç modeli, CC0 | Prolog, koridor penceresinden enkaz | Kodla kurulan gövde, cam kubbe, kızaklar; kabin düz plakalar (`hub/cockpit.ts`) |
 | Telsiz cızırtısı, dalış kıyafeti nefesi, gövde gıcırtısı (kayıt), CC0 | Prolog | Kodla üretilen sesler (`audio/synth.ts`): filtrelenmiş beyaz gürültü, testere dişi |
 | Dalış kıyafeti başlığı kenarı / cam çizik dokusu | Prolog (taban) | CSS katmanı (radyal geçiş + buğu animasyonu) |
+| Birinci şahıs kollar/eller (iskeletli, CC0; ör. Quaternius ya da Kenney karakter paketinden el) | Her an (bilek cihazı, panele uzanma, fener) | Kodla kurulan kutu-silindir kollar ve eldiven (`hub/viewmodel.ts`) |

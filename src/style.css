@@ -389,3 +389,6 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .helmet-gauge { position: absolute; right: 9%; bottom: 13%; font: bold 13px ui-monospace, monospace; color: #7fe8d8; text-shadow: 0 0 6px rgba(60, 220, 200, 0.6); }
 .helmet-gauge span { margin-right: 6px; color: #8aa0a4; }
 @media (prefers-reduced-motion: reduce) { .helmet-glass { animation: none; } }
+
+/* Bilek cihazı açıkken kaynak göstergesi ekranda değil, bilekte */
+body.wrist-hud .hud { display: none; }

@@ -8,6 +8,8 @@ export interface Synth {
   setBreath: (on: boolean) => void;
   /** Gövde gıcırtısı: alçak, uzun bir metal inlemesi. */
   creak: () => void;
+  /** Bilek cihazının uyarı bip'i (iki kısa ton). */
+  beep: () => void;
 }
 
 export function createSynth(ctx: AudioContext, out: AudioNode): Synth {
@@ -75,6 +77,22 @@ export function createSynth(ctx: AudioContext, out: AudioNode): Synth {
       };
       cycle();
       breath = { src, gain, timer: window.setInterval(cycle, 4200) };
+    },
+    beep() {
+      if (!running()) return;
+      const t0 = ctx.currentTime;
+      for (const [k, f] of [[0, 1760], [0.16, 1320]] as const) {
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = f;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t0 + k);
+        g.gain.linearRampToValueAtTime(0.05, t0 + k + 0.01);
+        g.gain.linearRampToValueAtTime(0, t0 + k + 0.1);
+        osc.connect(g).connect(out);
+        osc.start(t0 + k);
+        osc.stop(t0 + k + 0.12);
+      }
     },
     creak() {
       if (!running()) return;

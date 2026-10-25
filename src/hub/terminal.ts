@@ -51,7 +51,7 @@ export function createTerminal(scene: THREE.Scene, t: TerminalLayout, sharedLigh
     return { canvas, ctx: canvas.getContext('2d')!, tex };
   };
   const surfaces = [surface(...spec.canvas)];
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(...spec.size), new THREE.MeshBasicMaterial({ map: surfaces[0].tex, fog: false }));
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(...spec.size), new THREE.MeshBasicMaterial({ map: surfaces[0].tex, fog: false, name: 'terminal-screen' }));
   screen.position.copy(onScreen(spec.offset, 0.006));
   screen.rotation.x = -Math.PI / 4;
   root.add(screen);
@@ -60,7 +60,7 @@ export function createTerminal(scene: THREE.Scene, t: TerminalLayout, sharedLigh
     // bakan ön yüzüne (model +x) aynı durumu gösteren yatay bir şerit ekran.
     const front = surface(320, 192);
     surfaces.push(front);
-    const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.25), new THREE.MeshBasicMaterial({ map: front.tex, fog: false }));
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.25), new THREE.MeshBasicMaterial({ map: front.tex, fog: false, name: 'terminal-screen' }));
     strip.position.set(0.226, 1.3, 0.05);
     strip.rotation.y = Math.PI / 2;
     root.add(strip);

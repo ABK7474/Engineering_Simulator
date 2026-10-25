@@ -46,3 +46,9 @@ Belirsiz kalan ve beklemeden verilen kararlar; her biri bir cümle. Tarih: ilgil
 - Hikâye: tahliyenin gerçek sebebi ışığa ve sese tepki veren dev canlı; NEREUS altı yıldır istasyonu karanlıkta tutuyor ve mühendis gelsin diye parazit dalgasını kendisi gönderdi. Bu, kayıtlar (log-00, 02, 06, 08, 09) ve repliklerle yavaş açılır; açık itiraf finalde.
 - Sezon hedefi "Yüzeye ulaş" iki yol (Ece'ye haberleşme, kaçış kapsülü); her arızanın "neden" satırı panelde, haritada ve Defter → Hedefler'de. Test, dünyadaki her arızanın bir hedefe bağlı olmasını zorunlu kılar.
 - `Tweens.update` çalışırken eklenen animasyonları kaybediyordu (servis kilidi açıldıktan sonra kapanma hiç başlamıyordu); düzeltildi, testli.
+- Kollar ve eller kodla kurulur (kıyafet kolu, eldiven, bilekte cihaz); model indirilmez. Ayrı küçük sahnede, kameranın uzayında, derinlik temizlenerek ikinci geçişte çizilir: duvara girmez, ana sahnenin ışık sayısı değişmez. Çizim sayaçları iki geçişin toplamıdır (`renderer.info.autoReset = false`).
+- E'ye basınca sağ el panele uzanır, panel uzanmanın tepesinde (~0,23 s) açılır. Sol bilekteki cihaz dinlenirken ekranın sol altında görünür; Q bakış için kaldırır, M haritayı bilekte (tuvale çizilir) gösterir, N kolu kaldırıp defteri normal 2B panel olarak açar (kullanıcı kararı: matrix3d yok).
+- "Klasik HUD" (Ayarlar, localStorage: `derin-muhendis.ui.classicHud`): kaynaklar ve harita eski köşe panellerinde. Varsayılan bilek; HUD DOM'da güncellenmeye devam eder (erişilebilirlik ve testler).
+- Kaynak düşükken ya da temas başlayınca bilek ekranının kenarı yanıp söner ve bir kez bip (kodla üretilen ses) çalar.
+- Ayak altında blob (sahte) gölge; cam ve terminal ekranlarına yüklemede bir kez çekilen küp yansıma (128 px, kare başına maliyet yok). Oyuncunun kendi yansıması (düzlemsel yansıma) çizim bütçesi için yok.
+- Sessize alma kısayolu N'den K'ye taşındı: N hem defteri açıyor hem sesi kapatıyordu.

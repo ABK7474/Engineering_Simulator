@@ -13,6 +13,9 @@ export interface SettingsDeps {
   model: () => string;
   saveModel: (m: string) => void;
   testConnection: () => Promise<{ ok: boolean; message: string }>;
+  /** Klasik HUD: kaynaklar ve harita ekran köşesinde (kapalıyken bilek cihazında). */
+  classicHud: () => boolean;
+  saveClassicHud: (on: boolean) => void;
   /** Oyuncunun adı (replikler). */
   playerName: () => string;
   savePlayerName: (n: string) => void;
@@ -29,6 +32,10 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
         <h4>Mühendis adı</h4>
         <p class="muted">Ece ve NEREUS sana bu adla seslenir.</p>
         <div class="row"><input name="pname" maxlength="20" spellcheck="false"><button class="ghost" data-act="save-name">Kaydet</button></div>
+      </section>
+      <section>
+        <h4>Gösterge</h4>
+        <label class="row"><input type="checkbox" name="classic"> Klasik HUD (kaynaklar ve harita ekran köşesinde; kapalıyken bilek cihazında: Q bak, M harita)</label>
       </section>
       ${d.mock ? '<p class="error-box">Sahte istemci etkin (<code>?llm=mock</code>): gerçek API çağrısı yapılmaz.</p>' : ''}
       <section>
@@ -54,6 +61,9 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
   const modelIn = q<HTMLInputElement>('[name="model"]');
   const result = q<HTMLSpanElement>('.test-result');
   const nameIn = q<HTMLInputElement>('[name="pname"]');
+  const classicIn = q<HTMLInputElement>('[name="classic"]');
+  classicIn.checked = d.classicHud();
+  classicIn.addEventListener('change', () => d.saveClassicHud(classicIn.checked));
   q('[data-act="save-name"]').addEventListener('click', () => {
     d.savePlayerName(nameIn.value);
     render();
