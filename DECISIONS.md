@@ -52,3 +52,5 @@ Belirsiz kalan ve beklemeden verilen kararlar; her biri bir cümle. Tarih: ilgil
 - Kaynak düşükken ya da temas başlayınca bilek ekranının kenarı yanıp söner ve bir kez bip (kodla üretilen ses) çalar.
 - Ayak altında blob (sahte) gölge; cam ve terminal ekranlarına yüklemede bir kez çekilen küp yansıma (128 px, kare başına maliyet yok). Oyuncunun kendi yansıması (düzlemsel yansıma) çizim bütçesi için yok.
 - Sessize alma kısayolu N'den K'ye taşındı: N hem defteri açıyor hem sesi kapatıyordu.
+- Yayın: GitHub Pages, https://abk7474.github.io/Engineering_Simulator/ (kaynak: GitHub Actions). `.github/workflows/pages.yml` main'e her push'ta `npm ci` → `npm test` → `npm run build` (tsc dahil) → yayın; biri kırılırsa yayın yok. Yavaş tarayıcı turları (e2e, e2e:prologue) CI'da koşmaz. Yayın derlemesinde `window.__dm` olmadığı iş akışında denetlenir.
+- Vite tabanı: derleme ve önizleme `/Engineering_Simulator/`, geliştirme sunucusu `/` (e2e betikleri kökte). Bütün asset yolları `import.meta.env.BASE_URL`'den türer.

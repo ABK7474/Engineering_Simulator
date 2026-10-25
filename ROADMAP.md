@@ -103,3 +103,7 @@ Plan: Müren denizaltısında atlanabilir prolog, "yüzeye ulaş" hedefi, gizemi
 - [x] 4.3 "Klasik HUD" ayarı (eski HUD ve harita paneli)
 - [x] 4.4 Ayak altında blob gölge; cam ve karanlık ekranlarda statik küp yansıma
 - [x] 4.5 Doğrulama: 494 test, tsc, build; tam `npm run e2e` temiz (34 dk: 12 arıza → seçimli final, Q/M/N ve klasik HUD, konsol temiz; en kötü bakış 116 çağrı / 125 bin üçgen) → commit + push
+
+## Yayın (GitHub Pages)
+- [x] Vite tabanı alt yola (`/Engineering_Simulator/`), yerel geliştirme kökte; önizlemede 163 istek, 404 yok, konsol temiz, `window.__dm` yok
+- [x] GitHub Actions: test → tsc + build → Pages (e2e yok); Pages kaynağı gh ile "GitHub Actions" yapıldı
