@@ -1,6 +1,7 @@
 // Ayarlar: LLM API anahtarı (kaydet/sil), model kimliği, "bağlantıyı sına".
 
 import { esc } from '../puzzles/dom';
+import { controlsHtml } from './controls-help';
 
 export interface SettingsDeps {
   providerLabel: string;
@@ -34,8 +35,12 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
         <div class="row"><input name="pname" maxlength="20" spellcheck="false"><button class="ghost" data-act="save-name">Kaydet</button></div>
       </section>
       <section>
+        <h4>Kontroller</h4>
+        ${controlsHtml()}
+      </section>
+      <section>
         <h4>Gösterge</h4>
-        <label class="row"><input type="checkbox" name="classic"> Klasik HUD (kaynaklar ve harita ekran köşesinde; kapalıyken bilek cihazında: Q bak, M harita)</label>
+        <label class="check"><input type="checkbox" name="classic"> Klasik HUD (kaynaklar ve harita ekran köşesinde; kapalıyken bilek cihazında: Q bak, M harita)</label>
       </section>
       ${d.mock ? '<p class="error-box">Sahte istemci etkin (<code>?llm=mock</code>): gerçek API çağrısı yapılmaz.</p>' : ''}
       <section>

@@ -24,7 +24,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
   background: rgba(2, 14, 18, 0.6); cursor: pointer; text-align: center;
 }
 .gate h1 { margin: 0 0 8px; letter-spacing: 0.08em; font-weight: 600; }
-.gate .keys { color: var(--muted); font-size: 14px; }
+.gate-controls { margin-top: 10px; color: var(--muted); font-size: 13px; }
+.gate-controls summary { cursor: pointer; }
+.controls { display: grid; grid-template-columns: auto auto; gap: 3px 12px; justify-content: center; text-align: left; margin: 8px 0 0; }
+.controls dt { text-align: right; }
+.controls dd { margin: 0; }
+.controls kbd { font: 12px ui-monospace, monospace; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255, 255, 255, 0.04); color: var(--text, #d8eef0); }
+.settings .controls { justify-content: start; }
 .hint {
   position: absolute; left: 50%; top: 62%; transform: translateX(-50%);
   padding: 6px 14px; border: 1px solid var(--accent); border-radius: 4px;
@@ -392,3 +398,5 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 
 /* Bilek cihazı açıkken kaynak göstergesi ekranda değil, bilekte */
 body.wrist-hud .hud { display: none; }
+.settings label.check { display: flex; align-items: center; gap: 8px; justify-content: flex-start; cursor: pointer; }
+.settings label.check input { width: auto; }

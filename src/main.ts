@@ -472,7 +472,8 @@ function openMap(open?: boolean): void {
 }
 const typing = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
 window.addEventListener('keydown', (e) => {
-  if (e.code !== 'KeyM' || typing(e) || prologueActive()) return;
+  // Panel/rapor/defter açıkken M haritayı arkada açmasın
+  if (e.code !== 'KeyM' || typing(e) || prologueActive() || ui.querySelector('.overlay')) return;
   openMap();
 });
 // Q: bilek cihazına bak (kolu kaldır / indir)

@@ -15,6 +15,7 @@ import { buildExterior, distanceToRects, interiorsOf, seabedHeight, stationRocks
 import { buildMuren, type MurenPhase, type MurenStatus, type MurenTarget } from './cockpit';
 import { ArmState, type ArmMode } from './arm-state';
 import { buildViewmodel, type WristInfo, type WristMap } from './viewmodel';
+import { controlsHtml } from '../ui/controls-help';
 import { buildSeaLife } from './sealife';
 import { noiseLevel, stepProfile } from './movement';
 import { createPlayer } from './player';
@@ -146,9 +147,11 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   const gate = document.createElement('div');
   gate.className = 'gate';
   gate.innerHTML = `<div><h1>Derin Mühendis</h1><p class="gate-action">Yükleniyor…</p>
-    <p class="keys">WASD / oklar: yürü · W W (çift dokun): koş · C: eğil (aç/kapa) · Fare: bak · E: etkileşim · Q: bilek cihazı · M: harita · N: defter · K: sessiz · Esc: imleci bırak</p></div>`;
+    <details class="gate-controls"><summary>Kontroller</summary>${controlsHtml()}</details></div>`;
   container.appendChild(gate);
   const gateAction = gate.querySelector<HTMLParagraphElement>('.gate-action')!;
+  // Kontroller listesini açmak oyunu başlatmasın
+  gate.querySelector('.gate-controls')!.addEventListener('click', (e) => e.stopPropagation());
 
   const kit = createSceneKit(container);
   const { scene, camera, renderer } = kit;
