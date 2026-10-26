@@ -113,8 +113,8 @@ export interface OutcomeOptions {
 export interface Hub {
   /** Ana menü düzeni: kamera istasyonun dışında süzülür, girdi kapalı. Hub açılışta bu düzende başlar. */
   readonly inMenu: boolean;
-  /** Menüden oyuna: istasyon geri gelir, `onStart` çağrılır, imleç kilitlenir. */
-  start: () => void;
+  /** Menüden oyuna: istasyon geri gelir, `onStart` çağrılır, `lock` ise imleç kilitlenir. */
+  start: (lock?: boolean) => void;
   /** Oyundan menüye (yalnız istasyon düzeninde; prolog/final sırasında false döner). */
   toMenu: () => boolean;
   /** Girdiyi kapatır, imleci serbest bırakır (2D panel açılırken). */
@@ -1242,13 +1242,19 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     get inMenu() {
       return rig === 'menu';
     },
-    start() {
+    start(lock = true) {
       if (rig !== 'menu') return;
       leaveMenu();
       active = true;
       player.enabled = true;
       opts.onStart();
-      player.controls.lock();
+      if (lock) {
+        try {
+          (renderer.domElement.requestPointerLock?.() as unknown as Promise<void> | undefined)?.catch?.(() => {});
+        } catch {
+          /* klavyeden çağrıldığında kilit reddedilirse duraklatma ekranı görünür kalır */
+        }
+      }
       refreshGate();
     },
     toMenu() {

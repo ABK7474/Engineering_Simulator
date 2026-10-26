@@ -1003,7 +1003,13 @@ window.addEventListener('keydown', (e) => {
 // haritada görünür, kaynaklar dolar; arızalar çözülmüş sayılmaz (bulmacalar denenebilir). 923: ayrıca bütün
 // arızalar onarılmış sayılır ve final gelir. Kayda yazılır, Ayarlar'dan sıfırlanır.
 function testUnlock(solveAll: boolean): void {
-  if (prologueActive()) prologue!.skip();
+  if (hub.inMenu) {
+    skipPrologue = true;
+    mainMenu.hide();
+    hub.start(!solveAll);
+  } else if (prologueActive()) {
+    prologue!.skip();
+  }
   const before = new Set(W.doors.filter((x) => doorOpen(x, states())).map((x) => x.id));
   progress.world.states = testUnlockStates(W, states());
   if (solveAll) {
@@ -1024,6 +1030,7 @@ function testUnlock(solveAll: boolean): void {
   void persist();
   uiSound('switch');
   const text = solveAll ? 'Test kodu: bütün arızalar onarıldı.' : 'Test kodu: bütün kapılar ve terminaller açık, kaynaklar dolu.';
+  if (solveAll) subtitles.clear();
   subtitles.say([{ who: 'suit', label: 'TEST', text }]);
   if (solveAll) {
     // 923 finali her seferinde yeniden gösterir
@@ -1037,7 +1044,7 @@ const testCodes = [
 ];
 window.addEventListener('keydown', (e) => {
   const d = digitOf(e.code);
-  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay') || ending.active || hub.inMenu) return;
+  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay') || ending.active) return;
   for (const c of testCodes) if (c.hit(d)) testUnlock(c.solveAll);
 });
 

@@ -4,6 +4,7 @@
 
 import { esc } from '../puzzles/dom';
 import { controlsHtml } from './controls-help';
+import { digitOf } from './key-sequence';
 
 export type MenuItem = 'continue' | 'new' | 'settings' | 'controls' | 'library';
 
@@ -58,8 +59,10 @@ export function mountMainMenu(root: HTMLElement, info: MainMenuInfo): MainMenu {
     interacted = true;
     info.onFirstInteraction();
   });
-  // Menü açıkken oyun tuşları (E, M, N, rakamlar) oyuna gitmesin
-  el.addEventListener('keydown', (e) => e.stopPropagation());
+  // Menü açıkken oyun tuşları (E, M, N, Q, K) oyuna gitmesin; rakamlar (test kodları 681/923) geçer
+  el.addEventListener('keydown', (e) => {
+    if (!digitOf(e.code)) e.stopPropagation();
+  });
 
   const frame = (body: string) => `
     <div class="main-menu-inner">
