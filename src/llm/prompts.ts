@@ -10,8 +10,9 @@ export const MARKDOWN_SCHEMA = {
   properties: {
     markdown: { type: 'string', description: 'Belgenin tamamının temiz Markdown hali.' },
     briefing: { type: 'string', description: `Konunun ${BRIEFING_MAX} karakteri geçmeyen kısa özeti (oyundaki brifing ekranı için).` },
+    formulas: { type: 'string', description: 'Konunun formül sayfası (Markdown): başlıklar, formüller ve her birinin ne zaman kullanıldığı.' },
   },
-  required: ['markdown', 'briefing'],
+  required: ['markdown', 'briefing', 'formulas'],
 } as const;
 
 export function markdownPrompt(courseName: string, topicName: string): string {
@@ -29,6 +30,92 @@ export function markdownPrompt(courseName: string, topicName: string): string {
     '- Okunamayan ya da emin olmadığın yerleri [okunamadı] diye işaretle; uydurma.',
     `Ayrıca "briefing" alanına konunun en önemli kavramlarını ve formüllerini ${BRIEFING_MAX} karakteri`,
     'geçmeyen, öğrenciye hatırlatma niteliğinde kısa bir özet yaz.',
+    '"formulas" alanına bir formül sayfası yaz: ## alt başlıklar altında her formül ($...$), sembollerin anlamı ve birimi,',
+    'ne zaman kullanıldığı ve yaygın hata (bir satır). Belgede olmayan formül ekleme.',
+  ].join('\n');
+}
+
+const strArr = (description: string) => ({ type: 'array', items: { type: 'string' }, description });
+
+/** Tek soru dosyasının kalıp analizi (ders düzeyindeki birleştirme kodda yapılır). */
+export const ANALYSIS_SCHEMA = {
+  type: 'object',
+  properties: {
+    questionCount: { type: 'integer', description: 'Dosyadaki soru (alt sorular dahil değil) sayısı.' },
+    topics: {
+      type: 'array',
+      description: 'Konu ağırlıkları; ağırlıklar soru sayısına göre, toplam 100.',
+      items: { type: 'object', properties: { name: { type: 'string' }, weight: { type: 'number' } }, required: ['name', 'weight'] },
+    },
+    steps: {
+      type: 'object',
+      description: 'Bir sorunun çözümündeki adım sayısı.',
+      properties: { min: { type: 'integer' }, typical: { type: 'integer' }, max: { type: 'integer' } },
+      required: ['min', 'typical', 'max'],
+    },
+    traps: strArr('Öğrencinin tipik düştüğü tuzaklar (kısa cümleler).'),
+    ranges: {
+      type: 'array',
+      description: 'Sorulardaki sayısal büyüklüklerin aralıkları.',
+      items: {
+        type: 'object',
+        properties: { quantity: { type: 'string' }, unit: { type: 'string' }, min: { type: 'number' }, max: { type: 'number' } },
+        required: ['quantity', 'unit', 'min', 'max'],
+      },
+    },
+    notation: {
+      type: 'array',
+      description: 'Hocanın kullandığı semboller ve anlamları.',
+      items: { type: 'object', properties: { symbol: { type: 'string' }, meaning: { type: 'string' } }, required: ['symbol', 'meaning'] },
+    },
+    patterns: {
+      type: 'array',
+      description: 'Soru kalıpları ve mevcut problem türlerinin onları karşılayıp karşılamadığı.',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Kalıbın kısa adı.' },
+          description: { type: 'string' },
+          count: { type: 'integer', description: 'Bu kalıptaki soru sayısı.' },
+          steps: { type: 'integer' },
+          coveredBy: { type: 'string', description: 'Karşılayan mevcut türün kimliği; yoksa boş dize.' },
+          fit: { type: 'string', enum: ['full', 'partial', 'none'] },
+        },
+        required: ['name', 'description', 'count', 'steps', 'coveredBy', 'fit'],
+      },
+    },
+    proposals: {
+      type: 'array',
+      description: 'Karşılanmayan kalıplar için yazılması gereken yeni problem türü ya da mevcut türe soru biçimi.',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          kind: { type: 'string', enum: ['new-type', 'variant'] },
+          description: { type: 'string', description: 'Oyuncunun ne yapacağı ve kodun neyi hesaplayacağı.' },
+          covers: strArr('Karşıladığı kalıp adları (patterns[].name).'),
+          priority: { type: 'integer', description: '1 en önemli, 5 en az.' },
+        },
+        required: ['name', 'kind', 'description', 'covers', 'priority'],
+      },
+    },
+  },
+  required: ['questionCount', 'topics', 'steps', 'traps', 'ranges', 'notation', 'patterns', 'proposals'],
+} as const;
+
+export function analysisPrompt(courseName: string, fileName: string, catalog: string): string {
+  return [
+    `Bu dosya ("${fileName}") "${courseName}" dersinin sınav/ödev sorularıdır. Görevin soruları ÇÖZMEK değil, kalıplarını analiz etmek.`,
+    'Çıkar: konu ağırlıkları, çözüm adım sayısı, öğrencinin tipik düştüğü tuzaklar, sayısal büyüklüklerin aralıkları (birimiyle),',
+    'hocanın notasyonu (semboller) ve soru kalıpları.',
+    'Oyundaki mevcut problem türleri aşağıda. Her kalıp için onu karşılayan türü (kimliğiyle) ve uyumu yaz: full (aynı soru',
+    'biçimi), partial (konu aynı ama soru biçimi/adım sayısı farklı), none (karşılayan yok; coveredBy boş dize).',
+    'Son olarak eksik kalıplar için yazılması gereken yeni türleri ya da mevcut türe eklenecek soru biçimlerini öner ve',
+    'önceliklendir (1 en önemli). Öneriler çok adımlı, ters problem niteliğinde (çıktıdan girdi bulma) olsun.',
+    'Okuyamadığın yerleri tahmin etme; yalnız gördüğünü say.',
+    '',
+    'Mevcut problem türleri:',
+    catalog,
   ].join('\n');
 }
 

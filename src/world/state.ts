@@ -29,6 +29,17 @@ export function withProvided(states: States, f: FaultDef): string[] {
 
 export const providersOf = (w: WorldDef, state: string) => w.faults.filter((f) => f.provides.includes(state));
 
+/**
+ * Test kodu: bütün kapıları ve terminalleri açan durumlar (arızalar çözülmüş sayılmaz). Tehdit panolarının
+ * sağladıkları (ör. threat.cleared) verilmez; yoksa tehdit hiç başlamaz ve pano denenemez.
+ */
+export function testUnlockStates(w: WorldDef, states: States): string[] {
+  const boards = new Set(w.faults.filter((f) => f.event !== undefined).flatMap((f) => f.provides));
+  const out = new Set(Array.isArray(states) ? states : [...(states as ReadonlySet<string>)]);
+  for (const f of w.faults) for (const p of f.provides) if (!boards.has(p)) out.add(p);
+  return [...out];
+}
+
 /** Başlangıçtan açık kapılarla ulaşılabilen odalar. */
 export function reachableRooms(w: WorldDef, states: States): Set<string> {
   const seen = new Set([w.start.room]);

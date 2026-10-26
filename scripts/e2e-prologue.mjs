@@ -5,6 +5,7 @@
 // çizim çağrısı/üçgen (bütçe ≤ 150 / 150 bin). Konsol hatası ya da tıkanma olursa çıkış kodu 1.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
@@ -13,6 +14,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'screenshots');
 const PORT = 5212;
 fs.mkdirSync(OUT, { recursive: true });
+// Gerçek ders_materyalleri/ (kitaplar dahil) taranmasın, content/'e yazılmasın: klasör eklentisi boş geçici klasörlere bakar
+process.env.DM_MATERIALS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-e2e-materyal-'));
+process.env.DM_CONTENT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-e2e-icerik-'));
 const { createServer } = await import(path.join(ROOT, 'node_modules/vite/dist/node/index.js'));
 const server = await createServer({ root: ROOT, configFile: path.join(ROOT, 'vite.config.ts'), server: { port: PORT, strictPort: true, hmr: false, watch: null }, logLevel: 'error' });
 await server.listen();
@@ -165,7 +169,7 @@ try {
   await shot('koridor');
   const hud = await ev(() => document.querySelector('.hud-goal')?.textContent);
   console.log(`  HUD: ${hud}`);
-  if (!hud?.includes("Ece'ye ulaş")) fail('hedef satırı yok');
+  if (!hud?.includes('Destek gemisine ulaş')) fail('hedef satırı yok');
   // Enkaz koridor penceresinden görünür
   await ev(() => window.__dm.hub.debug.teleport(-0.6, -4.5, 1.35));
   await frames(10);

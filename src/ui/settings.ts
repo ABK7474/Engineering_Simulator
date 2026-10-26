@@ -13,7 +13,8 @@ export interface SettingsDeps {
   clearKey: () => void;
   model: () => string;
   saveModel: (m: string) => void;
-  testConnection: () => Promise<{ ok: boolean; message: string }>;
+  /** suggestModel: kota ya da erişilemeyen modelde tek tıkla geçilebilecek daha hafif model. */
+  testConnection: () => Promise<{ ok: boolean; message: string; suggestModel?: string | null }>;
   /** Klasik HUD: kaynaklar ve harita ekran köşesinde (kapalıyken bilek cihazında). */
   classicHud: () => boolean;
   saveClassicHud: (on: boolean) => void;
@@ -58,6 +59,7 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
       <section>
         <h4>Bağlantı</h4>
         <div class="row"><button class="primary" data-act="test">Bağlantıyı sına</button><span class="test-result" role="status"></span></div>
+        <div class="row"><button class="ghost" data-act="use-model" hidden></button></div>
       </section>
     </div>`;
   root.appendChild(el);
@@ -99,10 +101,24 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
     btn.disabled = true;
     result.className = 'test-result';
     result.textContent = 'Sınanıyor…';
+    useModel.hidden = true;
     const r = await d.testConnection();
     result.className = `test-result ${r.ok ? 'ok' : 'fail'}`;
     result.textContent = r.message;
     btn.disabled = false;
+    if (r.suggestModel) {
+      useModel.dataset.model = r.suggestModel;
+      useModel.textContent = `Modeli ${r.suggestModel} yap`;
+      useModel.hidden = false;
+    }
+  });
+  const useModel = q<HTMLButtonElement>('[data-act="use-model"]');
+  useModel.addEventListener('click', () => {
+    d.saveModel(useModel.dataset.model!);
+    useModel.hidden = true;
+    result.className = 'test-result';
+    result.textContent = `Model ${useModel.dataset.model} yapıldı; "Bağlantıyı sına" ile yeniden dene.`;
+    render();
   });
   q('[data-act="close"]').addEventListener('click', () => {
     el.remove();

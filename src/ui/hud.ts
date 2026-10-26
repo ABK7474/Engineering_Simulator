@@ -21,7 +21,7 @@ export interface HudView {
   threat?: { remaining: number; noise: 0 | 1 | 2 } | null;
   /** Tekrar zamanı gelmiş konu sayısı. */
   reviewDue?: number;
-  /** Sezon hedefinin tek satırı (ör. "Ece'ye ulaş — Yedek güç panosu"). */
+  /** Sezon hedefinin tek satırı (ör. "Destek gemisine ulaş — Yedek güç panosu"). */
   goal?: string;
 }
 

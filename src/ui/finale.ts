@@ -1,4 +1,4 @@
-// Sezon finali: Ece'ye ulaşılır, NEREUS itiraf eder, oyuncu seçer (kapsülle ayrıl / kal). Seçimin replikleri ve
+// Sezon finali: destek gemisine (Ece'ye) ulaşılır, NEREUS itiraf eder, oyuncu seçer (kapsülle ayrıl / kal). Seçimin replikleri ve
 // sezon özeti aynı panelde açılır. Oyun bitmez; serbest dolaşmaya dönülür. Yalnız gösterir; kaydı main yapar.
 
 import { esc } from '../puzzles/dom';

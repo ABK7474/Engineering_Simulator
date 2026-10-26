@@ -2,7 +2,7 @@
 // çağırır; hangi sağlayıcının kullanıldığını bilmez. Sağlayıcıya özgü her şey client.ts'te.
 // LLM yalnız "konu ekle" akışında çağrılır; oyun sırasında hiç çağrılmaz.
 
-import { createProvider, DEFAULT_MODEL, KEY_ADVICE, PROVIDER_LABEL } from './client';
+import { createProvider, DEFAULT_MODEL, FALLBACK_MODEL, KEY_ADVICE, PROVIDER_LABEL } from './client';
 import { createMockProvider } from './mock';
 
 export type TemplateType = 'series-led' | 'series-parallel';
@@ -11,6 +11,8 @@ export interface MarkdownResult {
   markdown: string;
   /** Konu kartı için kısa brifing özeti. */
   briefing: string;
+  /** Formül sayfası taslağı (Markdown; defterde konu sayfası olur). */
+  formulas: string;
   /** Yanıt çıktı sınırında kesildi ya da eksik/bozuk geldi: kullanıcı onaylayamaz. */
   truncated: boolean;
   /** Kesilme ya da eksiklik nedeni (kullanıcıya gösterilir). */
@@ -31,12 +33,27 @@ export interface TemplateResult {
   truncated: boolean;
 }
 
-export type LlmErrorKind = 'no_key' | 'invalid_key' | 'model_unavailable' | 'quota' | 'bad_request' | 'server' | 'network' | 'bad_response';
+export type LlmErrorKind = 'no_key' | 'invalid_key' | 'model_unavailable' | 'quota' | 'bad_request' | 'server' | 'network' | 'timeout' | 'bad_response';
+
+/** Soru analizi için tek dosya (PDF ya da görsel). */
+export interface QuestionFile {
+  name: string;
+  mime: string;
+  bytes: Uint8Array;
+}
+
+export interface QuestionAnalysisResult {
+  /** LLM'in ham analizi; DOĞRULANMAMIŞTIR (core/analysis.ts doğrular). */
+  analysis: unknown;
+  truncated: boolean;
+}
 
 export class LlmError extends Error {
   constructor(
     readonly kind: LlmErrorKind,
     message: string,
+    /** Bu hatada denenebilecek model (ör. kota ya da erişilemeyen modelde daha hafif olanı); yoksa null. */
+    readonly suggestModel: string | null = null,
   ) {
     super(message);
     this.name = 'LlmError';
@@ -47,6 +64,8 @@ export interface ConnectionCheck {
   ok: boolean;
   kind: 'ok' | LlmErrorKind;
   message: string;
+  /** Ayarlar'da tek tıkla geçilebilecek model (kota ya da erişilemeyen model); yoksa null. */
+  suggestModel: string | null;
 }
 
 export interface LlmProvider {
@@ -55,6 +74,8 @@ export interface LlmProvider {
   readonly model: string;
   pdfToMarkdown: (pdf: Uint8Array, ctx: { courseName: string; topicName: string }) => Promise<MarkdownResult>;
   generateTemplates: (req: TemplateRequest) => Promise<TemplateResult>;
+  /** Bir soru dosyasındaki kalıplar (dosya başına; ders düzeyinde birleştirme kodda). */
+  analyzeQuestions: (file: QuestionFile, ctx: { courseName: string; catalog: string }) => Promise<QuestionAnalysisResult>;
   testConnection: () => Promise<ConnectionCheck>;
 }
 
@@ -65,7 +86,7 @@ export interface LlmSettings {
   mock: boolean;
 }
 
-export const LLM_DEFAULTS = { label: PROVIDER_LABEL, model: DEFAULT_MODEL, keyAdvice: KEY_ADVICE };
+export const LLM_DEFAULTS = { label: PROVIDER_LABEL, model: DEFAULT_MODEL, fallbackModel: FALLBACK_MODEL, keyAdvice: KEY_ADVICE };
 
 export function getProvider(s: LlmSettings): LlmProvider {
   if (s.mock) return createMockProvider();
@@ -79,4 +100,8 @@ export function pdfToMarkdown(s: LlmSettings, pdf: Uint8Array, ctx: { courseName
 
 export function generateTemplates(s: LlmSettings, req: TemplateRequest): Promise<TemplateResult> {
   return getProvider(s).generateTemplates(req);
+}
+
+export function analyzeQuestions(s: LlmSettings, file: QuestionFile, ctx: { courseName: string; catalog: string }): Promise<QuestionAnalysisResult> {
+  return getProvider(s).analyzeQuestions(file, ctx);
 }

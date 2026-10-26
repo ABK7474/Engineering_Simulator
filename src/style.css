@@ -400,3 +400,33 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 body.wrist-hud .hud { display: none; }
 .settings label.check { display: flex; align-items: center; gap: 8px; justify-content: flex-start; cursor: pointer; }
 .settings label.check input { width: auto; }
+
+/* ders_materyalleri/ durum satırı (yalnız dev sunucusu) */
+#ui > .materials-status { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); max-width: min(620px, 70vw); padding: 5px 10px;
+  border-radius: 6px; background: rgba(6, 26, 31, 0.82); border: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.4;
+  pointer-events: none; z-index: 4; }
+#ui > .materials-status[hidden] { display: none; }
+.tag.warn { background: var(--warn); color: #061a1f; }
+.library b.warn { color: var(--warn); }
+.library b.fail { color: var(--fail); }
+.library .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.folder-table td { vertical-align: top; font-size: 13px; }
+.folder-table tr.st-done td { color: var(--muted); }
+.folder-table tr.st-failed td:nth-child(4), .folder-table tr.st-too-big td:nth-child(4) { color: var(--fail); }
+.folder-table tr.st-long td:nth-child(4), .folder-table tr.st-no-course td:nth-child(4) { color: var(--warn); }
+.an-recs li { margin: 6px 0 10px; line-height: 1.45; }
+.an-cover { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); margin: 6px 0 2px; }
+.an-cover .full { background: var(--ok); }
+.an-cover .partial { background: var(--warn); }
+.an-cover .none { background: var(--fail); }
+.an-table tr.fit-none td:last-child { color: var(--fail); }
+.an-table tr.fit-partial td:last-child { color: var(--warn); }
+.an-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 4px 20px; }
+.an-grid ul { padding-left: 18px; margin: 4px 0; font-size: 14px; line-height: 1.45; }
+.an-bars { list-style: none; padding: 0 !important; }
+.an-bars li { display: grid; grid-template-columns: 1fr 90px 52px; gap: 8px; align-items: center; }
+.an-bars i { display: block; height: 8px; border-radius: 4px; background: var(--accent); }
+.an-bars b { text-align: right; font-weight: 500; }
+.nb-sheet h4, .nb-sheet h5 { margin: 8px 0 4px; font-size: 14px; }
+.nb-sheet ul { margin: 4px 0; padding-left: 18px; line-height: 1.5; font-size: 14px; }
+code.tex { color: var(--accent); }

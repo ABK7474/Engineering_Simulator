@@ -3,6 +3,7 @@
 // için çizim çağrısı/üçgen sayısını yazar. Tam oynanış için `npm run e2e`.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
@@ -10,6 +11,9 @@ import puppeteer from 'puppeteer-core';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'screenshots');
 fs.mkdirSync(OUT, { recursive: true });
+// Gerçek ders_materyalleri/ (kitaplar dahil) taranmasın, content/'e yazılmasın: klasör eklentisi boş geçici klasörlere bakar
+process.env.DM_MATERIALS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-e2e-materyal-'));
+process.env.DM_CONTENT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-e2e-icerik-'));
 const { createServer } = await import(path.join(ROOT, 'node_modules/vite/dist/node/index.js'));
 const server = await createServer({ root: ROOT, configFile: path.join(ROOT, 'vite.config.ts'), server: { port: 5213, strictPort: true, hmr: false, watch: null }, logLevel: 'error' });
 await server.listen();
@@ -33,7 +37,7 @@ const views = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/e2e-views.json
 try {
   await page.goto('http://localhost:5213/?seed=11&prologue=skip', { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  await page.click('.gate');
+  await page.click('.gate h1'); // ortası ad alanına denk gelir (tıklamayı yutar)
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   await ev(() => window.__dm.solveAll());
   await sleep(300);

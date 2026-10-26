@@ -1,8 +1,9 @@
-// Defter (N): üç sekme. Tekrar: konuların Leitner kutuları ve zamanı gelenler için pratik; Formüller: denenmiş
-// konuların brifing özetleri; Kayıtlar: durumlarla açılan istasyon kayıtları. Yalnız gösterir; kararı main verir.
+// Defter (N): dört sekme (Hedefler, Tekrar, Formüller, Kayıtlar). Tekrar: konuların Leitner kutuları ve zamanı gelenler için pratik; Formüller: onaylı
+// konuların formül sayfaları ve denenmiş konuların brifing özetleri; Kayıtlar: durumlarla açılan istasyon kayıtları. Yalnız gösterir.
 
 import type { FormulaPage, StationLog } from '../core/notebook';
 import { esc } from '../puzzles/dom';
+import { mdToHtml } from './md-view';
 
 export interface ReviewRow {
   key: string;
@@ -27,6 +28,8 @@ export interface NotebookView {
   goals: { title: string; objectives: GoalView[] };
   review: ReviewRow[];
   formulas: FormulaPage[];
+  /** Onaylı konuların formül sayfaları (Markdown; güvenli görüntüleyiciyle). */
+  topicPages: { courseName: string; name: string; sheet: string }[];
   logs: StationLog[];
   totalLogs: number;
 }
@@ -79,6 +82,9 @@ export function openNotebook(root: HTMLElement, v: NotebookView, opts: { tab?: N
         }
       </section>
       <section data-page="formulas" hidden>
+        ${v.topicPages
+          .map((t) => `<article class="nb-page nb-sheet"><h3>${esc(t.name)} <span class="dim">${esc(t.courseName)} · konu sayfası</span></h3>${mdToHtml(t.sheet)}</article>`)
+          .join('')}
         ${
           v.formulas.length
             ? v.formulas
@@ -87,7 +93,9 @@ export function openNotebook(root: HTMLElement, v: NotebookView, opts: { tab?: N
                   ${f.notes.map((n) => `<p><b>${esc(n.title)}.</b> ${esc(n.text)}</p>`).join('')}</article>`,
                 )
                 .join('')
-            : '<p class="how">Formül sayfaları, bir konuyu ilk kez denediğinde açılır.</p>'
+            : v.topicPages.length
+              ? ''
+              : '<p class="how">Formül sayfaları, bir konuyu ilk kez denediğinde ya da kütüphanede bir konuyu onayladığında açılır.</p>'
         }
       </section>
       <section data-page="logs" hidden>

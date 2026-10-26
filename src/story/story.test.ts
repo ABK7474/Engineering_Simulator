@@ -56,7 +56,7 @@ describe('sezon hedefi', () => {
     expect(objectiveView(objectives, []).map((o) => o.completed)).toEqual([0, 0]);
     const all = objectives.objectives.flatMap((o) => o.steps);
     expect(objectiveView(objectives, all).every((o) => o.done)).toBe(true);
-    expect(objectiveLine(objectives, [], (s) => (s === 'power.backup' ? 'Yedek güç panosu' : null))).toBe("Ece'ye ulaş — Yedek güç panosu");
+    expect(objectiveLine(objectives, [], (s) => (s === 'power.backup' ? 'Yedek güç panosu' : null))).toBe("Destek gemisine ulaş — Yedek güç panosu");
     const comms = objectives.objectives[0].steps;
     expect(objectiveLine(objectives, comms, () => 'X')).toMatch(/^Kaçış kapsülü/);
     expect(objectiveLine(objectives, all, () => null)).toBe('Yüzeye ulaş: hazır');

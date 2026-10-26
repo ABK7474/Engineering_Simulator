@@ -8,3 +8,6 @@ dist/
 *.wav
 *.flac
 screenshots/
+
+# Ders kitapları (telifli) repoya girmez; bölümleri de. Kendi notların ve soruların girer.
+ders_materyalleri/**/kitaplar/

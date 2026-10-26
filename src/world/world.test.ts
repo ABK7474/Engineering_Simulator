@@ -13,7 +13,7 @@ import { unreachable, walkTargets } from './walk';
 import themesJson from '../../content/world/themes.json';
 import { parseThemes } from './dressing';
 import { parseWorld, WorldError, type WorldDef } from './schema';
-import { findCycle, missingFor, nextGoal, openDoors, reachableRooms, simulate, withProvided } from './state';
+import { findCycle, missingFor, nextGoal, openDoors, reachableRooms, simulate, testUnlockStates, withProvided } from './state';
 import { validateWorld, type Story } from './validate';
 
 const W = parseWorld(worldJson);
@@ -315,5 +315,15 @@ describe('prolog girişi', () => {
     const w = structuredClone(worldJson) as typeof worldJson;
     (w.start as { hatch: unknown }).hatch = { wall: 'west', index: 1 }; // pencere hücresi
     expect(() => loadWorld(w, undefined, undefined, { verifySeeds: 0 })).toThrow(/servis kilidi/);
+  });
+});
+
+describe('test kodu (681)', () => {
+  it('bütün kapılar açılır, tehdit panosu dışındaki terminallerin koşulu kalmaz; tehdit sonradan başlayabilir', () => {
+    const st = testUnlockStates(W, W.initialStates);
+    expect(openDoors(W, st).size).toBe(W.doors.length);
+    for (const f of W.faults) expect(missingFor(f, st), f.id).toEqual([]);
+    for (const t of W.threats) expect(st).not.toContain(t.clearedBy);
+    for (const t of W.threats) for (const a of t.after) expect(st).toContain(a);
   });
 });

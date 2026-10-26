@@ -107,3 +107,16 @@ Plan: Müren denizaltısında atlanabilir prolog, "yüzeye ulaş" hedefi, gizemi
 ## Yayın (GitHub Pages)
 - [x] Vite tabanı alt yola (`/Engineering_Simulator/`), yerel geliştirme kökte; önizlemede 163 istek, 404 yok, konsol temiz, `window.__dm` yok
 - [x] GitHub Actions: test → tsc + build → Pages (e2e yok); Pages kaynağı gh ile "GitHub Actions" yapıldı
+
+## Ders materyalleri klasörü (ders_materyalleri/)
+Plan: klasöre bırakılan not ve sorular dev sunucusu açıkken kendiliğinden işlenir; onaylanan içerik repoya yazılır.
+- [x] 5.1 Klasör düzeni ve ders eşleştirme (notlar|konular, sorular|ornek_sorular, kitaplar); eşleşmeyen klasör bildirilir
+- [x] 5.2 Kitap bölme (`npm run kitap:bol`, pdf-lib): yer imlerine göre bölüm, yer imi yoksa 30 sayfa; kısa ön bölümler birleşir; dev sunucusu yeni kitabı kendiliğinden böler; kitaplar/ git dışında
+- [x] 5.3 Dev sunucusu eklentisi (yalnız `npm run dev`): izleme, sha256, sayfa sayısı, liste/dosya uç noktaları, onaylı içeriği content/library ve content/analysis'e yazma; yalnız yerel ve aynı köken
+- [x] 5.4 LLM: istek zaman aşımı ("Bağlantıyı sına" artık takılı kalmaz), formül sayfası alanı, dosya başına soru analizi, kota/erişilemeyen modelde gemini-3.5-flash-lite önerisi
+- [x] 5.5 Kuyruk (saf, testli): tekrar etmeme, değişen dosya, uzun PDF onayı, anahtar bir kez, 429 bekleme (60 sn → 2 dk → 5 dk) ve "Şimdi dene", hata ayrımı
+- [x] 5.6 Ders analizi: dosya analizlerinin doğrulanması ve kodla birleştirilmesi, öncelikli öneriler, Kütüphane → Ders analizi, repoya .json + .md
+- [x] 5.7 Arayüz: Kütüphane sekmeleri (Konular / Klasör / Ders analizi), taslaktan inceleme (ad, .md, brifing, formül sayfası), Defter → Formüller'de konu sayfaları, durum satırı, Ayarlar'da model önerisi
+- [x] 5.8 Yayın: repodaki onaylı konular ve analizler pakete girer; klasör istemcisi yayın derlemesinde yok (CI denetler); `npm run check:size`
+- [x] 5.9 Doğrulama: birim testleri, tsc, build; `npm run e2e:materials` (sahte istemci, anahtarsız) temiz → commit + push
+

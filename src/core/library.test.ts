@@ -9,7 +9,12 @@ import {
   emptyLibrary,
   flagTemplate,
   loadLibrary,
+  parseRepoTopic,
+  replaceDraft,
   saveLibrary,
+  supersede,
+  toRepoTopic,
+  withRepoTopics,
   templatePool,
   upsertTopic,
   validateLibrary,
@@ -31,6 +36,7 @@ const draft = (patch: Partial<Topic> = {}): Topic => ({
   status: 'draft',
   markdown: '# Not',
   briefing: 'Özet',
+  formulaSheet: '',
   truncated: false,
   note: null,
   source: { fileName: 'not.pdf', bytes: 1234, pages: 3 },
@@ -173,5 +179,46 @@ describe('PDF ön denetimi', () => {
 
   it('50 MB üstü engellenir', () => {
     expect(checkPdf({ isPdf: true, pages: 10, bytes: MAX_PDF_BYTES + 1 }).blocking).toMatch(/üst sınır/);
+  });
+});
+
+describe('klasör ve repo konuları', () => {
+  const folder = (id: string, path: string, patch: Partial<Topic> = {}) =>
+    draft({ id, origin: 'folder', source: { fileName: path.split('/').pop()!, bytes: 1, pages: 2, sha256: id, path }, ...patch });
+
+  it('onay: formül sayfası ve ad düzenlenir; eski kayıtlarda formül sayfası boş göçer', () => {
+    const t = approveTopic(draft(), { markdown: '# x', briefing: 'y', formulaSheet: '  ## F  ', name: ' Yeni ad ' });
+    expect(t).toMatchObject({ formulaSheet: '## F', name: 'Yeni ad', status: 'approved' });
+    expect(() => approveTopic(draft(), { markdown: '# x', briefing: 'y', name: ' ' })).toThrow(/ad/);
+    const old = { version: 1, topics: [{ ...draft(), formulaSheet: undefined }] };
+    expect(validateLibrary(old)!.topics[0].formulaSheet).toBe('');
+  });
+
+  it('değişen dosya: yeni taslak eski taslağın yerine geçer; onaylı sürüm, yenisi onaylanana kadar kalır', () => {
+    const p = 'Devre/notlar/a.pdf';
+    let lib = upsertTopic(emptyLibrary(), approveTopic(folder('v1', p), { markdown: '# a', briefing: 'b' }));
+    lib = replaceDraft(lib, folder('v2', p));
+    lib = replaceDraft(lib, folder('v3', p));
+    expect(lib.topics.map((t) => `${t.id}:${t.status}`).sort()).toEqual(['v1:approved', 'v3:draft']);
+    lib = supersede(lib, approveTopic(lib.topics.find((t) => t.id === 'v3')!, { markdown: '# a2', briefing: 'b' }));
+    expect(lib.topics.map((t) => `${t.id}:${t.status}`)).toEqual(['v3:approved']);
+  });
+
+  it('repoya yalnız onaylı yazılır; kitaptan gelende tam .md çıkarılır', () => {
+    expect(() => toRepoTopic(draft())).toThrow(/Onaylanmamış/);
+    const note = toRepoTopic(approveTopic(folder('n', 'D/notlar/a.pdf'), { markdown: '# tam not', briefing: 'b', formulaSheet: 'F' }));
+    expect(note).toMatchObject({ origin: 'repo', markdown: '# tam not', formulaSheet: 'F' });
+    const book = toRepoTopic(approveTopic(folder('k', 'D/kitaplar/irwin/03-ch1.pdf'), { markdown: '# kitap metni', briefing: 'b', formulaSheet: 'F' }));
+    expect(book).toMatchObject({ markdown: '', formulaSheet: 'F', briefing: 'b' });
+    expect(book.note).toMatch(/telif/);
+  });
+
+  it('repo konuları eklenir; bu tarayıcıdaki aynı kimlik ya da aynı dosyanın onaylı sürümü öncelikli', () => {
+    const repo = [parseRepoTopic(JSON.parse(JSON.stringify(toRepoTopic(approveTopic(folder('r1', 'D/notlar/a.pdf'), { markdown: '# a', briefing: 'b' })))))!];
+    expect(repo[0]).not.toBeNull();
+    expect(parseRepoTopic(draft())).toBeNull();
+    expect(withRepoTopics(emptyLibrary(), repo).topics.map((t) => t.origin)).toEqual(['repo']);
+    const local = upsertTopic(emptyLibrary(), approveTopic(folder('l1', 'D/notlar/a.pdf'), { markdown: '# yeni', briefing: 'b' }));
+    expect(withRepoTopics(local, repo).topics.map((t) => t.id)).toEqual(['l1']);
   });
 });

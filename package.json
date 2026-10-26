@@ -14,13 +14,17 @@
     "gen:cs": "node scripts/gen-cs-output.mjs",
     "e2e": "node scripts/e2e.mjs",
     "screens": "node scripts/screens.mjs",
-    "e2e:prologue": "node scripts/e2e-prologue.mjs"
+    "e2e:prologue": "node scripts/e2e-prologue.mjs",
+    "kitap:bol": "node scripts/book-split.ts",
+    "check:size": "node scripts/check-size.mjs",
+    "e2e:materials": "node scripts/e2e-materials.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/three": "^0.186.0",
+    "pdf-lib": "^1.17.1",
     "puppeteer-core": "^24.43.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",

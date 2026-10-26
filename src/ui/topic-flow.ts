@@ -1,11 +1,54 @@
 // "Konu ekle" akışı: ders + konu adı + PDF → (anahtar sorusu) → .md üretimi → inceleme ve onay →
-// şablon üretimi → rapor. LLM çıktısı hiçbir yerde HTML olarak yorumlanmaz (textarea/esc).
+// şablon üretimi → rapor. ders_materyalleri/ klasöründen gelen taslak doğrudan incelemeden başlar.
+// LLM çıktısı hiçbir yerde HTML olarak yorumlanmaz (textarea/esc).
 
-import type { Topic } from '../core/library';
+import type { ApproveEdits, Topic } from '../core/library';
 import { BRIEFING_LIMIT } from '../core/library';
 import { checkPdf, inspectPdf } from '../core/pdf';
-import { TYPE_LABEL, type Course } from '../pipeline/topic-pipeline';
+import { TYPE_LABEL, type Course, type DraftInput } from '../pipeline/topic-pipeline';
 import { esc } from '../puzzles/dom';
+
+export interface KeyDeps {
+  providerLabel: () => string;
+  keyAdvice: string;
+  saveKey: (key: string) => void;
+}
+
+const keyFormHtml = (d: KeyDeps, why: string) => `
+  <p>${esc(why)} ${esc(d.providerLabel())} API anahtarın gerekiyor. Anahtar <b>yalnız bu tarayıcıda</b> saklanır;
+  koda, yedeğe ve kayıtlara girmez. Sonradan ⋯ → Ayarlar'dan değiştirebilirsin.</p>
+  <p class="muted">${esc(d.keyAdvice)}</p>
+  <label class="key-row">Anahtar <input type="password" name="key" autocomplete="off" spellcheck="false"></label>
+  <footer><button class="ghost" data-act="skip">Şimdilik atla</button><button class="primary" data-act="save" disabled>Kaydet ve devam et</button></footer>`;
+
+function bindKeyForm(el: HTMLElement, d: KeyDeps, onSave: () => void, onSkip: () => void): void {
+  const keyIn = el.querySelector<HTMLInputElement>('[name="key"]')!;
+  const save = el.querySelector<HTMLButtonElement>('[data-act="save"]')!;
+  keyIn.addEventListener('input', () => (save.disabled = !keyIn.value.trim()));
+  save.addEventListener('click', () => {
+    d.saveKey(keyIn.value);
+    keyIn.value = '';
+    onSave();
+  });
+  el.querySelector('[data-act="skip"]')!.addEventListener('click', onSkip);
+}
+
+/** Klasör kuyruğu için tek başına anahtar sorusu; kaydedilirse true. */
+export function askApiKey(root: HTMLElement, d: KeyDeps): Promise<boolean> {
+  return new Promise((done) => {
+    const el = document.createElement('div');
+    el.className = 'overlay';
+    el.innerHTML = `<div class="panel topic-flow" role="dialog" aria-label="API anahtarı">
+      <header class="panel-head"><span class="tag ok">İÇERİK</span><h2>ders_materyalleri/ için API anahtarı</h2></header>
+      ${keyFormHtml(d, 'Klasöre eklediğin notları ve soruları işlemek için')}</div>`;
+    root.appendChild(el);
+    const end = (ok: boolean) => {
+      el.remove();
+      done(ok);
+    };
+    bindKeyForm(el, d, () => end(true), () => end(false));
+  });
+}
 
 export interface TopicFlowDeps {
   courses: Course[];
@@ -15,13 +58,14 @@ export interface TopicFlowDeps {
   keyAdvice: string;
   needsKey: () => boolean;
   saveKey: (key: string) => void;
-  createDraft: (input: { course: Course; name: string; fileName: string; pdf: Uint8Array; pages: number | null }) => Promise<Topic>;
-  approve: (t: Topic, edits: { markdown: string; briefing: string }) => Promise<Topic>;
+  createDraft: (input: DraftInput) => Promise<Topic>;
+  approve: (t: Topic, edits: ApproveEdits) => Promise<Topic>;
   generate: (t: Topic) => Promise<Topic>;
   onClose: () => void;
 }
 
-export function openTopicFlow(root: HTMLElement, deps: TopicFlowDeps): void {
+/** `start` verilirse form atlanır, taslağın incelemesiyle başlar (klasörden gelen taslak; PDF önizleme için). */
+export function openTopicFlow(root: HTMLElement, deps: TopicFlowDeps, start?: { draft: Topic; pdf: Uint8Array | null }): void {
   const el = document.createElement('div');
   el.className = 'overlay';
   root.appendChild(el);
@@ -113,28 +157,15 @@ export function openTopicFlow(root: HTMLElement, deps: TopicFlowDeps): void {
 
   // ---------------------------------------------------------------- 2. anahtar (ilk kez burada)
   const askKey = (then: () => void) => {
-    show(`${head('API anahtarı')}
-      <p>PDF'i okumak için ${esc(deps.providerLabel())} API anahtarın gerekiyor. Anahtar <b>yalnız bu tarayıcıda</b> saklanır;
-      koda, yedeğe ve kayıtlara girmez. Sonradan ⋯ → Ayarlar'dan değiştirebilirsin.</p>
-      <p class="muted">${esc(deps.keyAdvice)}</p>
-      <label class="key-row">Anahtar <input type="password" name="key" autocomplete="off" spellcheck="false"></label>
-      <footer><button class="ghost" data-act="skip">Şimdilik atla</button><button class="primary" data-act="save" disabled>Kaydet ve devam et</button></footer>`);
-    const keyIn = el.querySelector<HTMLInputElement>('[name="key"]')!;
-    const save = el.querySelector<HTMLButtonElement>('[data-act="save"]')!;
-    keyIn.addEventListener('input', () => (save.disabled = !keyIn.value.trim()));
-    save.addEventListener('click', () => {
-      deps.saveKey(keyIn.value);
-      keyIn.value = '';
-      then();
-    });
-    el.querySelector('[data-act="skip"]')!.addEventListener('click', () =>
+    show(`${head('API anahtarı')}${keyFormHtml(deps, 'PDF\'i okumak için')}`);
+    bindKeyForm(el, deps, then, () =>
       show(`${head('Anahtar atlandı')}<p>Anahtar olmadan PDF okunamaz. Hazır olduğunda ⋯ → Ayarlar'dan anahtarı ekleyip
         "Konu ekle"yi yeniden başlatabilirsin.</p><footer><button class="primary" data-act="close">Tamam</button></footer>`),
     );
   };
 
   // ---------------------------------------------------------------- 3. .md üretimi
-  const extract = async (input: Parameters<TopicFlowDeps['createDraft']>[0]) => {
+  const extract = async (input: DraftInput) => {
     working(`PDF okunuyor ve .md'ye çevriliyor (${deps.providerLabel()})…`);
     try {
       review(await deps.createDraft(input), input);
@@ -144,33 +175,41 @@ export function openTopicFlow(root: HTMLElement, deps: TopicFlowDeps): void {
   };
 
   // ---------------------------------------------------------------- 4. inceleme ve onay
-  const review = (t: Topic, input: Parameters<TopicFlowDeps['createDraft']>[0]) => {
+  const review = (t: Topic, input: DraftInput | null) => {
+    const source = t.source.path ? `<p class="muted">Kaynak: ders_materyalleri/${esc(t.source.path)}</p>` : '';
     show(`${head(`İncele: ${t.name}`)}
       ${t.truncated ? `<p class="error-box"><b>Eksik .md:</b> ${esc(t.note ?? 'Yanıt kesildi.')} Bu hâliyle onaylanamaz.</p>` : ''}
+      ${source}
       <div class="review-grid">
-        <div class="pdf-pane"><iframe title="Kaynak PDF" src="${pdfUrl}"></iframe></div>
+        <div class="pdf-pane">${pdfUrl ? `<iframe title="Kaynak PDF" src="${pdfUrl}"></iframe>` : '<p class="muted">PDF önizlemesi yok.</p>'}</div>
         <div class="md-pane">
+          <label>Konu adı <input name="tname" maxlength="80"></label>
           <label>Not (.md) — düzenleyebilirsin <textarea name="md" spellcheck="false"></textarea></label>
           <label>Brifing özeti (oyunda gösterilir) <span class="counter"></span>
             <textarea name="briefing" maxlength="${BRIEFING_LIMIT}" rows="4"></textarea></label>
+          <label>Formül sayfası (defterde konu sayfası) <textarea name="formulas" spellcheck="false" rows="6"></textarea></label>
         </div>
       </div>
-      <p class="muted">Onaylamadan şablon üretimi başlamaz.</p>
-      <footer><button class="ghost" data-act="close">Vazgeç</button><button class="ghost" data-act="regen">Yeniden üret</button>
+      <p class="muted">Onaylamadan oyuna da repoya da girmez; şablon üretimi de başlamaz.</p>
+      <footer><button class="ghost" data-act="close">Vazgeç</button>${input ? '<button class="ghost" data-act="regen">Yeniden üret</button>' : ''}
         <button class="primary" data-act="approve" ${t.truncated ? 'disabled' : ''}>Onayla</button></footer>`);
     const md = el.querySelector<HTMLTextAreaElement>('[name="md"]')!;
     const br = el.querySelector<HTMLTextAreaElement>('[name="briefing"]')!;
+    const fs = el.querySelector<HTMLTextAreaElement>('[name="formulas"]')!;
+    const nm = el.querySelector<HTMLInputElement>('[name="tname"]')!;
     const counter = el.querySelector<HTMLSpanElement>('.counter')!;
     md.value = t.markdown; // value ataması: LLM çıktısı HTML olarak yorumlanmaz
     br.value = t.briefing.slice(0, BRIEFING_LIMIT);
+    fs.value = t.formulaSheet;
+    nm.value = t.name;
     const count = () => (counter.textContent = `${br.value.length}/${BRIEFING_LIMIT}`);
     br.addEventListener('input', count);
     count();
-    el.querySelector('[data-act="regen"]')!.addEventListener('click', () => extract(input));
+    if (input) el.querySelector('[data-act="regen"]')!.addEventListener('click', () => extract(input));
     el.querySelector('[data-act="approve"]')!.addEventListener('click', async () => {
       let approved: Topic;
       try {
-        approved = await deps.approve(t, { markdown: md.value, briefing: br.value });
+        approved = await deps.approve(t, { markdown: md.value, briefing: br.value, formulaSheet: fs.value, name: nm.value });
       } catch (e) {
         alert((e as Error).message);
         return;
@@ -217,5 +256,8 @@ export function openTopicFlow(root: HTMLElement, deps: TopicFlowDeps): void {
       <footer><button class="primary" data-act="close">Tamam</button></footer>`);
   };
 
-  form();
+  if (start) {
+    if (start.pdf) pdfUrl = URL.createObjectURL(new Blob([start.pdf as BlobPart], { type: 'application/pdf' }));
+    review(start.draft, null);
+  } else form();
 }

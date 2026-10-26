@@ -30,9 +30,12 @@ jobs:
         run: npm test
       - name: Tip denetimi ve derleme
         run: npm run build
-      - name: Geliştirme kancaları yayında olmamalı
+      - name: Geliştirme kancaları ve klasör izleme yayında olmamalı
         run: |
           if grep -q "__dm" dist/assets/*.js; then echo "window.__dm yayın derlemesinde"; exit 1; fi
+          if grep -q "__materials" dist/assets/*.js; then echo "ders_materyalleri istemcisi yayın derlemesinde"; exit 1; fi
+      - name: Boyut denetimi (100 MB üstü dosya yok)
+        run: npm run check:size
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

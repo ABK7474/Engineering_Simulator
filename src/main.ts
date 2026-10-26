@@ -14,10 +14,14 @@ import {
   loadLibrary,
   removeTopic,
   saveLibrary,
+  supersede,
   templatePool,
   upsertTopic,
   validateLibrary,
+  withRepoTopics,
+  type ApproveEdits,
   type Library,
+  type Topic,
 } from './core/library';
 import {
   defaultProgress,
@@ -68,11 +72,14 @@ import { createPrologueFlow, type PrologueFlow } from './prologue-flow';
 import { loadMeta, saveMeta } from './core/meta';
 import type { ResourceState } from './core/resources';
 import { respawnInRoom } from './world/respawn';
-import { doorOpen, missingFor, nextGoal, withProvided } from './world/state';
+import { doorOpen, missingFor, nextGoal, testUnlockStates, withProvided } from './world/state';
+import { digitOf, keySequence } from './ui/key-sequence';
 import { mountHud, type HudView } from './ui/hud';
 import { openLibraryView } from './ui/library-view';
 import { openSettings } from './ui/settings';
-import { openTopicFlow } from './ui/topic-flow';
+import { askApiKey, openTopicFlow, type TopicFlowDeps } from './ui/topic-flow';
+import { createMaterialsFlow } from './materials-flow';
+import { repoTopics } from './pipeline/materials';
 
 // --- Dünya içeriği (JSON): doğrulanır; bozuksa açıklamalı hata verir ---
 const content = loadWorld(undefined, undefined, undefined, { verifySeeds: 1 }); // 20 tohumluk tam doğrulama testlerde
@@ -209,7 +216,8 @@ function sanitize(lib: Library): Library {
     })),
   };
 }
-let library = sanitize(await loadLibrary(kv));
+// Repodaki onaylı konular (content/library/) da kütüphaneye girer; bu tarayıcıdaki sürüm öncelikli.
+let library = sanitize(withRepoTopics(await loadLibrary(kv), repoTopics()));
 const persistLibrary = async () => {
   try {
     await saveLibrary(kv, library);
@@ -220,6 +228,76 @@ const persistLibrary = async () => {
 const MOCK_LLM = new URLSearchParams(location.search).get('llm') === 'mock';
 const llmSettings = (): LlmSettings => ({ apiKey: getApiKey(), model: getModel(LLM_DEFAULTS.model), mock: MOCK_LLM });
 const providerLabel = () => (MOCK_LLM ? 'Sahte istemci' : `${LLM_DEFAULTS.label} · ${getModel(LLM_DEFAULTS.model)}`);
+const keyDeps = { providerLabel, keyAdvice: LLM_DEFAULTS.keyAdvice, saveKey: setApiKey };
+// --- ders_materyalleri/ (yalnız dev sunucusu): klasördeki notlar ve sorular kendiliğinden işlenir ---
+const materialsStatus = document.createElement('div');
+materialsStatus.className = 'materials-status';
+materialsStatus.hidden = true;
+ui.appendChild(materialsStatus);
+const materials = await createMaterialsFlow({
+  kv,
+  courses: coursesJson as Course[],
+  getLibrary: () => library,
+  setLibrary: async (lib) => {
+    library = sanitize(lib);
+    await persistLibrary();
+  },
+  llm: llmSettings,
+  needsKey: () => !getApiKey(),
+  askKey: () => new Promise((done) => withHubPaused((onClose) => void askApiKey(ui, keyDeps).then((ok) => (onClose(), done(ok))))),
+  canPrompt: () => started && hub.isRoaming() && !prologueActive() && !ui.querySelector('.overlay'),
+  saveModel: setModel,
+  onStatus: (text) => {
+    materialsStatus.hidden = !text;
+    materialsStatus.textContent = text ?? '';
+  },
+});
+/** Onay (Konu ekle ya da klasör taslağı): aynı dosyanın eski sürümü çıkar; klasör konusu repoya yazılır. */
+const approveAndStore = async (t: Topic, edits: ApproveEdits) => {
+  const approved = approveTopic(t, edits);
+  library = supersede(library, approved);
+  await persistLibrary();
+  await materials.afterApprove(approved);
+  return approved;
+};
+const generateAndStore = async (t: Topic) => {
+  const existing = library.topics.flatMap((x) => x.templates.map((y) => y.stage));
+  const done = await generateTopicTemplates(llmSettings(), t, { course: COURSES.find((c) => c.id === t.courseId)!, bases: BASES, existing });
+  library = upsertTopic(library, done);
+  await persistLibrary();
+  await materials.afterApprove(done);
+  return done;
+};
+function openLibrary(tab?: 'topics' | 'folder' | 'analysis'): void {
+  withHubPaused((onClose) =>
+    openLibraryView(ui, {
+      lib: () => library,
+      remove: async (id) => {
+        library = removeTopic(library, id);
+        await persistLibrary();
+      },
+      review: (id, done) => {
+        const draft = library.topics.find((t) => t.id === id);
+        if (!draft) return;
+        void materials.pdfFor(draft).then((pdf) => openTopicFlow(ui, topicFlowDeps(done), { draft, pdf }));
+      },
+      analyses: materials.analyses,
+      folder: materials.folder,
+      tab,
+      onClose,
+    }),
+  );
+}
+const topicFlowDeps = (onClose: () => void): TopicFlowDeps => ({
+  courses: COURSES,
+  ...keyDeps,
+  // Sahte istemci anahtarı kullanmaz ama akış (ve sızıntı denetimi) gerçeğiyle aynı kalsın.
+  needsKey: () => !getApiKey(),
+  createDraft: (input) => createTopicDraft(llmSettings(), input),
+  approve: approveAndStore,
+  generate: generateAndStore,
+  onClose,
+});
 /** Menüden açılan ekranlar: koridordaki girdiyi askıya alır, kapanınca geri verir. */
 const withHubPaused = (open: (onClose: () => void) => void) => {
   hub.suspend();
@@ -234,45 +312,11 @@ mountBackupMenu(ui, {
   items: [
     {
       label: 'Konu ekle…',
-      onClick: () =>
-        withHubPaused((onClose) =>
-          openTopicFlow(ui, {
-            courses: COURSES,
-            providerLabel,
-            keyAdvice: LLM_DEFAULTS.keyAdvice,
-            // Sahte istemci anahtarı kullanmaz ama akış (ve sızıntı denetimi) gerçeğiyle aynı kalsın.
-            needsKey: () => !getApiKey(),
-            saveKey: setApiKey,
-            createDraft: (input) => createTopicDraft(llmSettings(), input),
-            approve: async (t, edits) => {
-              const approved = approveTopic(t, edits);
-              library = upsertTopic(library, approved);
-              await persistLibrary();
-              return approved;
-            },
-            generate: async (t) => {
-              const existing = library.topics.flatMap((x) => x.templates.map((y) => y.stage));
-              const done = await generateTopicTemplates(llmSettings(), t, { course: COURSES.find((c) => c.id === t.courseId)!, bases: BASES, existing });
-              library = upsertTopic(library, done);
-              await persistLibrary();
-              return done;
-            },
-            onClose,
-          }),
-        ),
+      onClick: () => withHubPaused((onClose) => openTopicFlow(ui, topicFlowDeps(onClose))),
     },
     {
       label: 'Konu kütüphanesi',
-      onClick: () =>
-        withHubPaused((onClose) =>
-          openLibraryView(ui, () => library, {
-            remove: async (id) => {
-              library = removeTopic(library, id);
-              await persistLibrary();
-            },
-            onClose,
-          }),
-        ),
+      onClick: () => openLibrary(),
     },
     {
       label: 'Defter (N)…',
@@ -787,6 +831,8 @@ if (import.meta.env.DEV) {
         skip: () => prologue.skip(),
         active: () => prologue.active,
       },
+      /** ders_materyalleri/ kuyruğu: durum, sahte istemci çağrıları, listeyi yenile; kütüphaneyi sekmesiyle aç. */
+      materials: { ...materials.debug, analyses: () => materials.analyses(), openLibrary },
       setResources: (values: Amounts) => {
         progress.resources = { ...progress.resources, values: { ...progress.resources.values, ...values } };
         renderHud();
@@ -907,6 +953,11 @@ function notebookView() {
         };
       }),
     formulas: formulaPages(Object.values(content.cards), progress.review, COURSE_NAMES, TOPIC_NAMES),
+    // Onaylı konuların formül sayfaları (Konu ekle ve ders_materyalleri/)
+    topicPages: library.topics
+      .filter((t) => t.status === 'approved' && t.formulaSheet.trim())
+      .sort((a, b) => a.courseName.localeCompare(b.courseName, 'tr') || a.name.localeCompare(b.name, 'tr'))
+      .map((t) => ({ courseName: t.courseName, name: t.name, sheet: t.formulaSheet })),
     logs: unlockedLogs(STATION_LOGS, states()),
     totalLogs: STATION_LOGS.length,
   };
@@ -940,6 +991,44 @@ window.addEventListener('keydown', (e) => {
   if (e.code !== 'KeyN' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
   if (!hub.isRoaming() && !notebookOpen) return; // panel açıkken N defteri açmaz
   toggleNotebook();
+});
+
+// Test kodları (oyunda sırayla, rakam tuşlarıyla). 681: prolog atlanır, bütün kapılar ve terminaller açılır, odalar
+// haritada görünür, kaynaklar dolar; arızalar çözülmüş sayılmaz (bulmacalar denenebilir). 923: ayrıca bütün
+// arızalar onarılmış sayılır ve final gelir. Kayda yazılır, Ayarlar'dan sıfırlanır.
+function testUnlock(solveAll: boolean): void {
+  if (prologueActive()) prologue!.skip();
+  const before = new Set(W.doors.filter((x) => doorOpen(x, states())).map((x) => x.id));
+  progress.world.states = testUnlockStates(W, states());
+  if (solveAll) {
+    for (const f of W.faults) progress.faults[f.id] = { stagesDone: stagesOf(f.id).length };
+    progress.world.states = [...new Set([...states(), ...W.faults.flatMap((f) => f.provides)])];
+    mapTarget = null;
+  }
+  progress.world.discovered = W.rooms.map((r) => r.id);
+  progress.resources = {
+    ...progress.resources,
+    values: Object.fromEntries(Object.entries(balance.resources).map(([id, def]) => [id, def.max])),
+  };
+  for (const x of W.doors) if (!before.has(x.id) && doorOpen(x, states())) hub.setDoorOpen(x.id, true, true);
+  refreshAll();
+  renderHud();
+  updateMood();
+  renderMap();
+  void persist();
+  uiSound('switch');
+  const text = solveAll ? 'Test kodu: bütün arızalar onarıldı.' : 'Test kodu: bütün kapılar ve terminaller açık, kaynaklar dolu.';
+  subtitles.say([{ who: 'suit', label: 'TEST', text }]);
+  if (solveAll) maybeFinale();
+}
+const testCodes = [
+  { hit: keySequence('681'), solveAll: false },
+  { hit: keySequence('923'), solveAll: true },
+];
+window.addEventListener('keydown', (e) => {
+  const d = digitOf(e.code);
+  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay')) return;
+  for (const c of testCodes) if (c.hit(d)) testUnlock(c.solveAll);
 });
 
 /** Pratik: konunun bir aşaması yeni sayılarla; kaynak harcamaz, yalnız tekrar kaydını günceller. */
@@ -1105,3 +1194,6 @@ async function runAttempt(fid: string, answer: unknown): Promise<void> {
     },
   });
 }
+
+// Klasör kuyruğu oyun açılınca başlar (arka planda; anahtar gerekirse oyuncu dolaşırken bir kez sorulur).
+materials.start();

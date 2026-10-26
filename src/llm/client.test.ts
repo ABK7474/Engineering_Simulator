@@ -1,8 +1,8 @@
 // Gemini istemcisi: sahte fetch ile (ağ yok). İstek biçimi, yanıt ayrıştırma, kesilme algılama,
 // hata eşleme ve anahtarın hiçbir yere sızmaması.
 
-import { describe, expect, it } from 'vitest';
-import { createProvider, DEFAULT_MODEL, ENDPOINT, interpretMarkdown } from './client';
+import { describe, expect, it, vi } from 'vitest';
+import { createProvider, DEFAULT_MODEL, ENDPOINT, FALLBACK_MODEL, interpretMarkdown, TIMEOUT } from './client';
 import { LlmError } from './llm';
 
 const KEY = 'AIzaSy-gizli-test-anahtari-123';
@@ -25,7 +25,7 @@ const provider = (f: typeof fetch) => createProvider({ apiKey: KEY, model: DEFAU
 
 describe('istek biçimi', () => {
   it('pdfToMarkdown: Interactions uç noktası, anahtar başlıkta, store:false, belge parçası, şema', async () => {
-    const { f, calls } = fakeFetch(200, ok(JSON.stringify({ markdown: '# Not', briefing: 'Özet' })));
+    const { f, calls } = fakeFetch(200, ok(JSON.stringify({ markdown: '# Not', briefing: 'Özet', formulas: '## F' })));
     await provider(f).pdfToMarkdown(PDF, { courseName: 'Devre Teorisi 1', topicName: 'Seri devre' });
     const { url, init } = calls[0];
     expect(url).toBe(ENDPOINT);
@@ -38,7 +38,7 @@ describe('istek biçimi', () => {
     expect(body.input[0]).toEqual({ type: 'document', data: btoa('%PDF-1.7 sahte'), mime_type: 'application/pdf' });
     expect(body.input[1].type).toBe('text');
     expect(body.response_format.mime_type).toBe('application/json');
-    expect(body.response_format.schema.required).toEqual(['markdown', 'briefing']);
+    expect(body.response_format.schema.required).toEqual(['markdown', 'briefing', 'formulas']);
   });
 
   it('düşünme seviyesi asla "minimal" değil', async () => {
@@ -59,10 +59,11 @@ describe('istek biçimi', () => {
 
 describe('yanıt ayrıştırma ve kesilme algılama', () => {
   it('tam yanıt: md ve brifing döner, eksik değil', async () => {
-    const { f } = fakeFetch(200, ok(JSON.stringify({ markdown: '# Not\nmetin', briefing: 'Özet' })));
+    const { f } = fakeFetch(200, ok(JSON.stringify({ markdown: '# Not\nmetin', briefing: 'Özet', formulas: '## Ohm\n- $V = IR$' })));
     expect(await provider(f).pdfToMarkdown(PDF, { courseName: 'D', topicName: 'T' })).toEqual({
       markdown: '# Not\nmetin',
       briefing: 'Özet',
+      formulas: '## Ohm\n- $V = IR$',
       truncated: false,
     });
   });
@@ -147,6 +148,47 @@ describe('hata eşleme ve anahtar gizliliği', () => {
     const bad = await provider(fakeFetch(404, { error: { message: 'model not found' } }).f).testConnection();
     expect(bad).toMatchObject({ ok: false, kind: 'model_unavailable' });
     expect(bad.message).not.toContain(KEY);
+  });
+
+  it('kota ve erişilemeyen model: hafif model önerilir (zaten o modeldeyse önerilmez)', async () => {
+    for (const status of [429, 404]) {
+      const err = await provider(fakeFetch(status, { error: { message: 'x' } }).f).pdfToMarkdown(PDF, { courseName: 'D', topicName: 'T' }).catch((e) => e);
+      expect(err.suggestModel).toBe(FALLBACK_MODEL);
+      expect(err.message).toContain(`"${FALLBACK_MODEL}"`);
+    }
+    const check = await provider(fakeFetch(429, { error: { message: 'x' } }).f).testConnection();
+    expect(check).toMatchObject({ ok: false, kind: 'quota', suggestModel: FALLBACK_MODEL });
+    const lite = createProvider({ apiKey: KEY, model: FALLBACK_MODEL, fetch: fakeFetch(429, {}).f });
+    expect((await lite.testConnection()).suggestModel).toBeNull();
+    const other = await provider(fakeFetch(503, {}).f).testConnection();
+    expect(other.suggestModel).toBeNull();
+  });
+
+  it('zaman aşımı: yanıt gelmezse istek kesilir, takılı kalmaz', async () => {
+    vi.useFakeTimers();
+    try {
+      const hang = ((_url: string, init: RequestInit) =>
+        new Promise((_, reject) => init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))) as unknown as typeof fetch;
+      const p = provider(hang).testConnection();
+      await vi.advanceTimersByTimeAsync(TIMEOUT.test + 10);
+      const r = await p;
+      expect(r).toMatchObject({ ok: false, kind: 'timeout' });
+      expect(r.message).toMatch(/30 sn/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('soru analizi: dosya başına istek (PDF belge, görsel image parçası), kesilme algılanır', async () => {
+    const { f, calls } = fakeFetch(200, ok(JSON.stringify({ patterns: [] })));
+    const r = await provider(f).analyzeQuestions({ name: 'vize.png', mime: 'image/png', bytes: PDF }, { courseName: 'D', catalog: '- thevenin: …' });
+    const body = JSON.parse(calls[0].init.body as string);
+    expect(body.input[0]).toMatchObject({ type: 'image', mime_type: 'image/png' });
+    expect(body.input[1].text).toContain('- thevenin: …');
+    expect(body.response_format.schema.required).toContain('proposals');
+    expect(r).toEqual({ analysis: { patterns: [] }, truncated: false });
+    const cut = await provider(fakeFetch(200, ok('{"patterns": [', 'incomplete')).f).analyzeQuestions({ name: 'a.pdf', mime: 'application/pdf', bytes: PDF }, { courseName: 'D', catalog: '' });
+    expect(cut.truncated).toBe(true);
   });
 
   it('JSON olmayan hata gövdesi de işlenir', async () => {

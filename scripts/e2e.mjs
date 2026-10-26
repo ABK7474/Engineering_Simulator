@@ -6,6 +6,7 @@
 // Chrome yolu: CHROME_PATH (varsayılan /usr/bin/google-chrome). Konsol hatası ya da tıkanma olursa çıkış kodu 1.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
@@ -14,6 +15,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'screenshots');
 const PORT = 5211;
 fs.mkdirSync(OUT, { recursive: true });
+// Gerçek ders_materyalleri/ (kitaplar dahil) taranmasın, content/'e yazılmasın: klasör eklentisi boş geçici klasörlere bakar
+process.env.DM_MATERIALS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-e2e-materyal-'));
+process.env.DM_CONTENT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dm-e2e-icerik-'));
 
 const { createServer } = await import(path.join(ROOT, 'node_modules/vite/dist/node/index.js'));
 const server = await createServer({ root: ROOT, configFile: path.join(ROOT, 'vite.config.ts'), server: { port: PORT, strictPort: true, hmr: false, watch: null }, logLevel: 'error' }); // tur sürerken dosya değişirse sayfa tazelenmesin
@@ -97,7 +101,7 @@ try {
   const t0 = Date.now();
   await page.goto(`http://localhost:${PORT}/?seed=11&prologue=skip`, { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  await page.click('.gate');
+  await page.click('.gate h1'); // ortası ad alanına denk gelir (tıklamayı yutar)
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   log(`yüklendi (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 

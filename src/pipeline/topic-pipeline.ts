@@ -20,23 +20,32 @@ export const TYPE_LABEL: Record<TemplateType, string> = {
 /** LLM'e tür başına istenen aday sayısı. */
 export const CANDIDATES_PER_TYPE = 5;
 
-export async function createTopicDraft(
-  settings: LlmSettings,
-  input: { course: Course; name: string; fileName: string; pdf: Uint8Array; pages: number | null },
-  now = new Date(),
-): Promise<Topic> {
+export interface DraftInput {
+  course: Course;
+  name: string;
+  fileName: string;
+  pdf: Uint8Array;
+  pages: number | null;
+  /** Klasörden gelen dosya: içerik özeti ve ders_materyalleri/'ne göre yolu. */
+  folder?: { sha256: string; path: string };
+}
+
+export async function createTopicDraft(settings: LlmSettings, input: DraftInput, now = new Date()): Promise<Topic> {
   const r = await pdfToMarkdown(settings, input.pdf, { courseName: input.course.name, topicName: input.name });
   return {
-    id: `${input.course.id}-${now.getTime().toString(36)}`,
+    // Klasördeki dosyanın kimliği içerikten: aynı dosya aynı kimlik; değişen dosya yeni taslak
+    id: input.folder ? `${input.course.id}-f-${input.folder.sha256.slice(0, 12)}` : `${input.course.id}-${now.getTime().toString(36)}`,
     courseId: input.course.id,
     courseName: input.course.name,
     name: input.name,
     status: 'draft',
     markdown: r.markdown,
     briefing: r.briefing,
+    formulaSheet: r.formulas,
     truncated: r.truncated,
     note: r.note ?? null,
-    source: { fileName: input.fileName, bytes: input.pdf.byteLength, pages: input.pages },
+    source: { fileName: input.fileName, bytes: input.pdf.byteLength, pages: input.pages, ...(input.folder ?? {}) },
+    origin: input.folder ? 'folder' : 'upload',
     model: settings.mock ? 'mock' : settings.model,
     createdAt: now.toISOString(),
     approvedAt: null,

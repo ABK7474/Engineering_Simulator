@@ -50,3 +50,13 @@ export const formatFarad = (c: number) => si(c, 'F');
 export const formatHenry = (l: number) => si(l, 'H');
 /** Oran (0..1) → "%38,2". */
 export const formatPct = (p: number, digits = 1) => `%${(p * 100).toFixed(digits).replace('.', ',')}`;
+
+/** Karşılaştırma için: küçük harf, Türkçe karakterler katlanır, harf/rakam dışı tek tire. */
+export const normalizeName = (s: string): string =>
+  s
+    .toLocaleLowerCase('tr')
+    .replace(/[çğıöşüâîû]/g, (c) => ({ ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', â: 'a', î: 'i', û: 'u' })[c]!)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
