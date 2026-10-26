@@ -50,14 +50,14 @@ export interface HubOptions {
   hintFor: (terminalId: string) => string | null;
   /** Oyuncu başka bir odaya geçti. */
   onRoomChange: (roomId: string) => void;
-  /** "Tıkla ve başla" tıklaması: kullanıcı etkileşimi (ses burada başlatılabilir). */
+  /** Ana menüden oyuna geçildi (`hub.start()`; kullanıcı etkileşimi, ses burada başlatılabilir). */
   onStart: () => void;
   /** Prolog: istemi gösterilen hedefe (röle, pompa, dolap, kilit) E ile dokunuldu. */
   onPrologueTarget?: (target: string) => void;
 }
 
 /** Kamera düzeni: istasyonda yürüme, denizaltı koltuğu, dalış kıyafetiyle deniz tabanı. */
-export type Rig = 'station' | 'cockpit' | 'seabed' | 'capsule';
+export type Rig = 'station' | 'cockpit' | 'seabed' | 'capsule' | 'menu';
 
 /** Final: kapsülle yükseliş sahnesi (akış: ending-flow.ts). Kamera senaryoyla yönlenir; girdi kapalı. */
 export interface EndingStage {
@@ -111,6 +111,12 @@ export interface OutcomeOptions {
 }
 
 export interface Hub {
+  /** Ana menü düzeni: kamera istasyonun dışında süzülür, girdi kapalı. Hub açılışta bu düzende başlar. */
+  readonly inMenu: boolean;
+  /** Menüden oyuna: istasyon geri gelir, `onStart` çağrılır, imleç kilitlenir. */
+  start: () => void;
+  /** Oyundan menüye (yalnız istasyon düzeninde; prolog/final sırasında false döner). */
+  toMenu: () => boolean;
   /** Girdiyi kapatır, imleci serbest bırakır (2D panel açılırken). */
   suspend: () => void;
   /** Girdiyi açar; oyuncu tıklayınca yürümeye devam eder. */
@@ -327,11 +333,10 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   let ledFlicker: { t: Terminal; color: number; lo: number; hi: number } | null = null;
   let room: string | null = null;
 
-  gateAction.textContent = 'Tıkla ve başla';
+  // Yükleme bitti: ilk giriş ana menüden; giriş katmanı yalnız duraklatmadan dönüş
+  gateAction.textContent = 'Tıkla ve devam et';
   gate.addEventListener('click', () => {
-    opts.onStart();
-    player.controls.lock();
-    gateAction.textContent = 'Tıkla ve devam et';
+    if (rig !== 'menu') player.controls.lock();
   });
 
   const hint = document.createElement('div');
@@ -829,6 +834,70 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     onEvent: (fn) => endingFns.push(fn),
   };
 
+  // --- Ana menü: istasyonun çevresinde yavaş, kapalı bir yol; pencereler soluk ışıklı, arada büyük gölge geçer ---
+  const menuPath = (() => {
+    const xs = layout.rooms.flatMap((r) => [r.rect.minX, r.rect.maxX]);
+    const zs = layout.rooms.flatMap((r) => [r.rect.minZ, r.rect.maxZ]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const r = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) / 2 + 9;
+    return { cx, cz, r };
+  })();
+  const menu = { t: 0, passIn: 18, saved: null as { pos: THREE.Vector3; quat: THREE.Quaternion; power: number } | null };
+  const MENU_SPEED = 0.018;
+  const updateMenu = (dt: number) => {
+    menu.t += dt;
+    const a = 0.6 + menu.t * MENU_SPEED;
+    const r = menuPath.r + Math.sin(menu.t * 0.05) * 2.5;
+    const x = menuPath.cx + Math.cos(a) * r;
+    const z = menuPath.cz + Math.sin(a) * r;
+    camera.position.set(x, bedAt(x, z) + 3.4 + Math.sin(menu.t * 0.11) * 0.7, z);
+    // Bakış istasyonun biraz önüne (yol yönünde) ve hafif aşağı; yavaş salınım
+    const ahead = a + 0.35;
+    lookAtPt.set(menuPath.cx + Math.cos(ahead) * menuPath.r * 0.35, 1.2 + Math.sin(menu.t * 0.07) * 0.6, menuPath.cz + Math.sin(ahead) * menuPath.r * 0.35);
+    lookMat.lookAt(camera.position, lookAtPt, UP);
+    lookQ.setFromRotationMatrix(lookMat);
+    camera.quaternion.slerp(lookQ, menu.t < 0.1 ? 1 : 1 - Math.exp(-dt * 0.8));
+    menu.passIn -= dt;
+    if (menu.passIn <= 0) {
+      menu.passIn = 45 + Math.random() * 35;
+      // Kameranın 20 m önünden, bakışa dik
+      camera.getWorldDirection(look);
+      const len = Math.hypot(look.x, look.z) || 1;
+      exterior.forcePassAt(x + (look.x / len) * 20, z + (look.z / len) * 20, look.z / len, -look.x / len, 0.25);
+    }
+  };
+  const enterMenu = () => {
+    menu.saved = { pos: camera.position.clone(), quat: camera.quaternion.clone(), power: powerLevel };
+    menu.t = 0;
+    menu.passIn = 18;
+    rig = 'menu';
+    active = false;
+    player.enabled = false;
+    player.controls.unlock();
+    promptOn = false;
+    setStationVisible(false);
+    exterior.setOutdoor(true);
+    exterior.setStationLights({ windows: 0.45, guides: 1, beacon: true });
+    vm.scene.visible = false;
+    helmet.intensity = 0;
+    refreshGate();
+  };
+  const leaveMenu = () => {
+    rig = 'station';
+    exterior.setOutdoor(false);
+    exterior.setStationLights(null);
+    setStationVisible(true);
+    vm.scene.visible = true;
+    if (menu.saved) {
+      powerLevel = menu.saved.power;
+      applyPower();
+      camera.position.copy(menu.saved.pos);
+      camera.quaternion.copy(menu.saved.quat);
+      camera.position.y = 1.6;
+    }
+  };
+
   // --- Döngü ---
   const timer = new THREE.Timer();
   let elapsed = 0;
@@ -841,9 +910,10 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     const colliders = rig === 'seabed' ? outdoorColliders : [...building.colliders, ...[...doors.values()].filter((d) => d.openAmount < 0.95).map((d) => d.collider)];
     const { distance, mode } = player.update(dt, colliders);
     vm.update(arms.update(dt, dt > 0 ? distance / dt : 0), elapsed);
-    blob.visible = rig !== 'cockpit' && rig !== 'capsule';
+    blob.visible = rig !== 'cockpit' && rig !== 'capsule' && rig !== 'menu';
     blob.position.set(camera.position.x, player.ground(camera.position.x, camera.position.z) + 0.02, camera.position.z);
-    if (rig === 'capsule') updateCapsule(dt);
+    if (rig === 'menu') updateMenu(dt);
+    else if (rig === 'capsule') updateCapsule(dt);
     else if (rig !== 'station') updatePrologue(dt);
     const prof = stepProfile(mode);
     strides.setStride(prof.stride);
@@ -907,7 +977,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     if (!envCaptured && stationFrames > 40) captureEnv();
     renderFrame();
   });
-  refreshGate();
+  enterMenu();
 
   // --- Zamanlama yardımcıları ---
   const at = (t: number, fn: () => void) =>
@@ -1169,6 +1239,23 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
   };
 
   return {
+    get inMenu() {
+      return rig === 'menu';
+    },
+    start() {
+      if (rig !== 'menu') return;
+      leaveMenu();
+      active = true;
+      player.enabled = true;
+      opts.onStart();
+      player.controls.lock();
+      refreshGate();
+    },
+    toMenu() {
+      if (rig !== 'station') return false;
+      enterMenu();
+      return true;
+    },
     suspend() {
       active = false;
       player.enabled = false;

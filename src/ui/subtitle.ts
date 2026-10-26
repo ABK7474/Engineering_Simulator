@@ -1,4 +1,4 @@
-// Replikler: alt yazı kutusu, yazı efekti, sıra. Satır başına konuşmacı (NEREUS, ECE telsizden, MÜREN...).
+// Replikler: alt yazı kutusu, yazı efekti, sıra. Satır başına konuşmacı (NEREUS, NEXUS telsizden, MÜREN...).
 // Boşluk tuşu: satır yazılıyorsa tamamlar, tamamsa sıradakine geçer (ilk izlenimde bekletmesin).
 // Yalnız gösterir; hangi replik ne zaman söylenir kararını main/prolog verir (replikler content/story/*.json).
 
@@ -16,8 +16,8 @@ export interface Subtitles {
   onIdle: (fn: () => void) => void;
 }
 
-/** Konuşmacıya göre görünüm: telsiz (Ece), sistem sesi (Müren, kıyafet). */
-const STYLE: Record<string, string> = { ece: 'radio', muren: 'system', suit: 'system' };
+/** Konuşmacıya göre görünüm: telsiz (NEXUS), sistem sesi (Müren, kıyafet). */
+const STYLE: Record<string, string> = { nexus: 'radio', muren: 'system', suit: 'system' };
 
 export function mountSubtitles(root: HTMLElement): Subtitles {
   const el = document.createElement('div');

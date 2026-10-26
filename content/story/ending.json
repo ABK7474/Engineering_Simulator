@@ -16,7 +16,7 @@
       "id": "lights",
       "cues": ["radio", "look:station", "lightsOut"],
       "lines": [
-        { "who": "ece", "text": "Kapsülü gördüm. Yönünü bana bırak." },
+        { "who": "nexus", "text": "Kapsülü gördüm. Yönünü bana bırak." },
         "Işıkları sen gidince kapatırım. Alışkınım."
       ],
       "until": { "type": "event", "name": "depth:150" }
@@ -24,20 +24,20 @@
     {
       "id": "follow",
       "cues": ["sonarContact", "creatureFollow", "look:creature"],
-      "lines": [{ "who": "ece", "text": "…{ad}, sonarımda bir şey kapsülün peşinden yükseliyor." }],
+      "lines": [{ "who": "nexus", "text": "…{ad}, sonarımda bir şey kapsülün peşinden yükseliyor." }],
       "until": { "type": "event", "name": "creature:stop" }
     },
     {
       "id": "turn",
       "cues": [],
-      "lines": [{ "who": "ece", "text": "Hayır. Duruyor. Geri dönüyor." }],
+      "lines": [{ "who": "nexus", "text": "Hayır. Duruyor. Geri dönüyor." }],
       "until": { "type": "event", "name": "depth:55" }
     },
     {
       "id": "light",
       "cues": ["sonarLost", "look:up"],
       "lines": [
-        { "who": "ece", "text": "Elli metre. Işığı görüyor musun?" },
+        { "who": "nexus", "text": "Elli metre. Işığı görüyor musun?" },
         "Sinyalim burada biter, {ad}. Yukarıda ışığını açık tut."
       ],
       "until": { "type": "event", "name": "surfaced" }
@@ -46,15 +46,15 @@
       "id": "surface",
       "cues": ["look:ship", "searchlight"],
       "lines": [
-        { "who": "ece", "text": "Seni görüyorum! Projektör sende, {ad}." },
-        { "who": "ece", "text": "Bot geliyor. Kapağı sen açma, biz açacağız." }
+        { "who": "nexus", "text": "Seni görüyorum! Projektör sende, {ad}." },
+        { "who": "nexus", "text": "Bot geliyor. Kapağı sen açma, biz açacağız." }
       ],
       "until": { "type": "lines" }
     },
     {
       "id": "rescued",
       "cues": ["boat", "look:boat"],
-      "lines": [{ "who": "ece", "text": "Hoş geldin, {ad}. Altı saattir bekliyorum. Şimdi anlat bakalım." }],
+      "lines": [{ "who": "nexus", "text": "Hoş geldin, {ad}. Altı saattir bekliyorum. Şimdi anlat bakalım." }],
       "until": { "type": "time", "sec": 9 }
     }
   ]

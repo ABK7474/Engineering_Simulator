@@ -36,8 +36,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const views = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/e2e-views.json'), 'utf8')).filter((v) => !process.argv[2] || v.name.includes(process.argv[2]));
 try {
   await page.goto('http://localhost:5213/?seed=11&prologue=skip', { waitUntil: 'domcontentloaded', timeout: 300000 });
-  await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  await page.click('.gate h1'); // ortası ad alanına denk gelir (tıklamayı yutar)
+  await page.waitForSelector('[data-menu="new"]', { timeout: 600000 });
+  await page.click('[data-menu="new"]');
+  await page.click('[data-menu="start"]');
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   await ev(() => window.__dm.solveAll());
   await sleep(300);

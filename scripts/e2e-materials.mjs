@@ -79,8 +79,9 @@ const closeOverlays = () => ev(() => document.querySelectorAll('#ui .overlay [da
 
 async function openGame() {
   await page.goto(`http://localhost:${PORT}/?llm=mock&prologue=skip&seed=7`, { waitUntil: 'domcontentloaded', timeout: 300_000 });
-  await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600_000 });
-  await page.click('.gate h1');
+  await page.waitForSelector('[data-menu="new"]', { timeout: 600_000 });
+  await page.click('[data-menu="new"]');
+  await page.click('[data-menu="start"]');
   await page.waitForFunction(() => window.__dm?.hub.isRoaming() || document.querySelector('.subtitle'), { timeout: 60_000 });
 }
 

@@ -68,8 +68,9 @@ async function waitBeat(id, ms = 120000) {
 try {
   const t0 = Date.now();
   await page.goto(`http://localhost:${PORT}/?seed=5&prologue=skip`, { waitUntil: 'domcontentloaded', timeout: 300000 });
-  await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  await page.click('.gate h1');
+  await page.waitForSelector('[data-menu="new"]', { timeout: 600000 });
+  await page.click('[data-menu="new"]');
+  await page.click('[data-menu="start"]');
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   if (!(await ev(() => window.__dm.solveAll()))) fail('final açılmadı');
   await page.waitForSelector('.finale [data-end="left"]', { timeout: 10000 });

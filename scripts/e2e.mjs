@@ -100,8 +100,9 @@ async function solveFault(fid) {
 try {
   const t0 = Date.now();
   await page.goto(`http://localhost:${PORT}/?seed=11&prologue=skip`, { waitUntil: 'domcontentloaded', timeout: 300000 });
-  await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  await page.click('.gate h1'); // ortası ad alanına denk gelir (tıklamayı yutar)
+  await page.waitForSelector('[data-menu="new"]', { timeout: 600000 });
+  await page.click('[data-menu="new"]');
+  await page.click('[data-menu="start"]');
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   log(`yüklendi (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 

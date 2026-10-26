@@ -2,7 +2,7 @@
   "speaker": "NEREUS",
   "speakers": {
     "nereus": "NEREUS",
-    "ece": "ECE",
+    "nexus": "NEXUS",
     "muren": "MÜREN",
     "suit": "KIYAFET"
   },
@@ -62,7 +62,7 @@
     "solved:sonar-frontend": [
       "Sonar kalibre. Yankılar temiz… Bir tanesi istasyondan uzaklaşmıyor. Yaklaşıyor da değil. Bekliyor.",
       {
-        "who": "ece",
+        "who": "nexus",
         "text": "…{ad}… duyuyor… musun… sinyal… —"
       },
       "Akustik modemden bir parça geldi. Geminden. Mesajı çözmek için çekirdeğimin dizinine ihtiyacım var."
@@ -115,11 +115,11 @@
     ],
     "finale": [
       {
-        "who": "ece",
+        "who": "nexus",
         "text": "{ad}? Ses ver. …Altı saattir bu frekansı dinliyorum."
       },
       {
-        "who": "ece",
+        "who": "nexus",
         "text": "Gemi yukarıda. Kapsülü fırlatırsan seni alırım. Ne olduğunu sonra anlatırsın."
       },
       "Önce benden duy, {ad}. Dalgayı ben gönderdim. Denizaltını ben düşürdüm. Bir mühendise ihtiyacım vardı.",
@@ -128,7 +128,7 @@
     ],
     "finale:stayed": [
       {
-        "who": "ece",
+        "who": "nexus",
         "text": "Kalıyor musun? {ad}, bu bir soru değildi."
       },
       "Teşekkür ederim. O zaman sana neden burada olduğumu anlatayım.",

@@ -1,7 +1,8 @@
-// Prolog turu (yavaş; `npm test`e girmez): `npm run e2e:prologue`. Boş bir profille oyunu açar, adı yazar,
-// prologu oynar: altyazıyı boşlukla geçer, röle ve pompa panellerini bakıp E ile açar, kodun cevabıyla çözer,
-// düşüşü bekler, kıyafeti giyer, deniz tabanında W ile yürür, servis kilidinden girer. NEREUS'un karşılamasını,
-// kaydı (ad, prolog.done) ve enkazın koridor penceresinden göründüğünü denetler. Her sahneden ekran görüntüsü ve
+// Prolog turu (yavaş; `npm test`e girmez): `npm run e2e:prologue`. Boş bir profille oyunu açar, ana menüden yeni oyuna
+// geçip adı yazar, prologu oynar: altyazıyı boşlukla geçer, röle ve pompa panellerini bakıp E ile açar, kodun cevabıyla
+// çözer, düşüşü bekler, kıyafeti giyer, deniz tabanında W ile yürür, servis kilidinden girer. NEREUS'un karşılamasını,
+// kaydı (ad, prolog.done) ve enkazın koridor penceresinden göründüğünü denetler. Duraklatmadan ana menüye çıkıp döner;
+// yeniden yüklemede "Devam et" ve yeni oyun onayı. Her sahneden ekran görüntüsü ve
 // çizim çağrısı/üçgen (bütçe ≤ 150 / 150 bin). Konsol hatası ya da tıkanma olursa çıkış kodu 1.
 
 import fs from 'node:fs';
@@ -91,18 +92,22 @@ async function useTarget(t, expectPanel) {
 try {
   const t0 = Date.now();
   await page.goto(`http://localhost:${PORT}/?seed=7`, { waitUntil: 'domcontentloaded', timeout: 300000 });
-  await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  if (await page.$('.gate [data-act="skip"]')) fail('ilk oynayışta "Prologu atla" görünmemeli');
-  await page.click('.gate input[name="pname"]', { clickCount: 3 });
+  await page.waitForSelector('[data-menu="new"]', { timeout: 600000 });
+  if (await page.$('[data-menu="continue"]')) fail('ilk oynayışta "Devam et" görünmemeli');
+  if ((await ev(() => window.__dm.hub.debug.rig())) !== 'menu') fail('açılışta menü düzeni yok');
+  await sleep(1500);
+  await shot('menu');
+  await page.click('[data-menu="new"]');
+  if (await page.$('.main-menu input[name="skip"]')) fail('ilk oynayışta "Prologu atla" görünmemeli');
+  await page.click('.main-menu input[name="pname"]', { clickCount: 3 });
   await page.keyboard.type('Test');
-  await page.keyboard.press('Tab');
   await shot('giris');
-  await page.click('.gate h1');
+  await page.click('[data-menu="start"]');
   await page.waitForFunction(() => window.__dm.prologue.active(), { timeout: 20000 });
   console.log(`prolog başladı (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   // Boşluk: yazılan satır hemen tamamlanır, ikinci basış sıradakine geçer
   const first = await ev(() => document.querySelector('.subtitle .speaker')?.textContent);
-  if (first !== 'ECE') fail(`ilk konuşan ECE değil (${first})`);
+  if (first !== 'NEXUS') fail(`ilk konuşan NEXUS değil (${first})`);
   await page.keyboard.press('Space');
   const full = await ev(() => document.querySelector('.subtitle .text')?.textContent ?? '');
   if (!full.startsWith('Müren, derinlik iki yüz') || !full.endsWith('röleye bakalım.')) fail(`boşluk satırı tamamlamadı: '${full}'`);
@@ -184,10 +189,30 @@ try {
   await frames(10);
   console.log('  pencere bakışı:', JSON.stringify(await ev(() => window.__dm.hub.pose())));
   await shot('enkaz-pencere');
-  // Yeniden yükleme: prolog tekrar oynamaz
+  // Duraklatma ekranından ana menüye ve geri
+  await lockPointer();
+  const before = await ev(() => window.__dm.hub.stats());
+  await ev(() => document.exitPointerLock()); // Esc ile aynı: imleç bırakılır, duraklatma ekranı açılır
+  await page.waitForSelector('[data-act="menu"]', { visible: true, timeout: 10000 });
+  await page.click('[data-act="menu"]');
+  await page.waitForSelector('[data-menu="continue"]', { timeout: 10000 });
+  if (!(await ev(() => window.__dm.hub.inMenu))) fail('oyundan menüye dönülmedi');
+  await sleep(1500);
+  await shot('menu-oyundan');
+  await page.click('[data-menu="continue"]');
+  await frames(5);
+  const after = await ev(() => window.__dm.hub.stats());
+  if (await ev(() => window.__dm.hub.inMenu)) fail('menüden oyuna dönülmedi');
+  if (Math.hypot(after.x - before.x, after.z - before.z) > 0.3 || after.room !== before.room) fail(`menüden dönüşte yer değişti (${before.room} → ${after.room})`);
+  // Yeniden yükleme: menüde "Devam et"; prolog tekrar oynamaz; yeni oyun önce onay ister
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.querySelector('.gate-action')?.textContent === 'Tıkla ve başla', { timeout: 600000 });
-  if (await page.$('.gate input[name="pname"]')) fail('prolog bitmişken giriş ekranında ad alanı var');
+  await page.waitForSelector('[data-menu="continue"]', { timeout: 600000 });
+  await page.click('[data-menu="new"]');
+  if (!(await page.$('[data-menu="reset"]'))) fail('kayıt varken yeni oyun onay istemedi');
+  await page.click('[data-menu="back"]');
+  await page.click('[data-menu="continue"]');
+  await frames(5);
+  if (await ev(() => window.__dm.prologue.active())) fail('devam edince prolog yeniden başladı');
   console.log(`süre ${((Date.now() - t0) / 60000).toFixed(1)} dk`);
 } catch (e) {
   fail(String(e?.stack ?? e));

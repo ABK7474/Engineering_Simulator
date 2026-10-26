@@ -19,7 +19,7 @@ const worldStates = new Set([...world.faults.flatMap((f) => [...f.requires, ...f
 
 describe('replik biçimi', () => {
   it('ad yer tutucusu doldurulur; boş ya da uzun ad sadeleşir', () => {
-    expect(resolveLine(story, { who: 'ece', text: '{ad}, duyuyor musun?' }, 'Ayşe')).toEqual({ who: 'ece', label: 'ECE', text: 'Ayşe, duyuyor musun?' });
+    expect(resolveLine(story, { who: 'nexus', text: '{ad}, duyuyor musun?' }, 'Ayşe')).toEqual({ who: 'nexus', label: 'NEXUS', text: 'Ayşe, duyuyor musun?' });
     expect(resolveLine(story, 'Merhaba {ad}.', '   ')).toEqual({ who: 'default', label: 'NEREUS', text: 'Merhaba Deniz.' });
     expect(cleanName('  çok   uzun bir isim olan mühendis adı  ')).toHaveLength(20);
   });

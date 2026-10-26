@@ -32,7 +32,7 @@ export function openSettings(root: HTMLElement, d: SettingsDeps): void {
       <header class="panel-head"><span class="tag ok">AYAR</span><h2>Ayarlar</h2><button class="ghost" data-act="close">Kapat ✕</button></header>
       <section>
         <h4>Mühendis adı</h4>
-        <p class="muted">Ece ve NEREUS sana bu adla seslenir.</p>
+        <p class="muted">NEXUS ve NEREUS sana bu adla seslenir.</p>
         <div class="row"><input name="pname" maxlength="20" spellcheck="false"><button class="ghost" data-act="save-name">Kaydet</button></div>
       </section>
       <section>

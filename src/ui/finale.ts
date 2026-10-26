@@ -1,4 +1,4 @@
-// Sezon finali: destek gemisine (Ece'ye) ulaşılır, NEREUS itiraf eder, oyuncu seçer (kapsülle ayrıl / kal). "Kal": seçimin
+// Sezon finali: destek gemisine (NEXUS'a) ulaşılır, NEREUS itiraf eder, oyuncu seçer (kapsülle ayrıl / kal). "Kal": seçimin
 // replikleri ve sezon özeti aynı panelde açılır. "Ayrıl": panel kapanır, kapsül sahnesi oynar (ending-flow.ts), sonra
 // `showSeasonEnd` özeti gösterir. Oyun bitmez; serbest dolaşmaya dönülür. Yalnız gösterir; kaydı main yapar.
 

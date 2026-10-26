@@ -1,0 +1,570 @@
+{
+  "id": "devre-teorisi-1-f-a3c316ed1b0e",
+  "courseId": "devre-teorisi-1",
+  "courseName": "Devre Teorisi 1",
+  "name": "Chapter 1 BASIC CONCEPTS",
+  "status": "approved",
+  "markdown": "",
+  "briefing": "Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+  "formulaSheet": "## Temel Formüller ve Kullanım Alanları\n\n- **Akım ve Yük:** $$i(t) = \\frac{dq(t)}{dt}$$\n  - *Anlamı:* Akım ($i$), yükün ($q$) zamana göre türevidir. Birimi Amper (A).\n  - *Ne zaman kullanılır:* Yük fonksiyonundan akım hesaplanırken.\n  - *Yaygın Hata:* Türev yerine integral almak.\n\n- **Yük ve Akım (Entegral):** $$q(t) = \\int_{-\\infty}^{t} i(x)\\,dx$$\n  - *Anlamı:* Akımın zamana göre integrali toplam yükü verir. Birimi Coulomb (C).\n  - *Ne zaman kullanılır:* Akım dalga şeklinden yük hesaplanırken.\n\n- **Güç:** $$p(t) = v(t)i(t)$$\n  - *Anlamı:* Gerilim ile akımın çarpımı anlık gücü verir. Birimi Watt (W).\n  - *Ne zaman kullanılır:* Bir elemanın harcadığı veya sağladığı güç hesaplanırken.\n  - *Yaygın Hata:* Pasif işaret kuralına dikkat etmemek.\n\n- **Enerji Değişimi:** $$\\Delta w = \\int_{t_1}^{t_2} p(t)\\,dt$$ensington\n  - *Anlamı:* Gücün zamana göre integrali enerjiyi verir. Birimi Joule (J).\n  - *Ne zaman kullanılır:* Belirli bir zaman aralığında tüketilen/üretilen enerji bulunurken.\n\n- **Tellegen Teoremi:** $$\\sum_{k=1}^{n} P_k = 0$$\n  - *Anlamı:* Bir devredeki tüm elemanların harcadığı güçlerin cebirsel toplamı sıfırdır.\n  - *Ne zaman kullanılır:* Devre analizlerini doğrulamak veya bilinmeyenleri bulmak için.",
+  "truncated": false,
+  "note": "Kitaptan: tam not repoda tutulmaz (telif); brifing, formül sayfası ve şablonlar burada.",
+  "source": {
+    "fileName": "03-chapter-1-basic-concepts.pdf",
+    "bytes": 1652457,
+    "pages": 24,
+    "sha256": "a3c316ed1b0e6349435a61c556b21a599543d784cc95d69d4566d14945db3731",
+    "path": "Devre Teorisi 1/kitaplar/basic-engineering-circuit-analysis-10th-irwin/03-chapter-1-basic-concepts.pdf"
+  },
+  "origin": "repo",
+  "model": "gemini-3.5-flash-lite",
+  "createdAt": "2026-10-26T21:14:53.659Z",
+  "approvedAt": "2026-10-26T21:25:07.243Z",
+  "templates": [
+    {
+      "stage": {
+        "id": "tpl:devre-teorisi-1-f-a3c316ed1b0e:series-led:0",
+        "type": "series-led",
+        "course": "devre-teorisi-1",
+        "topic": "konu:devre-teorisi-1-f-a3c316ed1b0e",
+        "title": "Ana Güç Paneli Göstergesi",
+        "briefing": "Ana güç dağıtım ünitesinin durumunu bildiren yüksek parlaklıktaki LED göstergenin besleme devresi. Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+        "config": {
+          "supplyVoltages": [
+            12,
+            15
+          ],
+          "leds": [
+            {
+              "color": "Kırmızı",
+              "vf": 2.1
+            }
+          ],
+          "targetMin_mA": 15,
+          "targetMax_mA": 22,
+          "absMax_mA": 30,
+          "visibleMin_mA": 3,
+          "fuse_mA": 50,
+          "resistorRating_W": 0.5
+        },
+        "source": {
+          "topicId": "devre-teorisi-1-f-a3c316ed1b0e",
+          "topicName": "Chapter 1 BASIC CONCEPTS",
+          "courseName": "Devre Teorisi 1"
+        }
+      },
+      "flagged": false,
+      "createdAt": "2026-10-26T21:25:19.511Z"
+    },
+    {
+      "stage": {
+        "id": "tpl:devre-teorisi-1-f-a3c316ed1b0e:series-led:1",
+        "type": "series-led",
+        "course": "devre-teorisi-1",
+        "topic": "konu:devre-teorisi-1-f-a3c316ed1b0e",
+        "title": "Kriyojenik Yakıt Takip Ekranı",
+        "briefing": "Düşük sıcaklıktaki yakıt haznesinin durumunu gösteren hassas yeşil LED aydınlatma devresi. Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+        "config": {
+          "supplyVoltages": [
+            9,
+            12
+          ],
+          "leds": [
+            {
+              "color": "Yeşil",
+              "vf": 3.2
+            }
+          ],
+          "targetMin_mA": 10,
+          "targetMax_mA": 18,
+          "absMax_mA": 25,
+          "visibleMin_mA": 2,
+          "fuse_mA": 40,
+          "resistorRating_W": 0.25
+        },
+        "source": {
+          "topicId": "devre-teorisi-1-f-a3c316ed1b0e",
+          "topicName": "Chapter 1 BASIC CONCEPTS",
+          "courseName": "Devre Teorisi 1"
+        }
+      },
+      "flagged": false,
+      "createdAt": "2026-10-26T21:25:19.511Z"
+    },
+    {
+      "stage": {
+        "id": "tpl:devre-teorisi-1-f-a3c316ed1b0e:series-led:2",
+        "type": "series-led",
+        "course": "devre-teorisi-1",
+        "topic": "konu:devre-teorisi-1-f-a3c316ed1b0e",
+        "title": "Acil Durum Kaçış Koridoru",
+        "briefing": "Kritik güç kesintisi durumunda devreye giren yüksek akımlı mavi acil durum ikaz lambası. Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+        "config": {
+          "supplyVoltages": [
+            24
+          ],
+          "leds": [
+            {
+              "color": "Mavi",
+              "vf": 3.4
+            }
+          ],
+          "targetMin_mA": 20,
+          "targetMax_mA": 30,
+          "absMax_mA": 40,
+          "visibleMin_mA": 4,
+          "fuse_mA": 60,
+          "resistorRating_W": 1
+        },
+        "source": {
+          "topicId": "devre-teorisi-1-f-a3c316ed1b0e",
+          "topicName": "Chapter 1 BASIC CONCEPTS",
+          "courseName": "Devre Teorisi 1"
+        }
+      },
+      "flagged": false,
+      "createdAt": "2026-10-26T21:25:19.511Z"
+    },
+    {
+      "stage": {
+        "id": "tpl:devre-teorisi-1-f-a3c316ed1b0e:series-led:3",
+        "type": "series-led",
+        "course": "devre-teorisi-1",
+        "topic": "konu:devre-teorisi-1-f-a3c316ed1b0e",
+        "title": "Hava Kilidi Uyarı Feneri",
+        "briefing": "Hava kilidi basınç dengelenirken yanıp sönen turuncu ikaz LED'inin akım sınırlama devresi. Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+        "config": {
+          "supplyVoltages": [
+            12,
+            18
+          ],
+          "leds": [
+            {
+              "color": "Turuncu",
+              "vf": 2.2
+            }
+          ],
+          "targetMin_mA": 12,
+          "targetMax_mA": 20,
+          "absMax_mA": 30,
+          "visibleMin_mA": 2.5,
+          "fuse_mA": 45,
+          "resistorRating_W": 0.5
+        },
+        "source": {
+          "topicId": "devre-teorisi-1-f-a3c316ed1b0e",
+          "topicName": "Chapter 1 BASIC CONCEPTS",
+          "courseName": "Devre Teorisi 1"
+        }
+      },
+      "flagged": false,
+      "createdAt": "2026-10-26T21:25:19.511Z"
+    },
+    {
+      "stage": {
+        "id": "tpl:devre-teorisi-1-f-a3c316ed1b0e:series-led:4",
+        "type": "series-led",
+        "course": "devre-teorisi-1",
+        "topic": "konu:devre-teorisi-1-f-a3c316ed1b0e",
+        "title": "Atık Isı Geri Kazanım Modülü",
+        "briefing": "Termoelektrik üreteç çıkışına bağlı, beyaz renkli durum doğrulama LED'i. Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+        "config": {
+          "supplyVoltages": [
+            5,
+            9
+          ],
+          "leds": [
+            {
+              "color": "Beyaz",
+              "vf": 3
+            }
+          ],
+          "targetMin_mA": 15,
+          "targetMax_mA": 25,
+          "absMax_mA": 35,
+          "visibleMin_mA": 3,
+          "fuse_mA": 50,
+          "resistorRating_W": 0.5
+        },
+        "source": {
+          "topicId": "devre-teorisi-1-f-a3c316ed1b0e",
+          "topicName": "Chapter 1 BASIC CONCEPTS",
+          "courseName": "Devre Teorisi 1"
+        }
+      },
+      "flagged": false,
+      "createdAt": "2026-10-26T21:25:19.511Z"
+    },
+    {
+      "stage": {
+        "id": "tpl:devre-teorisi-1-f-a3c316ed1b0e:series-parallel:1",
+        "type": "series-parallel",
+        "course": "devre-teorisi-1",
+        "topic": "konu:devre-teorisi-1-f-a3c316ed1b0e",
+        "title": "Yardımcı Pompa Sürücü Devresi",
+        "briefing": "Hidrolik pompanın hassas besleme devresi yenileniyor. Kaynak gerilimi altında güvenli çalışma noktasını yakalayın. Bu bölümde SI birim sistemi, temel büyüklükler (yük, akım, gerilim, güç, enerji) ve devre elemanları incelenmiştir. Akım, yükün zamana göre türevidir ($i=dq/dt$). Gerilim birim yük başına düşen enerjidir. Pasif İşaret Kuralı'na göre akım pozitif uçtan giriyorsa güç harcanır ($P>0$), negatif uçtan giriyorsa güç sağlanır ($P<0$). Bağımsız ve bağımlı kaynaklar ile Tellegen teoremi ($\\sum P = 0$) devre analizinin temel taşlarıdır.",
+        "config": {
+          "elements": [
+            {
+              "id": "Vs",
+              "kind": "V",
+              "a": "top",
+              "b": "0",
+              "value": "Vs",
+              "label": "Vs"
+            },
+            {
+              "id": "R1",
+              "kind": "R",
+              "a": "top",
+              "b": "a",
+              "slot": true,
+              "label": "R₁"
+            },
+            {
+              "id": "Rm",
+              "kind": "R",
+              "a": "a",
+              "b": "0",
+              "value": "Rm",
+              "label": "Motor",
+              "symbol": "motor"
+            },
+            {
+              "id": "R2",
+              "kind": "R",
+              "a": "a",
+              "b": "0",
+              "slot": true,
+              "label": "R₂"
+            }
+          ],
+          "params": {
+            "Vs": {
+              "label": "Kaynak gerilimi",
+              "unit": "V",
+              "choices": [
+                12,
+                24
+              ]
+            },
+            "Rm": {
+              "label": "Motor sargı direnci",
+              "unit": "Ω",
+              "e12": [
+                15,
+                39
+              ],
+              "hidden": true
+            },
+            "Rold": {
+              "label": "Eski R₁",
+              "unit": "Ω",
+              "e12": [
+                8.2,
+                18
+              ]
+            }
+          },
+          "answer": {
+            "R1": [
+              10,
+              27
+            ],
+            "R2": [
+              33,
+              82
+            ]
+          },
+          "measurement": {
+            "id": "Vmeas",
+            "set": {
+              "R1": "Rold"
+            },
+            "open": [
+              "R2"
+            ],
+            "probe": {
+              "voltage": "a"
+            },
+            "unit": "V",
+            "identifies": "Rm",
+            "text": "Önceki vardiyanın kaydı: R₁ yerinde {Rold:Ω} varken ve R₂ sökülüyken a düğümünde {Vmeas:V} ölçülmüş."
+          },
+          "targets": [
+            {
+              "id": "Im",
+              "label": "Motor akımı (tork için)",
+              "probe": {
+                "current": "Rm"
+              },
+              "unit": "A",
+              "tolerance": 0.04
+            },
+            {
+              "id": "Is",
+              "label": "Regülatör çıkış akımı (çalışma aralığı)",
+              "probe": {
+                "current": "Vs",
+                "negate": true
+              },
+              "unit": "A",
+              "tolerance": 0.04
+            }
+          ],
+          "roles": {
+            "load": "Im",
+            "supply": "Is"
+          },
+          "limits": {
+            "slotRating_W": 3
+          },
+          "plausible": {
+            "load": [
+              0.15,
+              1.2
+            ],
+            "node": "a",
+            "nodeFraction": [
+              0.3,
+              0.85
+            ]
+          },
+          "binSize": 6,
+          "derived": {
+            "Rm_calc": "Vmeas*Rold/(Vs-Vmeas)",
+            "Va": "Im*Rm_calc",
+            "R1_calc": "(Vs-Va)/Is",
+            "I2": "Is-Im",
+            "R2_calc": "Va/I2"
+          },
+          "solution": {
+            "R1": "R1_calc",
+            "R2": "R2_calc"
+          },
+          "mistakes": [
+            {
+              "expr": "Va/Is",
+              "text": "Paralel koldaki motor akımı unutulursa R₂ = V_a / I_s = {value:Ω} bulunur; bu kutudaki en yakın değer."
+            },
+            {
+              "expr": "(Vs-Vmeas)/Is",
+              "text": "Eski ölçümdeki gerilim hedef sanılırsa R₁ = (Vs − V_ölç) / I_s = {value:Ω} bulunur; bu kutudaki en yakın değer."
+            },
+            {
+              "expr": "Vs/Is",
+              "text": "Motorun üzerindeki gerilim unutulursa R₁ = Vs / I_s = {value:Ω} bulunur; bu kutudaki en yakın değer."
+            }
+          ],
+          "steps": [
+            "Ölçümden motor direnci (gerilim bölücü, tersten): R_m = V_ölç·R_eski / (Vs − V_ölç) = {Vmeas:V} · {Rold:Ω} / ({Vs:V} − {Vmeas:V}) = {Rm_calc:Ω}",
+            "Motorun gerilimi a düğümünün gerilimidir: V_a = I_m·R_m = {Im:A} · {Rm_calc:Ω} = {Va:V}",
+            "R₁ kaynağın tüm akımını taşır (KVL): R₁ = (Vs − V_a) / I_s = ({Vs:V} − {Va:V}) / {Is:A} = {R1_calc:Ω}",
+            "Paralel kolun akımı (KCL): I₂ = I_s − I_m = {Is:A} − {Im:A} = {I2:A}",
+            "R₂ motorla aynı gerilimi görür: R₂ = V_a / I₂ = {Va:V} / {I2:A} = {R2_calc:Ω}",
+            "En yakın E12 değerleri: R₁ = {R1:Ω}, R₂ = {R2:Ω}"
+          ],
+          "reportProbes": [
+            {
+              "label": "a düğümü gerilimi",
+              "probe": {
+                "voltage": "a"
+              },
+              "unit": "V"
+            },
+            {
+              "label": "Motor akımı",
+              "probe": {
+                "current": "Rm"
+              },
+              "unit": "A"
+            },
+            {
+              "label": "Kaynak akımı",
+              "probe": {
+                "current": "Vs",
+                "negate": true
+              },
+              "unit": "A"
+            },
+            {
+              "label": "R₂ akımı",
+              "probe": {
+                "current": "R2"
+              },
+              "unit": "A"
+            },
+            {
+              "label": "R₁ gücü",
+              "probe": {
+                "power": "R1"
+              },
+              "unit": "W"
+            },
+            {
+              "label": "R₂ gücü",
+              "probe": {
+                "power": "R2"
+              },
+              "unit": "W"
+            }
+          ],
+          "layout": {
+            "viewBox": [
+              0,
+              0,
+              540,
+              260
+            ],
+            "elements": {
+              "Vs": {
+                "x": 50,
+                "y": 135,
+                "dir": "v"
+              },
+              "R1": {
+                "x": 170,
+                "y": 50,
+                "dir": "h"
+              },
+              "Rm": {
+                "x": 280,
+                "y": 135,
+                "dir": "v"
+              },
+              "R2": {
+                "x": 420,
+                "y": 135,
+                "dir": "v"
+              }
+            },
+            "wires": [
+              [
+                [
+                  50,
+                  95
+                ],
+                [
+                  50,
+                  50
+                ],
+                [
+                  130,
+                  50
+                ]
+              ],
+              [
+                [
+                  210,
+                  50
+                ],
+                [
+                  420,
+                  50
+                ],
+                [
+                  420,
+                  95
+                ]
+              ],
+              [
+                [
+                  280,
+                  50
+                ],
+                [
+                  280,
+                  95
+                ]
+              ],
+              [
+                [
+                  50,
+                  175
+                ],
+                [
+                  50,
+                  220
+                ],
+                [
+                  420,
+                  220
+                ],
+                [
+                  420,
+                  175
+                ]
+              ],
+              [
+                [
+                  280,
+                  175
+                ],
+                [
+                  280,
+                  220
+                ]
+              ]
+            ],
+            "dots": [
+              [
+                280,
+                50
+              ],
+              [
+                280,
+                220
+              ]
+            ],
+            "ground": [
+              235,
+              220
+            ],
+            "labels": [],
+            "probes": [
+              {
+                "x": 280,
+                "y": 50,
+                "text": "a"
+              }
+            ]
+          }
+        },
+        "source": {
+          "topicId": "devre-teorisi-1-f-a3c316ed1b0e",
+          "topicName": "Chapter 1 BASIC CONCEPTS",
+          "courseName": "Devre Teorisi 1"
+        }
+      },
+      "flagged": false,
+      "createdAt": "2026-10-26T21:25:19.511Z"
+    }
+  ],
+  "report": {
+    "total": 10,
+    "accepted": 6,
+    "rejected": [
+      {
+        "type": "series-parallel",
+        "index": 0,
+        "reason": "1. tohumda doğrulanabilir problem yok: Seri-paralel problem üretilemedi: 200 denemede doğrulanabilir problem bulunamadı (tohum 1). En sık red nedenleri: cevapta 'R1' anma gücüne çok yakın (134); düğüm gerilimi oranı gerçekçi değil (41); yük akımı gerçekçi aralıkta değil (25)"
+      },
+      {
+        "type": "series-parallel",
+        "index": 2,
+        "reason": "1. tohumda doğrulanabilir problem yok: Seri-paralel problem üretilemedi: 200 denemede doğrulanabilir problem bulunamadı (tohum 1). En sık red nedenleri: cevapta 'R1' anma gücüne çok yakın (181); düğüm gerilimi oranı gerçekçi değil (19)"
+      },
+      {
+        "type": "series-parallel",
+        "index": 3,
+        "reason": "1. tohumda doğrulanabilir problem yok: Seri-paralel problem üretilemedi: 200 denemede doğrulanabilir problem bulunamadı (tohum 1). En sık red nedenleri: yük akımı gerçekçi aralıkta değil (99); cevapta 'R1' anma gücüne çok yakın (77); düğüm gerilimi oranı gerçekçi değil (24)"
+      },
+      {
+        "type": "series-parallel",
+        "index": 4,
+        "reason": "1. tohumda doğrulanabilir problem yok: Seri-paralel problem üretilemedi: 200 denemede doğrulanabilir problem bulunamadı (tohum 1). En sık red nedenleri: cevapta 'R1' anma gücüne çok yakın (165); düğüm gerilimi oranı gerçekçi değil (35)"
+      }
+    ],
+    "truncatedTypes": []
+  }
+}

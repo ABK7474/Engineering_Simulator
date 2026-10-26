@@ -6,7 +6,7 @@ export type Line = string | { who: string; text: string };
 export interface StoryLines {
   /** Varsayılan konuşmacının görünen adı (düz metin satırlar). */
   speaker: string;
-  /** Konuşmacı kimliği → görünen ad (ör. ece → ECE). */
+  /** Konuşmacı kimliği → görünen ad (ör. nexus → NEXUS). */
   speakers?: Record<string, string>;
   lines: Record<string, Line[]>;
 }

@@ -90,7 +90,7 @@
     },
     {
       "id": "log-11",
-      "title": "Ece'nin yarım mesajı",
+      "title": "NEXUS'un yarım mesajı",
       "after": [
         "sensor.calibrated"
       ],

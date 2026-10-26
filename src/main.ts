@@ -78,6 +78,7 @@ import { digitOf, keySequence } from './ui/key-sequence';
 import { mountHud, type HudView } from './ui/hud';
 import { openLibraryView } from './ui/library-view';
 import { openSettings } from './ui/settings';
+import { mountMainMenu } from './ui/main-menu';
 import { askApiKey, openTopicFlow, type TopicFlowDeps } from './ui/topic-flow';
 import { createMaterialsFlow } from './materials-flow';
 import { repoTopics } from './pipeline/materials';
@@ -269,7 +270,7 @@ const generateAndStore = async (t: Topic) => {
   await materials.afterApprove(done);
   return done;
 };
-function openLibrary(tab?: 'topics' | 'folder' | 'analysis'): void {
+function openLibrary(tab?: 'topics' | 'folder' | 'analysis', after?: () => void): void {
   withHubPaused((onClose) =>
     openLibraryView(ui, {
       lib: () => library,
@@ -287,6 +288,7 @@ function openLibrary(tab?: 'topics' | 'folder' | 'analysis'): void {
       tab,
       onClose,
     }),
+    after,
   );
 }
 const topicFlowDeps = (onClose: () => void): TopicFlowDeps => ({
@@ -299,8 +301,16 @@ const topicFlowDeps = (onClose: () => void): TopicFlowDeps => ({
   generate: generateAndStore,
   onClose,
 });
-/** Menüden açılan ekranlar: koridordaki girdiyi askıya alır, kapanınca geri verir. */
-const withHubPaused = (open: (onClose: () => void) => void) => {
+/** Menüden açılan ekranlar: koridordaki girdiyi askıya alır, kapanınca geri verir. Ana menüdeyken hub'a dokunmaz;
+ * kapanınca `after` (menüye dönüş) çağrılır. */
+const withHubPaused = (open: (onClose: () => void) => void, after?: () => void) => {
+  if (hub.inMenu) {
+    open(() => {
+      runs.clear();
+      after?.();
+    });
+    return;
+  }
   hub.suspend();
   map.toggle(false);
   open(() => {
@@ -308,6 +318,44 @@ const withHubPaused = (open: (onClose: () => void) => void) => {
     hub.resume();
   });
 };
+
+/** Ayarlar paneli (⋯ menüsü ve ana menü aynı açıcıyı kullanır). */
+function openSettingsPanel(onClose: () => void): void {
+  openSettings(ui, {
+    providerLabel: LLM_DEFAULTS.label,
+    defaultModel: LLM_DEFAULTS.model,
+    keyAdvice: LLM_DEFAULTS.keyAdvice,
+    mock: MOCK_LLM,
+    maskedKey: () => maskKey(getApiKey()),
+    saveKey: setApiKey,
+    clearKey: clearApiKey,
+    model: () => getModel(LLM_DEFAULTS.model),
+    saveModel: setModel,
+    classicHud,
+    saveClassicHud: (on: boolean) => {
+      try {
+        localStorage.setItem(CLASSIC_KEY, on ? '1' : '0');
+      } catch {
+        /* depolama kapalıysa yalnız bu oturum */
+      }
+      applyHudMode();
+      if (!on) map.toggle(false);
+    },
+    playerName: () => progress.profile.name,
+    savePlayerName: (n) => {
+      progress.profile.name = cleanName(n);
+      void persist();
+    },
+    testConnection: async () => {
+      try {
+        return await getProvider(llmSettings()).testConnection();
+      } catch (e) {
+        return { ok: false, message: (e as Error).message };
+      }
+    },
+    onClose,
+  });
+}
 
 mountBackupMenu(ui, {
   items: [
@@ -325,43 +373,7 @@ mountBackupMenu(ui, {
     },
     {
       label: 'Ayarlar…',
-      onClick: () =>
-        withHubPaused((onClose) =>
-          openSettings(ui, {
-            providerLabel: LLM_DEFAULTS.label,
-            defaultModel: LLM_DEFAULTS.model,
-            keyAdvice: LLM_DEFAULTS.keyAdvice,
-            mock: MOCK_LLM,
-            maskedKey: () => maskKey(getApiKey()),
-            saveKey: setApiKey,
-            clearKey: clearApiKey,
-            model: () => getModel(LLM_DEFAULTS.model),
-            saveModel: setModel,
-            classicHud,
-            saveClassicHud: (on: boolean) => {
-              try {
-                localStorage.setItem(CLASSIC_KEY, on ? '1' : '0');
-              } catch {
-                /* depolama kapalıysa yalnız bu oturum */
-              }
-              applyHudMode();
-              if (!on) map.toggle(false);
-            },
-            playerName: () => progress.profile.name,
-            savePlayerName: (n) => {
-              progress.profile.name = cleanName(n);
-              void persist();
-            },
-            testConnection: async () => {
-              try {
-                return await getProvider(llmSettings()).testConnection();
-              } catch (e) {
-                return { ok: false, message: (e as Error).message };
-              }
-            },
-            onClose,
-          }),
-        ),
+      onClick: () => withHubPaused(openSettingsPanel),
     },
   ],
   exportJson: () => toExportJson(progress, library),
@@ -401,12 +413,12 @@ const hub = await createHub(app, {
   onRoomChange,
   onStart: () => {
     void audioReady.then(() => audio.start());
-    if (started) return;
-    started = true;
-    // Giriş ekranındaki ad alanı odakta kalırsa boşluk/E tuşları ona gider
+    // Menüdeki ad alanı odakta kalırsa boşluk/E tuşları ona gider
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    hub.gateBox.querySelector('.gate-extra')?.remove();
+    if (started) return; // oyun içinden menüye çıkıp dönüldü
+    started = true;
     if (prologue && !progress.prologueDone) {
+      prologue.prepare();
       if (skipPrologue) prologue.skip();
       else prologue.start();
       return;
@@ -478,26 +490,6 @@ prologue = hub.prologue
       },
     })
   : null;
-if (prologue && !progress.prologueDone) {
-  prologue.prepare();
-  // Giriş ekranı: ad ve (prolog daha önce görüldüyse) atlama
-  const box = document.createElement('div');
-  box.className = 'gate-extra';
-  box.innerHTML = `<label class="gate-name">Adın <input name="pname" maxlength="20" spellcheck="false" autocomplete="off"></label>
-    ${meta.prologueSeen ? '<button class="ghost small gate-skip" data-act="skip">Prologu atla ve başla</button>' : ''}`;
-  const nameIn = box.querySelector<HTMLInputElement>('input')!;
-  nameIn.value = progress.profile.name;
-  nameIn.addEventListener('click', (e) => e.stopPropagation());
-  nameIn.addEventListener('keydown', (e) => e.stopPropagation());
-  nameIn.addEventListener('change', () => {
-    progress.profile.name = cleanName(nameIn.value);
-    void persist();
-  });
-  box.querySelector('[data-act="skip"]')?.addEventListener('click', () => {
-    skipPrologue = true;
-  });
-  hub.gateBox.querySelector('.gate-action')!.before(box);
-}
 /** Replikleri oyuncunun adıyla çözer. */
 const spoken = (lines: readonly Line[] | undefined) => resolveLines(content.story, lines, progress.profile.name);
 /** Oyuncu "Tıkla ve başla"ya bastı mı (öncesinde söylenen replik görünmezdi). */
@@ -529,7 +521,7 @@ function openMap(open?: boolean): void {
 const typing = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
 window.addEventListener('keydown', (e) => {
   // Panel/rapor/defter açıkken M haritayı arkada açmasın
-  if (e.code !== 'KeyM' || typing(e) || prologueActive() || ui.querySelector('.overlay')) return;
+  if (e.code !== 'KeyM' || typing(e) || prologueActive() || ui.querySelector('.overlay') || hub.inMenu) return;
   openMap();
 });
 // Q: bilek cihazına bak (kolu kaldır / indir)
@@ -1045,7 +1037,7 @@ const testCodes = [
 ];
 window.addEventListener('keydown', (e) => {
   const d = digitOf(e.code);
-  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay') || ending.active) return;
+  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay') || ending.active || hub.inMenu) return;
   for (const c of testCodes) if (c.hit(d)) testUnlock(c.solveAll);
 });
 
@@ -1220,3 +1212,59 @@ async function runAttempt(fid: string, answer: unknown): Promise<void> {
 
 // Klasör kuyruğu oyun açılınca başlar (arka planda; anahtar gerekirse oyuncu dolaşırken bir kez sorulur).
 materials.start();
+
+// --- Ana menü (açılış ekranı; oyun içinden duraklatma ekranındaki "Ana menü" ile) ---
+const NEW_GAME_FLAG = 'derin-muhendis.menu.newGame';
+const hasSave = () => progress.prologueDone || Object.keys(progress.faults).length > 0;
+const mainMenu = mountMainMenu(ui, {
+  hasSave,
+  canSkipPrologue: () => !!prologue && meta.prologueSeen,
+  playerName: () => progress.profile.name,
+  saveSummary: () => {
+    const done = W.faults.filter((f) => isSolved(f.id)).length;
+    const name = progress.profile.name ? `${progress.profile.name} · ` : '';
+    return `${name}Bölüm ${progress.episode} · ${done}/${W.faults.length} arıza onarıldı`;
+  },
+  onContinue: () => hub.start(),
+  onNewGame: ({ name, skipPrologue: skip }) => {
+    progress.profile.name = cleanName(name);
+    skipPrologue ||= skip;
+    void persist();
+    hub.start();
+  },
+  onReset: async () => {
+    progress = defaultProgress(balance, W.start.room);
+    await persist();
+    try {
+      sessionStorage.setItem(NEW_GAME_FLAG, '1');
+    } catch {
+      /* depolama kapalıysa menüden yeniden "Yeni oyun" */
+    }
+    location.reload();
+  },
+  onSettings: (onClose) => withHubPaused(openSettingsPanel, onClose),
+  onLibrary: (onClose) => openLibrary(undefined, onClose),
+  onFirstInteraction: () => void audioReady.then(() => audio.start()),
+});
+let newGameStep = false;
+try {
+  newGameStep = sessionStorage.getItem(NEW_GAME_FLAG) === '1';
+  sessionStorage.removeItem(NEW_GAME_FLAG);
+} catch {
+  /* yok say */
+}
+mainMenu.show(newGameStep ? 'name' : 'main');
+// Duraklatma ekranından ana menüye: kayıt yazılır; prolog ya da final sürerken sayfa yenilenir (prolog baştan oynar)
+const toMenuBtn = document.createElement('button');
+toMenuBtn.className = 'ghost small gate-menu';
+toMenuBtn.dataset.act = 'menu';
+toMenuBtn.textContent = 'Ana menü';
+toMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  subtitles.clear();
+  void persist().then(() => {
+    if (hub.toMenu()) mainMenu.show();
+    else location.reload();
+  });
+});
+hub.gateBox.querySelector('.gate-action')!.after(toMenuBtn);

@@ -9,7 +9,7 @@
   },
   "reserve": [
     {
-      "who": "ece",
+      "who": "nexus",
       "text": "Hücreler kritik. Yedeğe geçtim; bir daha yakma, {ad}."
     }
   ],
@@ -22,11 +22,11 @@
       ],
       "lines": [
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Müren, derinlik iki yüz. {ad}, kahveni dökmediysen röleye bakalım."
         },
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Röle kutusu solunda. Test LED'i yanmadan hat bağlanmaz."
         }
       ],
@@ -38,13 +38,13 @@
       },
       "onFail": [
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Sigorta mı attı? Sorun değil. İlk günümde ben de iki tane yakmıştım. Üç."
         }
       ],
       "onSuccess": [
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Hat bağlandı. Gördün mü, kolaydı."
         }
       ]
@@ -61,7 +61,7 @@
           "text": "Sonar teması. Boyut: belirsiz."
         },
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Balina olmalı. …Çok büyük bir balina."
         }
       ],
@@ -81,11 +81,11 @@
           "text": "Telsizde parazit. Kaynak: NEREUS acil durum işaretçisi."
         },
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "O işaretçi altı yıldır susuyordu. Şirket 'eski sistem arızası' diyor."
         },
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Uzak dur dediler. Duruyoruz. Röleyi bitir, yukarı çık."
         }
       ],
@@ -104,7 +104,7 @@
           "text": "Güç barası düştü. Balast pompası: yanıt yok."
         },
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "{ad}, pompayı yedek hücreden besle. Şimdi."
         }
       ],
@@ -116,7 +116,7 @@
       },
       "onFail": [
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "Sakin. Önce motorun direncini bul, gerisi kendiliğinden gelir."
         }
       ],
@@ -135,7 +135,7 @@
       ],
       "lines": [
         {
-          "who": "ece",
+          "who": "nexus",
           "text": "…{ad}… balastı elle… —"
         },
         {

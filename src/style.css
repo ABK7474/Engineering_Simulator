@@ -198,7 +198,7 @@ button { font: inherit; cursor: pointer; }
 .topic-flow footer, .settings footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
 .form-grid { display: grid; gap: 12px; margin: 14px 0; }
 .form-grid label, .key-row, .md-pane label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 14px; }
-.topic-flow input, .topic-flow select, .topic-flow textarea, .settings input {
+.topic-flow input, .topic-flow select, .topic-flow textarea, .settings input, .main-menu-name input {
   font: inherit; color: var(--text); background: #061a1f; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
 }
 .topic-flow textarea { font-family: monospace; font-size: 13px; line-height: 1.45; resize: vertical; }
@@ -357,7 +357,7 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .finale dt { color: var(--muted); }
 .finale dd { margin: 0; }
 .finale footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-.finale .finale-lines p.ece b { color: var(--warn); }
+.finale .finale-lines p.nexus b { color: var(--warn); }
 .finale-choice, .finale-tail { opacity: 0; animation: finale-in 1s ease forwards; }
 .finale-end { color: var(--muted); font-style: italic; margin: 14px 0 0; }
 .subtitle.radio .speaker { color: var(--warn); }
@@ -373,9 +373,7 @@ table.trace tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
 .nb-goal li { margin: 4px 0; line-height: 1.45; font-size: 14px; }
 .nb-goal li.done { color: var(--muted); text-decoration: line-through; }
 .nb-goal li .dim { display: block; text-decoration: none; }
-.gate-name { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 10px 0; }
-.gate-name input { width: 180px; }
-.gate-skip { margin-top: 6px; }
+.gate-menu { margin-top: 12px; }
 .tag.ok { background: var(--ok, #30c070); }
 .tag.note { background: var(--accent); color: #061a1f; }
 
@@ -443,3 +441,28 @@ body.cinematic #app > :not(canvas),
 body.cinematic #ui > :not(.fade):not(.cinema-bars):not(.subtitle):not(.overlay) { visibility: hidden; }
 .season-end-note { color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
 @media (prefers-reduced-motion: reduce) { .cinema-bars > i { animation: none; } }
+
+/* Ana menü: solda başlık ve seçenekler; arkada istasyonun dışında süzülen kamera (hub 'menu' düzeni) */
+.main-menu {
+  position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; padding: 0 clamp(16px, 8vw, 120px);
+  background: linear-gradient(90deg, rgba(1, 8, 11, 0.86) 0%, rgba(1, 8, 11, 0.55) 38%, rgba(1, 8, 11, 0) 70%);
+}
+.main-menu[hidden] { display: none; }
+.main-menu-inner { width: min(440px, 100%); animation: menu-in 1.4s ease both; }
+@keyframes menu-in { from { opacity: 0; transform: translateY(8px); } }
+.main-menu h1 { margin: 0; font-size: clamp(30px, 4.5vw, 46px); letter-spacing: 0.1em; font-weight: 600; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6); }
+.main-menu-season { margin: 4px 0 28px; color: var(--muted); letter-spacing: 0.06em; }
+.main-menu-items { display: flex; flex-direction: column; gap: 8px; align-items: stretch; max-width: 360px; }
+.main-menu-items button { text-align: left; padding: 10px 16px; font-size: 16px; }
+.main-menu-items button.ghost { background: rgba(4, 22, 27, 0.55); }
+.main-menu-save { margin: 16px 0 0; color: var(--muted); font-size: 13px; }
+.main-menu-card { background: rgba(4, 22, 27, 0.85); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.main-menu-card footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.main-menu-card .controls { justify-content: start; }
+.main-menu-card .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.main-menu-name { display: flex; gap: 10px; align-items: center; }
+.main-menu-name input { flex: 1; min-width: 0; }
+.main-menu-skip { display: flex; gap: 8px; align-items: center; margin-top: 10px; color: var(--muted); }
+body.in-menu #app > :not(canvas),
+body.in-menu #ui > :is(.hud, .subtitle, .map-panel, .materials-status) { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .main-menu-inner { animation: none; } }
