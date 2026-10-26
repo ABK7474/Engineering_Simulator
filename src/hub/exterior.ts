@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createRng } from '../core/rng';
+import type { Pose, StationLights, WaterLook } from './ascent';
 import { edgeMid, INWARD, MODULE, neighborCell, SIDE_ROT, WALL_DEPTH, type Rect, type WindowLayout, type WorldLayout } from '../world/layout';
 
 /** Dış nesneler iç hacimlerden (oda + duvar kalınlığı) en az bu kadar uzakta. */
@@ -118,11 +119,20 @@ vec3 waterColor(vec3 dir) {
   return mix(uWaterBottom, uWaterTop, smoothstep(-0.45, 0.65, dir.y));
 }`;
 
+/** Yoğunluk bütün malzemelerde ortak (renkler zaten ortak nesne): final yükselişinde derinlikle değişir. */
+const waterDensity = { value: WATER_DENSITY };
 const waterUniforms = () => ({
   uWaterTop: { value: WATER_TOP },
   uWaterBottom: { value: WATER_BOTTOM },
-  uWaterDensity: { value: WATER_DENSITY },
+  uWaterDensity: waterDensity,
 });
+
+/** Suyun rengi ve sisi (final: derinliğe göre; `waterAt(START_DEPTH)` varsayılana döndürür). */
+export function setWater(w: WaterLook): void {
+  WATER_TOP.setRGB(w.top[0], w.top[1], w.top[2], THREE.SRGBColorSpace);
+  WATER_BOTTOM.setRGB(w.bottom[0], w.bottom[1], w.bottom[2], THREE.SRGBColorSpace);
+  waterDensity.value = w.density;
+}
 
 /**
  * Standart malzemenin sisini, bakış yönüne göre renk değiştiren su sisiyle değiştirir; böylece uzak
@@ -155,7 +165,7 @@ export function withWaterFog<M extends THREE.Material>(m: M): M {
   return m;
 }
 
-function softDot(): THREE.Texture {
+export function softDot(): THREE.Texture {
   const c = document.createElement('canvas');
   c.width = c.height = 32;
   const g = c.getContext('2d')!;
@@ -241,6 +251,12 @@ export interface Exterior {
   forcePassAt: (x: number, z: number, dx: number, dz: number, k: number) => void;
   /** Geliştirme/test: büyük gölgenin geçişini, yolun `k` (0..1) noktasından hemen başlatır (isteğe bağlı pencere sırası). */
   forcePass: (k: number, window?: number) => void;
+  /** Final: yaratık senaryodaki pozda (null: kendi geçişlerine döner); yanlarındaki ışık noktaları yalnız burada yanar. */
+  setCreature: (p: Pose | null) => void;
+  /** Final: pencere parıltısı, kılavuz lambaları ve çanak feneri (null: varsayılan davranış). */
+  setStationLights: (l: StationLights | null) => void;
+  /** Final: yüzeydeyken dış grup hiç çizilmez. */
+  setHidden: (on: boolean) => void;
 }
 
 export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
@@ -327,7 +343,27 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
     hull.push(new THREE.PlaneGeometry(roof.maxX - roof.minX, roof.maxZ - roof.minZ).rotateX(-Math.PI / 2).translate((roof.minX + roof.maxX) / 2, HULL_TOP, (roof.minZ + roof.maxZ) / 2));
   }
   if (hull.length) outside.add(new THREE.Mesh(mergeGeometries(hull), withWaterFog(new THREE.MeshStandardMaterial({ color: 0x1a2327, roughness: 0.8, metalness: 0.5 }))));
-  const coverMesh = new THREE.Mesh(covers.length ? mergeGeometries(covers) : new THREE.BufferGeometry(), withWaterFog(new THREE.MeshStandardMaterial({ color: 0x050b0e, roughness: 0.15, metalness: 0.9 })));
+  // Final: kapaklar içeriden ışık sızan pencere gibi parlar (yalnız pencere biçimi; çerçeve ve gövde karanlık kalır)
+  const glowMap = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, 128, 128);
+    const grad = g.createLinearGradient(0, 30, 0, 98);
+    grad.addColorStop(0, '#5a3a1a');
+    grad.addColorStop(1, '#ffffff');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.roundRect(30, 34, 68, 60, 10);
+    g.fill();
+    g.fillStyle = '#000';
+    g.fillRect(62, 34, 4, 60);
+    return new THREE.CanvasTexture(c);
+  })();
+  const coverMat = withWaterFog(new THREE.MeshStandardMaterial({ color: 0x050b0e, roughness: 0.15, metalness: 0.9, emissiveMap: glowMap }));
+  const coverMesh = new THREE.Mesh(covers.length ? mergeGeometries(covers) : new THREE.BufferGeometry(), coverMat);
+  const WINDOW_GLOW = new THREE.Color(0xffb860);
   coverMesh.visible = false;
   outside.add(coverMesh);
 
@@ -466,7 +502,20 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
   const finGeo = new THREE.ConeGeometry(0.9, 3.2, 4).rotateZ(Math.PI / 2).scale(1, 0.18, 1).translate(0, -0.3, -1);
   const shadow = new THREE.Mesh(mergeGeometries([bodyGeo, tailGeo, finGeo, finGeo.clone().rotateY(Math.PI)]), withWaterFog(new THREE.MeshBasicMaterial({ color: 0x041c22 })));
   shadow.visible = false;
+  shadow.rotation.order = 'YXZ';
   outside.add(shadow);
+  // Yanlarda soluk ışık noktaları (yalnız finalde, aşağıdan yükselirken karanlıkta seçilsin diye)
+  const glowPts: number[] = [];
+  for (let k = 0; k < 9; k++) for (const sx of [-1, 1]) glowPts.push(sx * (1.35 - Math.abs(k - 3) * 0.08), -0.25, -4.8 + k * 1.15);
+  const photophores = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(glowPts, 3)),
+    new THREE.PointsMaterial({ map: softDot(), color: 0x6fe8ff, size: 0.9, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
+  );
+  photophores.visible = false;
+  shadow.add(photophores);
+  let scripted: Pose | null = null;
+  let hidden = false;
+  let beaconOff = false;
   // Geçiş: bir pencerenin önünden, duvara paralel, 18–24 m uzaktan
   const pass = { active: false, start: 0, next: 25 + rng() * 25, duration: 42, base: [0, 0] as [number, number], dir: [0, 1] as [number, number] };
   const startPass = (time: number, k = 0, wi?: number) => {
@@ -550,6 +599,19 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
     forcePass(k, wi) {
       startPass(now, k, wi);
     },
+    setCreature(p) {
+      scripted = p;
+      photophores.visible = !!p;
+      if (!p) shadow.visible = pass.active;
+    },
+    setStationLights(l) {
+      coverMat.emissive.copy(WINDOW_GLOW).multiplyScalar(l ? l.windows * 0.9 : 0);
+      beaconOff = !!l && !l.beacon;
+      if (l) this.setGuideLit(Math.round(l.guides * guidePts.length));
+    },
+    setHidden(on) {
+      hidden = on;
+    },
     update(dt, time, camera) {
       now = time;
       causticMat.uniforms.uTime.value = time;
@@ -557,12 +619,16 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
       dome.position.setFromMatrixPosition(camera.matrixWorld);
       vp.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(vp);
-      outside.visible = outdoor || windowBoxes.some((b) => frustum.intersectsBox(b));
+      outside.visible = !hidden && (outdoor || windowBoxes.some((b) => frustum.intersectsBox(b)));
 
       // Zamanlayıcılar görünmezken de işler; parçacıklar yalnız görünürken güncellenir.
       if (time > nextBurst) burst(time);
       if (!pass.active && time > pass.next) startPass(time);
-      if (pass.active) {
+      if (scripted) {
+        shadow.visible = true;
+        shadow.position.set(scripted.x, scripted.y, scripted.z);
+        shadow.rotation.set(scripted.pitch, scripted.yaw, 0);
+      } else if (pass.active) {
         const k = (time - pass.start) / pass.duration;
         if (k >= 1) Object.assign(pass, { active: false, next: time + 50 + rng() * 60 });
         shadow.visible = pass.active;
@@ -576,7 +642,7 @@ export function buildExterior(scene: THREE.Scene, L: WorldLayout): Exterior {
       shaftMat.uniforms.uTime.value = time;
       for (const d of dishes) {
         d.head.rotation.y = d.yaw + Math.sin(time * 0.07) * 0.9;
-        d.beacon.color.setHex(Math.sin(time * 2.2) > 0.6 ? 0xff3020 : 0x3a0806);
+        d.beacon.color.setHex(!beaconOff && Math.sin(time * 2.2) > 0.6 ? 0xff3020 : 0x3a0806);
       }
       for (let i = 0; i < SNOW; i++) {
         const o = i * 3;

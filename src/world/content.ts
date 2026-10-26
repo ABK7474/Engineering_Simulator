@@ -1,6 +1,7 @@
 // Dünya içeriğini yükler ve baştan sona doğrular: şema → anlamsal kurallar → oda zorluğuyla aşamalar.
 // Kartlar content/faults/ altındaki bütün JSON'lardır; yeni arıza = yeni dosya.
 
+import endingJson from '../../content/story/ending.json';
 import prologueJson from '../../content/story/prologue.json';
 import storyJson from '../../content/story/season1.json';
 import worldJson from '../../content/world/season1-world.json';
@@ -10,6 +11,7 @@ import { faultStages, verifyFaultStages } from './difficulty';
 import { buildWorldLayout, type WorldLayout } from './layout';
 import { parseWorld, WorldError, type WorldDef } from './schema';
 import { validateWorld, type Story } from './validate';
+import { parseEnding, type EndingDef } from '../story/ending';
 import { parsePrologue, type PrologueDef } from '../story/prologue';
 import { lineProblems } from '../story/lines';
 import type { Difficulty } from './schema';
@@ -68,4 +70,12 @@ export function loadPrologue(raw: unknown = prologueJson, story: Story = storyJs
   }
   if (problems.length) throw new WorldError(problems);
   return { def, stages };
+}
+
+/** Final (kapsülle yükseliş): sahneler ve replik denetimi. */
+export function loadEnding(raw: unknown = endingJson, story: Story = storyJson as Story): EndingDef {
+  const def = parseEnding(raw);
+  const problems = def.beats.flatMap((b) => b.lines.flatMap((l, i) => lineProblems(story, l, `final '${b.id}' #${i + 1}`)));
+  if (problems.length) throw new WorldError(problems);
+  return def;
 }

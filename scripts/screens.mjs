@@ -41,7 +41,7 @@ try {
   await page.waitForFunction(() => window.__dm.hub.isRoaming(), { timeout: 30000 });
   await ev(() => window.__dm.solveAll());
   await sleep(300);
-  await page.$eval('.finale [data-end="left"]', (b) => b.click()).catch(() => {});
+  await page.$eval('.finale [data-end="stayed"]', (b) => b.click()).catch(() => {}); // "ayrıl" kapsül sahnesini oynatır
   await page.$eval('.finale [data-act="continue"]', (b) => b.click()).catch(() => {});
   await ev(() => {
     for (const id of Object.keys(window.__dm.hub.debug.doors())) window.__dm.hub.setDoorOpen(id, true, false);

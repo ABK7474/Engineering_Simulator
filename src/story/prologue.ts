@@ -45,21 +45,21 @@ export type PrologueEvent =
   | { type: 'puzzle'; card: string; success: boolean }
   | { type: 'event'; name: string };
 
-export function parsePrologue(raw: unknown): PrologueDef {
+export function parsePrologue(raw: unknown, file = 'prologue.json'): PrologueDef {
   const d = raw as PrologueDef;
-  if (!Array.isArray(d?.beats) || !d.beats.length) throw new Error('prologue.json: sahne yok');
+  if (!Array.isArray(d?.beats) || !d.beats.length) throw new Error(`${file}: sahne yok`);
   const ids = new Set<string>();
   for (const b of d.beats) {
-    if (typeof b.id !== 'string' || ids.has(b.id)) throw new Error(`prologue.json: sahne kimliği eksik/yinelenmiş (${String(b?.id)})`);
+    if (typeof b.id !== 'string' || ids.has(b.id)) throw new Error(`${file}: sahne kimliği eksik/yinelenmiş (${String(b?.id)})`);
     ids.add(b.id);
-    if (!Array.isArray(b.cues) || !Array.isArray(b.lines)) throw new Error(`prologue.json '${b.id}': cues/lines dizi olmalı`);
+    if (!Array.isArray(b.cues) || !Array.isArray(b.lines)) throw new Error(`${file} '${b.id}': cues/lines dizi olmalı`);
     const u = b.until;
-    if (!u || !['lines', 'time', 'interact', 'puzzle', 'event'].includes(u.type)) throw new Error(`prologue.json '${b.id}': bitiş koşulu geçersiz`);
-    if ((u.type === 'interact' || u.type === 'puzzle') && !b.target) throw new Error(`prologue.json '${b.id}': etkileşim hedefi yok`);
-    if (u.type === 'puzzle' && typeof u.card !== 'string') throw new Error(`prologue.json '${b.id}': bulmaca kartı yok`);
-    if (u.type === 'event' && typeof u.name !== 'string') throw new Error(`prologue.json '${b.id}': olay adı yok`);
-    if (u.type === 'time' && !(u.sec > 0)) throw new Error(`prologue.json '${b.id}': süre geçersiz`);
-    if (u.type === 'lines' && !b.lines.length) throw new Error(`prologue.json '${b.id}': replik yokken 'lines' koşulu bitmez`);
+    if (!u || !['lines', 'time', 'interact', 'puzzle', 'event'].includes(u.type)) throw new Error(`${file} '${b.id}': bitiş koşulu geçersiz`);
+    if ((u.type === 'interact' || u.type === 'puzzle') && !b.target) throw new Error(`${file} '${b.id}': etkileşim hedefi yok`);
+    if (u.type === 'puzzle' && typeof u.card !== 'string') throw new Error(`${file} '${b.id}': bulmaca kartı yok`);
+    if (u.type === 'event' && typeof u.name !== 'string') throw new Error(`${file} '${b.id}': olay adı yok`);
+    if (u.type === 'time' && !(u.sec > 0)) throw new Error(`${file} '${b.id}': süre geçersiz`);
+    if (u.type === 'lines' && !b.lines.length) throw new Error(`${file} '${b.id}': replik yokken 'lines' koşulu bitmez`);
   }
   return d;
 }
@@ -72,7 +72,7 @@ export class PrologueDirector {
   /** Bu sahnede bulmaca açık mı (aynı anda ikinci kez açılmasın). */
   puzzleOpen = false;
 
-  constructor(readonly def: PrologueDef) {}
+  constructor(readonly def: Pick<PrologueDef, 'beats'>) {}
 
   get beat(): Beat | null {
     return this.def.beats[this.index] ?? null;

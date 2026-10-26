@@ -11,8 +11,12 @@ import { buildAtmosphere } from './atmosphere';
 import { buildBuilding } from './building';
 import { createDoor, type Door } from './door';
 import { Effects, Tweens } from './effects';
-import { buildExterior, distanceToRects, interiorsOf, seabedHeight, stationRocks } from './exterior';
+import { buildExterior, distanceToRects, interiorsOf, seabedHeight, setWater, stationRocks, WALL_OUT } from './exterior';
 import { buildMuren, type MurenPhase, type MurenStatus, type MurenTarget } from './cockpit';
+import { creatureAt, depthAt, FOLLOW_STOP, followStop, lightsAt, riseAt, RISE, START_DEPTH, timeForDepth, waterAt, type Pose } from './ascent';
+import { buildCapsule, type CapsuleStatus } from './capsule';
+import { buildSurface, waveHeight } from './surface';
+import type { LookTarget } from '../story/ending';
 import { ArmState, type ArmMode } from './arm-state';
 import { buildViewmodel, type WristInfo, type WristMap } from './viewmodel';
 import { controlsHtml } from '../ui/controls-help';
@@ -53,7 +57,30 @@ export interface HubOptions {
 }
 
 /** Kamera düzeni: istasyonda yürüme, denizaltı koltuğu, dalış kıyafetiyle deniz tabanı. */
-export type Rig = 'station' | 'cockpit' | 'seabed';
+export type Rig = 'station' | 'cockpit' | 'seabed' | 'capsule';
+
+/** Final: kapsülle yükseliş sahnesi (akış: ending-flow.ts). Kamera senaryoyla yönlenir; girdi kapalı. */
+export interface EndingStage {
+  readonly entered: boolean;
+  readonly launched: boolean;
+  readonly status: CapsuleStatus;
+  /** Kapsülün içine geç (yuvada, fırlatmadan önce). */
+  enter: () => void;
+  /** İstasyona, başlangıç noktasına dön; su, yaratık ve ışıklar varsayılana. */
+  leave: () => void;
+  /** Kenetler açılır, yükseliş başlar. */
+  launch: () => void;
+  /** Atlama: yükselişi bu derinliğe taşı. */
+  setDepth: (depth: number) => void;
+  lightsOut: (seconds: number) => void;
+  creatureFollow: (seconds: number) => void;
+  look: (t: LookTarget) => void;
+  shake: (seconds: number, amp: number) => void;
+  searchlight: (seconds: number) => void;
+  boat: (seconds: number) => void;
+  /** Sahne olayları: 'creature:stop', 'surfacing' (yüzeye birkaç metre), 'surfaced'. */
+  onEvent: (fn: (name: string) => void) => void;
+}
 
 /** Prolog sahnesinin hub'daki karşılığı (dünya: Müren, kabuk, kılavuz lambaları, kask lambası). */
 export interface PrologueStage {
@@ -129,6 +156,8 @@ export interface Hub {
   };
   /** Prolog sahnesi (dünyada servis kilidi ve enkaz yoksa null). */
   prologue: PrologueStage | null;
+  /** Final: kapsülle yükseliş. */
+  ending: EndingStage;
   /** Giriş ekranının içerik kutusu (ad alanı, "Prologu atla" buraya eklenir). */
   gateBox: HTMLElement;
   /** Geliştirme/test kancaları (oyunda kullanılmaz). */
@@ -537,6 +566,269 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
         }
       : null;
 
+  // --- Final: kapsülle yükseliş ---
+  // Yuva, hava kilidi odasının dışında: dört kenardan istasyonun merkezine en uzak ve kayalardan/öteki odalardan açık
+  // olanı. Kapsül istasyona dönük durur (konsol ve ön cam istasyon yönünde).
+  const capsuleSite = (() => {
+    const xs = layout.rooms.flatMap((r) => [r.rect.minX, r.rect.maxX]);
+    const zs = layout.rooms.flatMap((r) => [r.rect.minZ, r.rect.maxZ]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const home = layout.rooms.find((r) => r.def.theme === 'airlock') ?? layout.rooms.find((r) => r.def.id === layout.world.start.room)!;
+    const { minX, maxX, minZ, maxZ } = home.rect;
+    const out = WALL_OUT + 5;
+    const rocks = stationRocks(layout);
+    const sides: [number, number][] = [
+      [maxX + out, (minZ + maxZ) / 2],
+      [minX - out, (minZ + maxZ) / 2],
+      [(minX + maxX) / 2, maxZ + out],
+      [(minX + maxX) / 2, minZ - out],
+    ];
+    const clearance = ([x, z]: [number, number]) => Math.min(distanceToRects(interiors, x, z), ...rocks.map((r) => Math.hypot(r.x - x, r.z - z) - r.scale * 1.2));
+    const score = (p: [number, number]) => (clearance(p) >= 2.2 ? 1000 : 0) + Math.hypot(p[0] - cx, p[1] - cz);
+    const [x, z] = sides.reduce((a, b) => (score(b) > score(a) ? b : a));
+    const len = Math.hypot(x - cx, z - cz) || 1;
+    return { x, z, y: bedAt(x, z) + 1.25 + 0.2, yaw: Math.atan2(-(cx - x), -(cz - z)), cx, cz, out: [(x - cx) / len, (z - cz) / len] as [number, number] };
+  })();
+  const capsule = buildCapsule(scene, capsuleSite);
+  capsule.setVisible(false);
+  const surfaceY = capsuleSite.y + RISE - 0.25;
+  const surface = buildSurface(scene, { x: capsuleSite.x, z: capsuleSite.z, y: surfaceY, shipDir: capsuleSite.yaw });
+  surface.setMode('off');
+  const cam0 = { far: camera.far, fog: (scene.fog as THREE.FogExp2).density };
+  const endingFns: ((name: string) => void)[] = [];
+  const emit = (name: string) => endingFns.forEach((f) => f(name));
+  // Yaratık önden-yandan gelir (kapsül istasyona dönük; arkası koltuk tarafı)
+  const follow = {
+    floorY: bedAt(capsuleSite.x, capsuleSite.z),
+    side: [-capsuleSite.out[0] * Math.cos(0.6) + capsuleSite.out[1] * Math.sin(0.6), -capsuleSite.out[1] * Math.cos(0.6) - capsuleSite.out[0] * Math.sin(0.6)] as [number, number],
+  };
+  const cap = {
+    entered: false,
+    launched: false,
+    /** Fırlatmadan beri geçen yükseliş süresi (sn). */
+    t: 0,
+    clamps: 0,
+    lights: -1,
+    lightsDur: 1,
+    follow: -1,
+    followDur: 1,
+    stop: null as { x: number; y: number; z: number } | null,
+    beam: -1,
+    beamDur: 1,
+    boat: -1,
+    boatDur: 1,
+    surfacing: false,
+    look: 'console' as LookTarget,
+  };
+  const capPos = new THREE.Vector3();
+  const lookAtPt = new THREE.Vector3();
+  const lookMat = new THREE.Matrix4();
+  const lookQ = new THREE.Quaternion();
+  const creaturePos = new THREE.Vector3();
+  const UP = new THREE.Vector3(0, 1, 0);
+  const resetCapsule = () => {
+    Object.assign(cap, { launched: false, t: 0, clamps: 0, lights: -1, follow: -1, stop: null, beam: -1, boat: -1, surfacing: false, look: 'console' });
+    Object.assign(capsule.status, { depth: START_DEPTH, rate: 0, sonar: 'idle', contact: null, surfaced: false });
+    capsule.root.position.set(capsuleSite.x, capsuleSite.y, capsuleSite.z);
+    capsule.root.rotation.set(0, capsuleSite.yaw, 0);
+    capsule.setClamps(0);
+    capsule.setRiseSpeed(0);
+    capsule.setParticles(true);
+    surface.setMode('off');
+    surface.setSearchlight(0);
+    surface.setBoat(0);
+    setWater(waterAt(START_DEPTH));
+    exterior.setCreature(null);
+    exterior.setStationLights(null);
+    exterior.setHidden(false);
+    camera.far = cam0.far;
+    camera.updateProjectionMatrix();
+    (scene.fog as THREE.FogExp2).density = cam0.fog;
+  };
+  const updateCapsule = (dt: number) => {
+    const s = capsule.status;
+    // Yükseliş: derinlik eğrisi saf fonksiyondan; kapsülün yüksekliği derinliğin ölçeklenmiş karşılığı
+    if (cap.launched && !s.surfaced) {
+      cap.t += dt;
+      const d = depthAt(cap.t);
+      s.rate = dt > 0 ? (s.depth - d) / dt : 0;
+      s.depth = d;
+    }
+    cap.clamps = Math.min(1, cap.clamps + (cap.launched ? dt / 1.2 : 0));
+    capsule.setClamps(cap.clamps);
+    capsule.setRiseSpeed(cap.launched && !s.surfaced ? (RISE / START_DEPTH) * Math.max(0, s.rate) : 0);
+    capsule.root.position.y = capsuleSite.y + riseAt(s.depth) + (s.surfaced ? waveHeight(capsuleSite.x, capsuleSite.z, elapsed) * 0.7 : 0);
+    if (s.surfaced) capsule.root.rotation.set(Math.sin(elapsed * 0.9) * 0.05, capsuleSite.yaw, Math.sin(elapsed * 0.7) * 0.06);
+    capPos.copy(capsule.root.position);
+    setWater(waterAt(s.depth));
+    // Yüzey: son 60 m'de parlak alt yüz; birkaç metre kala beyaz parlama, sonra yüzeyin üstü
+    if (!s.surfaced) {
+      surface.setMode(s.depth < 60 ? 'below' : 'off');
+      surface.setBelow(1 - s.depth / 60);
+      if (!cap.surfacing && s.depth <= 2.5 && cap.launched) {
+        cap.surfacing = true;
+        emit('surfacing');
+      }
+      if (cap.launched && s.depth <= 0) {
+        s.surfaced = true;
+        s.rate = 0;
+        surface.setMode('above');
+        exterior.setHidden(true);
+        capsule.setParticles(false);
+        capsule.cradle.visible = false;
+        camera.far = 900;
+        camera.updateProjectionMatrix();
+        (scene.fog as THREE.FogExp2).density = 0;
+        emit('surfaced');
+      }
+    }
+    // İstasyon ışıkları (NEREUS söndürür)
+    if (cap.lights >= 0) {
+      cap.lights += dt;
+      exterior.setStationLights(lightsAt(Math.min(1, cap.lights / cap.lightsDur)));
+    }
+    // Yaratık: aşağıdan yükselir, durur (olay), döner, sise dalar
+    if (cap.follow >= 0 && !s.surfaced) {
+      const before = cap.follow / cap.followDur;
+      cap.follow += dt;
+      const u = Math.min(1, cap.follow / cap.followDur);
+      if (before < FOLLOW_STOP && u >= FOLLOW_STOP) {
+        cap.stop = followStop(capPos, follow);
+        emit('creature:stop');
+      }
+      const p: Pose = creatureAt(u, capPos, follow, cap.stop ?? undefined);
+      exterior.setCreature(p);
+      creaturePos.set(p.x, p.y, p.z);
+      const dx = p.x - capPos.x;
+      const dz = p.z - capPos.z;
+      const b = Math.atan2(-dx, -dz) - capsuleSite.yaw;
+      s.contact = s.sonar === 'contact' ? { range: creaturePos.distanceTo(capPos) * (START_DEPTH / RISE), bearing: Math.atan2(Math.sin(b), Math.cos(b)) } : null;
+    } else s.contact = null;
+    if (cap.beam >= 0) surface.setSearchlight((cap.beam += dt) / cap.beamDur);
+    if (cap.boat >= 0) surface.setBoat((cap.boat += dt) / cap.boatDur);
+    // Kamera: kapsülün içinde, senaryodaki hedefe yumuşakça döner
+    capsule.root.updateMatrixWorld();
+    camera.position.copy(capsule.eye).applyMatrix4(capsule.root.matrixWorld);
+    switch (cap.look) {
+      case 'console':
+        lookAtPt.set(0, -0.62, -1.1).applyMatrix4(capsule.root.matrixWorld);
+        break;
+      case 'station':
+        lookAtPt.set(capsuleSite.cx, follow.floorY + 1.5, capsuleSite.cz);
+        break;
+      case 'creature':
+        lookAtPt.copy(cap.follow >= 0 ? creaturePos : capPos.clone().setY(follow.floorY));
+        break;
+      case 'up':
+        lookAtPt.set(0, 30, -6).applyMatrix4(capsule.root.matrixWorld);
+        break;
+      case 'ship':
+        surface.shipPoint(lookAtPt);
+        break;
+      case 'boat':
+        surface.boatPoint(lookAtPt);
+        break;
+    }
+    lookMat.lookAt(camera.position, lookAtPt, UP);
+    lookQ.setFromRotationMatrix(lookMat);
+    camera.quaternion.slerp(lookQ, 1 - Math.exp(-dt * 1.4));
+    if (shakeLeft > 0) {
+      shakeLeft -= dt;
+      const a = shakeAmp * Math.min(1, shakeLeft);
+      camera.position.add(new THREE.Vector3((Math.random() - 0.5) * a, (Math.random() - 0.5) * a, (Math.random() - 0.5) * a));
+    }
+    // Kabin lambası (LED ışığı ödünç): derinde loş sıcak ışık, yüzeyde söner
+    ledLight.position.copy(capPos).add(new THREE.Vector3(0, 0.7, 0));
+    ledLight.distance = 3.5;
+    ledLight.color.setHex(0xffd9a8);
+    ledLight.intensity = s.surfaced ? 0 : 2.2;
+    capsule.update(dt, elapsed);
+    surface.update(dt, elapsed, camera);
+  };
+  const endingStage: EndingStage = {
+    get entered() {
+      return cap.entered;
+    },
+    get launched() {
+      return cap.launched;
+    },
+    status: capsule.status,
+    enter() {
+      resetCapsule();
+      cap.entered = true;
+      rig = 'capsule';
+      promptOn = false;
+      player.enabled = false;
+      player.controls.unlock();
+      setStationVisible(false);
+      exterior.setOutdoor(true);
+      exterior.setStationLights(lightsAt(0));
+      capsule.setVisible(true);
+      vm.scene.visible = false;
+      helmet.intensity = 0;
+      // Başlangıç bakışı: doğrudan konsola
+      capsule.root.updateMatrixWorld();
+      camera.position.copy(capsule.eye).applyMatrix4(capsule.root.matrixWorld);
+      lookMat.lookAt(camera.position, lookAtPt.set(0, -0.62, -1.1).applyMatrix4(capsule.root.matrixWorld), UP);
+      camera.quaternion.setFromRotationMatrix(lookMat);
+    },
+    leave() {
+      if (!cap.entered) return;
+      resetCapsule();
+      cap.entered = false;
+      capsule.setVisible(false);
+      vm.scene.visible = true;
+      ledLight.intensity = 0;
+      ledLight.distance = 3;
+      ledLight.color.setHex(0xffffff);
+      rig = 'station';
+      exterior.setOutdoor(false);
+      setStationVisible(true);
+      player.enabled = true;
+      teleport(opts.spawn.x, opts.spawn.z, opts.spawn.yaw);
+      camera.position.y = 1.6;
+    },
+    launch() {
+      if (cap.launched) return;
+      cap.launched = true;
+      capsule.burst();
+    },
+    setDepth(d) {
+      if (!cap.launched) {
+        cap.launched = true;
+        cap.clamps = 1;
+      }
+      cap.t = timeForDepth(d);
+      capsule.status.depth = d;
+    },
+    lightsOut(sec) {
+      cap.lights = 0;
+      cap.lightsDur = sec;
+    },
+    creatureFollow(sec) {
+      cap.follow = 0;
+      cap.followDur = sec;
+      cap.stop = null;
+    },
+    look(t) {
+      cap.look = t;
+    },
+    shake(seconds, amp) {
+      shakeLeft = seconds;
+      shakeAmp = amp;
+    },
+    searchlight(sec) {
+      cap.beam = 0;
+      cap.beamDur = sec;
+    },
+    boat(sec) {
+      cap.boat = 0;
+      cap.boatDur = sec;
+    },
+    onEvent: (fn) => endingFns.push(fn),
+  };
+
   // --- Döngü ---
   const timer = new THREE.Timer();
   let elapsed = 0;
@@ -549,9 +841,10 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     const colliders = rig === 'seabed' ? outdoorColliders : [...building.colliders, ...[...doors.values()].filter((d) => d.openAmount < 0.95).map((d) => d.collider)];
     const { distance, mode } = player.update(dt, colliders);
     vm.update(arms.update(dt, dt > 0 ? distance / dt : 0), elapsed);
-    blob.visible = rig !== 'cockpit';
+    blob.visible = rig !== 'cockpit' && rig !== 'capsule';
     blob.position.set(camera.position.x, player.ground(camera.position.x, camera.position.z) + 0.02, camera.position.z);
-    if (rig !== 'station') updatePrologue(dt);
+    if (rig === 'capsule') updateCapsule(dt);
+    else if (rig !== 'station') updatePrologue(dt);
     const prof = stepProfile(mode);
     strides.setStride(prof.stride);
     for (let k = strides.add(distance); k > 0; k--) sounds.play('step', { volume: prof.volume, pitchJitter: 0.08 });
@@ -959,6 +1252,7 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
     },
     teleport,
     prologue: prologueStage,
+    ending: endingStage,
     arms: {
       raise(mode) {
         arms.setMode(mode);

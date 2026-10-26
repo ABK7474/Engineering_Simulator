@@ -47,7 +47,7 @@ const TARGETS: Record<MurenTarget, THREE.Vector3> = {
   locker: new THREE.Vector3(0.82, 0.05, 0.85),
 };
 
-function screenCanvas(w: number, h: number) {
+export function screenCanvas(w: number, h: number) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;

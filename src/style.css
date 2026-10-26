@@ -430,3 +430,16 @@ body.wrist-hud .hud { display: none; }
 .nb-sheet h4, .nb-sheet h5 { margin: 8px 0 4px; font-size: 14px; }
 .nb-sheet ul { margin: 4px 0; padding-left: 18px; line-height: 1.5; font-size: 14px; }
 code.tex { color: var(--accent); }
+
+/* Final: kapsül sahnesi. Sinema şeritleri, "Atla ›", beyaz parlama; HUD, nişangâh ve istem gizli. */
+#ui > .fade.flash { background: #f4fbff; }
+.cinema-bars { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.cinema-bars > i { position: absolute; left: 0; right: 0; height: 9vh; background: #000; animation: bars-in 1.2s ease both; }
+.cinema-bars > i:first-child { top: 0; }
+.cinema-bars > i:nth-child(2) { bottom: 0; }
+@keyframes bars-in { from { height: 0; } }
+.cinema-bars .ending-skip { position: absolute; right: 18px; bottom: calc(9vh + 12px); pointer-events: auto; z-index: 7; }
+body.cinematic #app > :not(canvas),
+body.cinematic #ui > :not(.fade):not(.cinema-bars):not(.subtitle):not(.overlay) { visibility: hidden; }
+.season-end-note { color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .cinema-bars > i { animation: none; } }

@@ -15,6 +15,7 @@
     "e2e": "node scripts/e2e.mjs",
     "screens": "node scripts/screens.mjs",
     "e2e:prologue": "node scripts/e2e-prologue.mjs",
+    "e2e:ending": "node scripts/e2e-ending.mjs",
     "kitap:bol": "node scripts/book-split.ts",
     "check:size": "node scripts/check-size.mjs",
     "e2e:materials": "node scripts/e2e-materials.mjs"

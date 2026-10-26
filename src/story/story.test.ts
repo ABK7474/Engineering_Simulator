@@ -35,8 +35,7 @@ describe('replik biçimi', () => {
     expect(all.flatMap(([k, ls]) => ls.flatMap((l, i) => lineProblems(story, l, `${k} #${i + 1}`)))).toEqual([]);
   });
 
-  it('final iki seçeneği de içerir; açılış NEREUS’un karşılamasıyla başlar', () => {
-    expect(story.lines['finale:left']?.length).toBeGreaterThan(0);
+  it('final "kal" seçeneğini içerir ("ayrıl" kapsül sahnesinde); açılış NEREUS’un karşılamasıyla başlar', () => {
     expect(story.lines['finale:stayed']?.length).toBeGreaterThan(0);
     expect(resolveLines(story, story.lines.start, 'Deniz')[0].text).toBe('Hoş geldiniz, mühendis. Sizi bekliyordum.');
   });

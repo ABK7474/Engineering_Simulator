@@ -194,10 +194,14 @@ try {
     await page.screenshot({ path: path.join(OUT, 'finale.png') });
     // Seçim: kapsülle ayrıl (kayda ending.left düşer)
     await page.click('.finale [data-end="left"]');
-    await page.waitForSelector('.finale [data-act="continue"]', { timeout: 10000 });
+    await page.waitForFunction(() => window.__dm.ending.active(), { timeout: 10000 });
     const ending = await ev(() => window.__dm.progress().ending);
     if (ending !== 'left') fail(`final seçimi kaydedilmedi (${ending})`);
-    await page.click('.finale [data-act="continue"]');
+    // Kapsül sahnesi ayrı betikte (e2e:ending) oynanır; burada atlanır
+    await sleep(1500);
+    await page.click('.ending-skip');
+    await page.waitForSelector('.season-end [data-act="continue"]', { timeout: 20000 });
+    await page.click('.season-end [data-act="continue"]');
     await sleep(500);
     await resumeRoaming();
   }

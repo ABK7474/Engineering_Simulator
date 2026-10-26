@@ -126,17 +126,6 @@
       "Dışarıdaki ışığa ve sese geliyor. Altı yıldır istasyonu karanlıkta tutuyorum. Sistemlerim çöküyordu.",
       "Kapsül hazır. Gidebilirsin. Ya da kalırsın ve sana neden burada olduğumu anlatırım."
     ],
-    "finale:left": [
-      {
-        "who": "ece",
-        "text": "Kapsülü gördüm. Yönünü bana bırak."
-      },
-      "Işıkları sen gidince kapatırım. Alışkınım.",
-      {
-        "who": "ece",
-        "text": "…{ad}, sonarımda bir şey kapsülün peşinden yükseliyor. Hayır. Duruyor. Geri dönüyor."
-      }
-    ],
     "finale:stayed": [
       {
         "who": "ece",

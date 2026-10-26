@@ -55,7 +55,7 @@ import { objectiveLine, objectiveView, parseObjectives } from './story/objective
 import { cleanName, resolveLines, type Line } from './story/lines';
 import topicsJson from '../content/topics.json';
 import { openNotebook } from './ui/notebook';
-import { showFinale } from './ui/finale';
+import { showFinale, showSeasonEnd } from './ui/finale';
 import { clearApiKey, getApiKey, getModel, maskKey, setApiKey, setModel } from './core/secrets';
 import type { StageDef } from './core/types';
 import { createHub } from './hub/hub';
@@ -67,8 +67,9 @@ import { mountBackupMenu } from './ui/backup';
 import { showEpisodeClosed } from './ui/episode-closed';
 import { mountMap, type MapView } from './ui/map';
 import { mountSubtitles } from './ui/subtitle';
-import { loadPrologue, loadWorld } from './world/content';
+import { loadEnding, loadPrologue, loadWorld } from './world/content';
 import { createPrologueFlow, type PrologueFlow } from './prologue-flow';
+import { createEndingFlow } from './ending-flow';
 import { loadMeta, saveMeta } from './core/meta';
 import type { ResourceState } from './core/resources';
 import { respawnInRoom } from './world/respawn';
@@ -429,6 +430,17 @@ setInterval(() => {
 // --- Replikler ve harita ---
 const subtitles = mountSubtitles(ui);
 
+// --- Final: kapsülle yükseliş (yalnız "Kapsülle ayrıl" seçilince; sonra sezon özeti, serbest dolaşma) ---
+const ending = createEndingFlow({
+  stage: hub.ending,
+  def: loadEnding(),
+  ui,
+  subtitles,
+  spoken: (lines) => spoken(lines),
+  audio,
+  onDone: () => showSeasonEnd(ui, { stats: seasonStats(), onContinue: () => hub.resume() }),
+});
+
 // --- Prolog: Müren, iniş, iki kolay bulmaca, düşüş, deniz tabanı, servis kilidi ---
 const PROLOGUE = loadPrologue(undefined, undefined, undefined, { verifySeeds: 1 });
 prologue = hub.prologue
@@ -783,6 +795,8 @@ if (import.meta.env.DEV) {
     __dm: {
       audio,
       hub,
+      /** Final sahnesi: hangi sahnede, sahneye atla, geç. */
+      ending: { active: () => ending.active, beat: () => ending.debug.beat(), skipTo: (id: string) => ending.debug.skipTo(id), skip: () => ending.skip() },
       progress: () => structuredClone(progress),
       stage: (fid: string) => ({ fid, index: stageIndex(fid), baseSeed, attempt, seed: stageSeed(fid), def: structuredClone(getRun(fid).def) }),
       library: () => structuredClone(library),
@@ -1019,7 +1033,11 @@ function testUnlock(solveAll: boolean): void {
   uiSound('switch');
   const text = solveAll ? 'Test kodu: bütün arızalar onarıldı.' : 'Test kodu: bütün kapılar ve terminaller açık, kaynaklar dolu.';
   subtitles.say([{ who: 'suit', label: 'TEST', text }]);
-  if (solveAll) maybeFinale();
+  if (solveAll) {
+    // 923 finali her seferinde yeniden gösterir
+    progress.world.seenLines = progress.world.seenLines.filter((k) => k !== 'finale');
+    maybeFinale();
+  }
 }
 const testCodes = [
   { hit: keySequence('681'), solveAll: false },
@@ -1027,7 +1045,7 @@ const testCodes = [
 ];
 window.addEventListener('keydown', (e) => {
   const d = digitOf(e.code);
-  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay')) return;
+  if (!d || typing(e) || e.repeat || ui.querySelector('.overlay') || ending.active) return;
   for (const c of testCodes) if (c.hit(d)) testUnlock(c.solveAll);
 });
 
@@ -1065,26 +1083,31 @@ function maybeFinale(): boolean {
   progress.world.seenLines.push('finale');
   void persist();
   hub.suspend();
-  const reviewed = Object.values(progress.review);
   showFinale(ui, {
     lines: spoken(content.story.lines.finale),
-    after: { left: spoken(content.story.lines['finale:left']), stayed: spoken(content.story.lines['finale:stayed']) },
+    after: spoken(content.story.lines['finale:stayed']),
     onChoose: (end) => {
       progress.ending = end;
       if (!progress.world.states.includes(`ending.${end}`)) progress.world.states.push(`ending.${end}`);
       void persist();
     },
-    stats: [
-      { label: 'Onarılan arıza', value: `${W.faults.length}/${W.faults.length}` },
-      { label: 'Bölüm', value: String(progress.episode) },
-      { label: 'Denenen konu', value: String(reviewed.length) },
-      { label: 'Oturmuş konu (kutu ≥ 3)', value: String(reviewed.filter((r) => r.box >= 3).length) },
-      { label: 'Açılan kayıt', value: `${unlockedLogs(STATION_LOGS, states()).length}/${STATION_LOGS.length}` },
-      { label: 'Yaratık saldırısı', value: String(Object.values(progress.threats).reduce((a, t) => a + t.strikes, 0)) },
-    ],
+    onLeave: () => ending.start(),
+    stats: seasonStats(),
     onContinue: () => hub.resume(),
   });
   return true;
+}
+
+function seasonStats(): { label: string; value: string }[] {
+  const reviewed = Object.values(progress.review);
+  return [
+    { label: 'Onarılan arıza', value: `${W.faults.length}/${W.faults.length}` },
+    { label: 'Bölüm', value: String(progress.episode) },
+    { label: 'Denenen konu', value: String(reviewed.length) },
+    { label: 'Oturmuş konu (kutu ≥ 3)', value: String(reviewed.filter((r) => r.box >= 3).length) },
+    { label: 'Açılan kayıt', value: `${unlockedLogs(STATION_LOGS, states()).length}/${STATION_LOGS.length}` },
+    { label: 'Yaratık saldırısı', value: String(Object.values(progress.threats).reduce((a, t) => a + t.strikes, 0)) },
+  ];
 }
 
 function openPuzzle(fid: string): void {
