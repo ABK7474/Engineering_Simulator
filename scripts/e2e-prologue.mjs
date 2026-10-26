@@ -154,6 +154,15 @@ try {
   await shot('kilit-onu');
   await ev((q) => window.__dm.hub.debug.teleport(q.x - 0.5, q.z + 1.2), h);
   await useTarget('hatch', false);
+  // Kapak açılırken ardındaki koridor çizilmeli (önceden bütün odalar gizliydi; kapıdan boşluk görünüyordu)
+  // Akış 1,3 sn sonra ekranı karartır; yazılımla çizimde kapak o sürede ancak aralanır: çekimde karartma gizlenir
+  await ev(() => document.querySelectorAll('#ui > .fade').forEach((f) => (f.style.visibility = 'hidden')));
+  await frames(16);
+  await page.screenshot({ path: path.join(OUT, 'prolog-kilit-acilirken.png') });
+  const opening = await ev(() => window.__dm.hub.debug.breakdown());
+  await ev(() => document.querySelectorAll('#ui > .fade').forEach((f) => (f.style.visibility = '')));
+  console.log(`  kapak açılırken koridor: ${opening['room:corridor-b2'] ? `${opening['room:corridor-b2'].calls} çağrı` : 'yok'}`);
+  if (!opening['room:corridor-b2']) fail('kapak açılırken koridor çizilmiyor (kapıdan boşluk görünür)');
   await page.waitForFunction(() => !window.__dm.prologue.active(), { timeout: 180000 });
   await sleep(800);
   const sub = await ev(() => [document.querySelector('.subtitle .speaker')?.textContent, document.querySelector('.subtitle .text')?.textContent]);

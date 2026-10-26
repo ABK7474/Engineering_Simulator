@@ -506,6 +506,12 @@ export async function createHub(container: HTMLElement, opts: HubOptions): Promi
           },
           enterStation() {
             return new Promise<void>((done) => {
+              // Kapak açılırken ardındaki koridor görünsün (dışarıdayken bütün odalar gizli; yoksa kapıdan boşluk
+              // görünür). Öteki odalar kapalı kapıların ardında kalır.
+              for (const o of stationRoots) o.visible = true;
+              building.setVisibleRooms(new Set([layout.world.start.room]));
+              powerLevel = 1;
+              applyPower();
               sounds.play('door_open');
               const from = hatchDoor.openAmount;
               doorTweens.add((_dt, el) => {
